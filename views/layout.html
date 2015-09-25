@@ -41,11 +41,9 @@
 
   <!-- include stylesheets -->
   {{
-  response.files.insert(0,URL('static','css/web2py.css'))
-  response.files.insert(1,URL('static','css/bootstrap.min.css'))
-  response.files.insert(2,URL('static','css/bootstrap-responsive.min.css'))
-  response.files.insert(3,URL('static','css/web2py_bootstrap.css'))
-  response.files.insert(4,URL('static','css/cross.css'))
+  response.files.insert(0,URL('static','css/bootstrap.min.css'))
+  response.files.insert(1,URL('static','css/web2py_bootstrap.css'))
+  response.files.insert(2,URL('static','css/web2py.css'))
   }}
 
   {{include 'web2py_ajax.html'}}
@@ -59,6 +57,8 @@
 <script>
 var menuarray = {{=menuarray}};
 jQuery(document).ready(function() {
+    
+    jQuery('input:text:visible:first').focus();    
     
     getCrossIndex = function(data, id) {
       var i = 0;
@@ -84,15 +84,15 @@ jQuery(document).ready(function() {
     r = jQuery("#crossmainmenu").closest('li')
     if (r.length) buildMainMenu(r, menuarray, '{{=URL('cross')}}');
     
-    {{if 'verticalmainmenu' in locals():}}
+    {{if response.verticalmainmenu:}}
       r = jQuery("#verticalmainmenu").closest('li')
       if (r.length) {
-        var i = getCrossIndex(menuarray, {{=verticalmainmenu}});
+        var i = getCrossIndex(menuarray, {{=response.verticalmainmenu}});
         buildMainMenu(r, menuarray[i][2], '{{=URL('vertical')}}');
         }
     {{pass}}
     
-    {{block review_scripts}}{{end}}
+    {{block scripts}}{{end}}
 
 });
 </script>
@@ -101,6 +101,7 @@ jQuery(document).ready(function() {
 </head>
 
 <body>
+<div id="container">
   <!-- Navbar ================================================== -->
   <div class="navbar navbar-inverse">
     <div class="flash">{{=response.flash or ''}}</div>
@@ -116,8 +117,8 @@ jQuery(document).ready(function() {
         {{=response.logo or ''}}
         <ul id="navbar" class="nav pull-right">{{='auth' in globals() and auth.navbar(mode="dropdown") or ''}}</ul>
         <ul id="searchbar" class="nav pull-right"><li><a href={{=URL('search')}}>{{=_SEARCH_}}</a></li></ul>
-        {{if auth.has_membership('managers'):}}
-           <ul id="searchbar" class="nav pull-right"><li><a href={{=URL('manage')}}>{{=_MANAGE_}}</a></li></ul>
+        {{if auth.has_membership('administrators'):}}
+          {{=response.toolsmenu}}
         {{pass}}
         <div class="{{='nav-collapse' if is_mobile else 'nav'}}">
           {{if response.menu:}}
@@ -130,27 +131,23 @@ jQuery(document).ready(function() {
 
   <div class="container">
 
-      <section id="main" class="main row">
-        <div class="span12">
-            {{block center}}
-            {{include}}
-            {{end}}
-        </div>
-        <div class="ajaxanimation"></div>
-    </section><!--/main-->
-
-    <!-- Footer ================================================== -->
-    <div class="copyright pull-right">
-      <a href="http://www.uksatse.ua" target="_blank">{{=T('Украэрорух')}} &#169; {{=request.now.year}}</a>
-    </div>
-    <div class="row">
-       <footer class="footer span12" id="footer">
-
-       </footer>
-    </div>
+   <section id="main" class="main row">
+     {{block center}}
+     {{include}}
+     {{end}}
+     <div class="pull-right">
+     <a href="http://www.uksatse.ua" target="_blank">{{=_UKSATSE_}} &#169; {{=request.now.year}}</a>
+     </div>
+     <div class="copyright">
+     </div>
+     {{if response.toolbar_enable:
+         =response.toolbar()
+       pass}}   
+   </section><!--/main-->
 
   </div> <!-- /container -->
-
+</div>
+<div class="ajaxanimation"></div>
   <!-- The javascript =============================================
        (Placed at the end of the document so the pages load faster) -->
   <script src="{{=URL('static','js/bootstrap.min.js')}}"></script>

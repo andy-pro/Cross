@@ -4,10 +4,11 @@
   {{for plint in plints:
       dx = 0 if plint.numeration_start_1 else -1
       comefrom = get_plint_outside_info(plint)
-      s1 = 'Info: ' + plint.common_data
-      plintdata = '%s\n%s\n%s %s\n%s\n%s' % (plint.title, plint.modified_on, plint.modified_by.first_name, plint.modified_by.last_name, s1, comefrom['title'])}}
+      s1 = 'Info: ' + str(plint.common_data)
+      who = get_user_name(plint.modified_by)
+      plintdata = '%s\n%s\n%s\n%s\n%s' % (plint.title, plint.modified_on, who, s1, comefrom[0])}}
     <tr>
-      <td class="colv1"><a href="{{=URL('plintmod', args = [plint.id])}}" title="{{=plintdata}}">{{=plint.title}}</a></td>
+      <td class="colv1"><a href="{{=URL('editplint', args = [plint.id])}}" title="{{=plintdata}}">{{=plint.title}}</a></td>
       {{for i in range(1, 11):
         z = str(i)
         pairtitle = plint('pair_id_' + z)
@@ -16,24 +17,19 @@
         <td class="{{=pair_loop}}">
         {{if pairtitle:
             when = plint('modified_on_id_' + z)
-            who_id = plint('modified_by_id_' + z)
-            who = who_id.first_name + ' ' + who_id.last_name
+            who = get_user_name(plint('modified_by_id_' + z))
             crossedto = get_pair_crossed_info(plint('crossed_to_plint_id_' + z), plint('crossed_to_pair_id_' + z))          
-            plintdata = 'title="%s\n%s\n%s\n%s"' % (pairtitle, who, when, crossedto[0])
+            plintdata = '%s\n%s\n%s\n%s' % (pairtitle, who, when, crossedto[0])
           else:
             plintdata = ''
           pass}}
-        <a href="{{=URL('pairmod', args = [plint.id, i])}}"{{=plintdata}}><sup>{{=start}}&nbsp;&nbsp;</sup>{{=pairtitle}}</a>
+        <a href="{{=URL('editpair', args = [plint.id, i])}}" title="{{=plintdata}}"><sup>{{=start}}&nbsp;&nbsp;</sup>{{=pairtitle}}</a>
         </td>
       {{pass}}
-      <td class="commondata" style="border-left: 2px solid #ccc;">
-        {{=plint.common_data}}
-      </td>
+      <td class="commondata" style="border-left: 2px solid #ccc;">{{=plint.common_data}}</td>
     </tr>
   {{pass}}
 {{import time
 dt = (time.time() - timestart)  * 1000.0}}
 </table>
-<div class="well">
-Rendering time = {{=dt}} ms
-</div>
+<div class="well">Rendering time = {{=dt}} ms</div>

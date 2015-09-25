@@ -1,7 +1,13 @@
 {{extend 'layout.html'}}
 <table class="table">
   {{reccnt = len(items)
-    rowcnt = 5
+    if reccnt == 0:
+      rowcnt = 1
+    elif reccnt > 22:
+      rowcnt = 4 + (reccnt-10)/10
+    else:
+      rowcnt = reccnt
+    pass
     colcnt = int(reccnt / rowcnt)
     if reccnt < rowcnt:
       rowcnt = reccnt
@@ -13,7 +19,7 @@
           <td class="colc1">
           {{if idx < reccnt:
             item = items[idx]
-            =A(item.title, _href = URL(item_name, args = item.id))
+            =A(item.title, _href = URL(urlfunc, args = item.id))
           pass}}
           </td>
         {{pass}}

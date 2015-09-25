@@ -29,7 +29,7 @@ jQuery.fn.getPlintList = function (cross_index, vert_index) {
   var e = this;
   if (!cachearray[vert_id])  { // cache point is empty?
       jQuery.ajax({
-        url: '{{=URL('getPlintList')}}',
+        url: "{{=URL('default', 'ajax_getPlintList')}}",
         data: {'id': vert_id}, // vertical table id
         dataType: "json",
         type: "POST",
@@ -60,47 +60,3 @@ jQuery.fn.enumoptions = function (cj, vj, pj) {
         }
      }
 }
-
-var h1 = jQuery('#vertsel');
-var h2 = jQuery('#plintsel');
-var h3 = jQuery('#pairsel');
-var self_cross_index = getCrossIndex(menuarray, {{=plintcrossindex}}); // jQuery, convert table record id to array index
-h1.addoptions(menuarray[self_cross_index][2], true);
-h1.settovalue({{=crossed_info[1]}}); // vertical id
-var j1 = h1[0].selectedIndex;
-var j2 = 0;
-if (j1 > 0) {
-    j1 -= 1
-    h2.getPlintList(self_cross_index, j1);
-    h2.settovalue({{=crossed_info[2]}}); // plint id
-    j2 = h2[0].selectedIndex;
-    h3.enumoptions(self_cross_index, j1, j2);
-    h3.settovalue({{=crossed_info[3]}}); // pair number
-}
-  else {
-    h2.prop('disabled', true);
-    h3.prop('disabled', true);
-}
-
-h1.change(function(){ // cross to new vertical
-  h2.empty();
-  h2.prop("disabled", true);
-  if (h3[0]) {
-      h3.empty();
-      h3.prop('disabled', true);
-  }
-  j1 = h1[0].selectedIndex;    // select by index of selection
-  if (j1 > 0) {
-      j1 -= 1
-      h2.getPlintList(self_cross_index, j1)
-      h2.settofirst();
-      if (h3[0]) {
-          h3.enumoptions(self_cross_index, j1, 0);
-          h3.settofirst();
-      }
-  }
-});
-
-h2.change(function(){
-  if (h3[0]) h3.enumoptions(self_cross_index, j1, h2[0].selectedIndex);
-});

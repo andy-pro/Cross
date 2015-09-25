@@ -1,215 +1,188 @@
 # -*- coding: utf-8 -*-
-import time
 
-def makemenu():
-    import json
-
-    t1 = time.time()
-    # ~ 20ms
-    c_items = db(db.cross_table).select()
-    #c_items = c_items[15:16]
-    m = [None] * len(c_items)
-    for i, cr in enumerate(c_items):
-        j = cr.id
-        v_items = db(db.vertical_table.parent == j).select()
-        n = [None] * len(v_items)
-        for k, vr in enumerate(v_items):
-            n[k] = [vr.id, vr.title]
-        m[i] = [j, cr.title, n]
-    #data_json1 = json.dumps(m)
-    data_json1 = gluon.contrib.simplejson.dumps(m)
-    db.menu_table.truncate()
-    db.menu_table.insert(menu = data_json1)
-    t2 = time.time()
-    d1 = '%f ms' % ((t2 - t1)*1000.0)
-
-    t1 = time.time()
-    m = [ [r.id, r.title, [ [w.id, w.title] for w in db(db.vertical_table.parent == r.id).select() ] ] for r in db(db.cross_table).select()]
-    data_json2 = json.dumps(m)
-    #data_json2 = gluon.contrib.simplejson.dumps(m)
-    t2 = time.time()
-    d2 = '%f ms' % ((t2 - t1)*1000.0)
-    
-    e = 'equ' if data_json1 == data_json2 else 'not equ'
-
-    return {'menu1':data_json1, 'time1': d1, 'menu2':data_json2, 'time2': d2, 'a summary': e}
-
-def test():
-    import time
-    #rec=db.vertical_table(36)
-    b=db(db.plint_table.pair_id_0.contains('Терно')).select()
-    #b=db(db.plint_table.pair_id_0.like('БЗ%'),case_sensitive=False).select()
-    return {'m1':b}
 
 def index():
-    #cross_items = db(db.cross_table).select(orderby = db.cross_table.id)
+    #updatemenu()
     items = db(db.cross_table).select()
-    item_name = 'cross'
-    some_data = ''#db.vertical_table(36).plints#cross_storage#session #request.vars    #response.menu
-    #some_data=[1,2,3,4]
-    #return dict(items = items, item_name = item_name, some_data=some_data)
+    urlfunc = 'cross'
     response.view='default/cross.html'
+    appendManageMenu()
     return locals()
 
 def cross():
-    rec_id = request.args(0, cast = int)
-    #cross_storage['cross'] = rec_id
-    # 6 - cross_table
-    # 7 - vertical_table
-    # 8 - plint_table
-    #items = db(db[db.tables[7]].parent == rec_id).select()
-    #table_id=7
-    #parent_id=rec_id
-    #items = db(db[db.tables[table_id]].parent == parent_id).select()
-    items = db(db.vertical_table.parent == rec_id).select()
-    item_name = 'vertical'
-    response.menu.append((db.cross_table[rec_id].title, False, ''))
-    #response.flash='%d, %d' % (reccnt, reccnt/20)
-    some_data = ''#str(cross_storage.cross)+'asdfghjhg'#cross_storage
-    #return dict(items = items, item_name = item_name)#, some_data=some_data)
+    cross = Cross(request.args(0, cast = int))
+    items = db(db.vertical_table.parent == cross.index).select()
+    urlfunc = 'vertical'
+    response.title = cross.header
+    appendManageMenu(cross.title)
     return locals()
 
 def vertical():
-    #response.flash=response.vars
-    rec_id = request.args(0, cast = int)
-    rec = db.vertical_table[rec_id]
-    parent = db.cross_table[rec.parent]
-    vt = rec.title
-    response.title = T('Cross %s, Vertical %s') % (parent.title, vt)
-    response.menu.append(gluon.contrib.simplejson.loads(parent.menu))
-    response.menu.append((vt, False, ''))
-    view = request.vars.q
-    if view == 'list':
-        vertical_item = db.vertical_table(rec_id)
-        plints = vertical_item.plints
-        response.view='default/plints.html'
-    else:
-        if view == 'light':
-            response.view='default/vlight.html'
-        plints = db(db.plint_table.parent == rec_id).select()
-    #response.view='default/vlight.html'    # remove
-    return {'plints': plints}
+    import time
+    timestart = time.time()     # for Debug    
+    vertical = Vertical(request.args(0, cast = int))
+    response.title = vertical.header
+    response.verticalmainmenu = appendVerticalMenu(vertical.cross)
+    appendManageMenu(vertical.title)
+    plints = db(db.plint_table.parent == vertical.index).select()
+    return {'plints': plints, 'timestart': timestart}
 
-@auth.requires_login()
-def plintmod():
+@auth.requires_membership('managers')
+def newcross():
+    response.title = _NEW_CROSS_
+    form = PFORM(_NEW_CROSS_, FTEXT(r=IS_NOT_EMPTY()), FOK())     
+    if form.process().accepted:
+        i = db.cross_table.update_or_insert(title=form.vars.title)
+        redirect_updatemenu(URL('editcross', args = [i])) if i else redirect(URL('index'))
+    response.view='default/newitem.html'
+    return {'form': form}
+
+@auth.requires_membership('managers')
+def editcross():
+    cross = Cross(request.args(0, cast = int))
+    urlback = URL('cross', args=[cross.index])
+    response.menu.append((cross.title, False, urlback))
+    response.title = _EDIT_CROSS_ + ' ' + cross.title
+    form = PFORM(cross.header,
+                FTEXT(v=cross.title, r=IS_NOT_EMPTY()),
+                FDEL(T('Delete cross')),
+                FLABEL(B(T('Add vertical'))),
+                FTEXT(n='child'),
+                FOK())
+    if form.process().accepted:
+        if form.vars.delete:
+            cross.delete()
+            redirect_updatemenu(URL('index'))
+        else:
+            i = cross.update(form.vars.title, form.vars.child)
+            redirect_updatemenu(URL('editvertical', args = [i])) if i else redirect_updatemenu(urlback)
+    response.view='default/newitem.html'
+    return {'form': form}    
+
+@auth.requires_membership('managers')
+def editvertical():
+    vertical = Vertical(request.args(0, cast = int))
+    urlback = URL('vertical', args=[vertical.index])
+    response.verticalmainmenu = appendVerticalMenu(vertical.cross)
+    response.menu.append((vertical.title, False, urlback))
+    response.title = _EDIT_VERTICAL_ + ' ' + vertical.title
+    response.outside_info = (0,0,0,0,0)
+    form = PFORM(vertical.header,
+                 FTEXT(v=vertical.title, r=IS_NOT_EMPTY()),
+                 FDEL(T('Delete vertical')),
+                 FLABEL(B(T('Add plint'))),
+                 FTEXT( n='child', v='M%1', h=T('%1 is a count variable')),
+                 FTEXT(T('Count:'), 'count', '0', r=IS_INT_IN_RANGE(0)),
+                 FCDATA(''),
+                 FSTART(True),
+                 BCOME(_COME_FROM_),
+                 FOK())    
+    if form.process().accepted:
+        if form.vars.delete:
+            vertical.delete()
+            redirect_updatemenu(URL('cross', args=[vertical.cross.index]))
+        else:
+            vertical.update(form.vars)
+            redirect_updatemenu(urlback)        
+    #response.view='default/editplint.html'
+    return {'form': form}
+
+@auth.requires_membership('managers')
+def editplint():
     plint = Plint(request.args(0, cast = int))
-    crossed_info = [0,0,0,0]
     urlback = URL('vertical', args=[plint.vertical.index])
-    response.menu.append(gluon.contrib.simplejson.loads(plint.cross.menu))
+    response.verticalmainmenu = appendVerticalMenu(plint.cross)
     response.menu.append((plint.vertical.title, False, urlback))
     response.menu.append((plint.title, False, ''))
     response.title = plint.address
-    form=FORM(UL(B(plint.header), HR(), I(plint.modified_info),
-              (T('Title:'), XML('&nbsp;&nbsp;'), INPUT(_name='title', _value = plint.title, requires=IS_NOT_EMPTY())),
-              (T('Common data:'), XML('&nbsp;&nbsp;'), INPUT(_name='common_data', _value = plint.common_data)),
-              (T('Numeration start 1:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='numeration_start_1', value=plint.numeration_start_1)),
-               HR(), B(plint.outside_info['title']),
-               (T('Raplace common data:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='replace_common_data', value=True))),
-              TABLE(TR(TD('Cross:'), TD('Vertical:'), TD('Plint:')),
-                    TR(TD(SELECT([], _id='fromcrosssel', _name='from_cross', _size=_SIZE_)),
-                       TD(SELECT([], _id='fromvertsel', _name='from_vert', _size=_SIZE_)),
-                       TD(SELECT([], _id='fromplintsel', _name='from_plint', _size=_SIZE_))),
-                    TR(TD(HR(), _colspan=3)),
-                    TR(TD(B(T('Cross entire plint:')), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='crossall', value=False, _onclick='PlintCrossToggle(this)'), _colspan=3)),
-                    TR(TD(DIV(TABLE(TR(TD('Vertical:'), TD('Plint:')),
-                                    TR(TD(SELECT([], _id='vertsel', _name='cross_vert', _size=_SIZE_)),
-                                       TD(SELECT([], _id='plintsel', _name='cross_plint', _size=_SIZE_)))
-                                   ),
-                              _class='sel_hide', _id='sel_cross_to'), _colspan=3)),
-                    TR(TD(HR(), _colspan=3)),
-                    TR(TD(), TD(), TD(INPUT(_type='submit'))),
-              _class='plintset'))
-    div_class = 'plint'    # form width in css
+    response.crossed_info = (0,0,0,0)
+    response.plintcrossindex = plint.cross.index
+    response.outside_info = plint.outside_info
+    form = PFORM(plint.header,
+                 FLABEL(I(plint.modified_info)),
+                 FTEXT(v=plint.title, r=IS_NOT_EMPTY()),
+                 FDEL(T('Delete plint')),
+                 FCDATA(plint.common_data),
+                 FSTART(plint.numeration_start_1),
+                 BCOME(plint.outside_info[0]),
+                 FCHECK(T('Cross entire plint:'), 'crossall', False, '', 'PlintCrossToggle(this)'),
+                 DIV(TABLE(DIV(TABLE(TR(TD(_VERTICAL_), TD(_PLINT_), TD(_TITLE_)),
+                                     TR(get_select(0), get_select(1),
+                                        TEXTAREA('\n'.join(plint.get_pair_titles()), _name='pairtitles', _rows='9', _wrap='off', _class='intotd'))),
+                                     _class='sel_hide', _id='sel_cross_to')), _class='form-row'), FOK())    
     if form.process().accepted:
-        vars = (form.vars.title,
-                bool(form.vars.numeration_start_1),
-                form.vars.common_data,
-                db.plint_table[form.vars.from_plint],
-                bool(form.vars.replace_common_data))
-        plint.update(vars)
+        if form.vars.delete:
+            plint.delete()
+        else:        
+            plint.update_come_from(form.vars)
+            if bool(form.vars.crossall):
+                plint.update_crossing(form.vars)
         redirect(urlback)
-    response.view='default/plint.html'
-    return locals()
-
-@auth.requires_login()
-def pairmod():
-    rec_id = request.args(0, cast = int)
-    pair_id = request.args(1, cast = int)
-    rec = db.plint_table(rec_id)
-    cross_id = rec.root
-    vertical_id = rec.parent
-    rectitle = rec.title
-    dx = 1 if rec.numeration_start_1 else 0
-    #f_pair_title = 'pair_id_%d' % pair_id  #0
-    #f_crosstoplint = 'crossed_to_plint_id_%d' % pair_id  #1
-    #f_crosstopair = 'crossed_to_pair_id_%d' % pair_id  #2
-    #f_mod_on = 'modified_on_id_%d' % pair_id  #3
-    #f_mod_by = 'modified_by_id_%d' % pair_id  #4
-    #f_pair_loop = 'loopback_id_%d' % pair_id  #5
-    fp = get_pair_fields(pair_id)  # edited pair fields
-    toplintold = rec(fp[1])
-    topairold = rec(fp[2])
-    crossed_info = get_pair_crossed_info(toplintold, topairold)
-    urlback = URL('vertical', args=[vertical_id])
-    response.menu.append(gluon.contrib.simplejson.loads(cross_id.menu))
-    response.menu.append((vertical_id.title, False, urlback))
-    response.menu.append((rectitle, False, URL('plintmod', args=[rec_id])))
-    ptitle = T('Cross %s, Vertical %s, Plint %s, Pair %s') % (cross_id.title, vertical_id.title,  rectitle, pair_id + dx)
-    response.title = ptitle
-    pstatus1 = I('%s %s, %s %s' % (T('Last modified on'), rec(fp[3]), rec(fp[4]).first_name, rec(fp[4]).last_name))
-    form=FORM(UL(B(ptitle), HR(), pstatus1,
-              (T('Title:'), XML('&nbsp;&nbsp;'), INPUT(_name='title', _value = rec(fp[0]), requires=IS_NOT_EMPTY())),
-              (T('Loop:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='loop', value=rec(fp[5]))),
-              HR(), B(T('Cross to:'))),
-              TABLE(TR(TD('Vertical:'), TD('Plint:'), TD('Pair:')),
-                    TR(TD(SELECT([], _id='vertsel', _name='cross_vert', _size=_SIZE_)),
-                       TD(SELECT([], _id='plintsel', _name='cross_plint', _size=_SIZE_)),
-                       TD(SELECT([], _id='pairsel', _name='cross_pair', _size=_SIZE_))),
-                    TR(TD(crossed_info[0], _colspan=3)),
-                    TR(TD(HR(), _colspan=3)),
-                    TR(TD(), TD(), TD(INPUT(_type='submit'))),
-              _class='plintset'))
-    div_class = 'pair'    # form width in css
-    if form.process().accepted:
-        try:
-            toplint = int(form.vars.cross_plint)  # cross to new plint
-            topair = int(form.vars.cross_pair)  # cross to new pair
-        except:
-            toplint = None
-            topair = ''
-        if (toplint > 0):
-            # get fieldset tuple of destination plint
-            fd = get_pair_fields(topair - 1)  # new pair fields, value from <select> 1-10, pair_id 0-9 ==> topair-1
-            # update to new plint crossing data
-            db.plint_table[toplint] = dict(zip(fd[0:5], (form.vars.title, rec, pair_id+1, request.now.date(), auth.user)))  # pair_id+1 - convert to <select> value
-        db.plint_table[rec_id] = dict(zip(fp, (form.vars.title, toplint, topair, request.now.date(), auth.user, bool(form.vars.loop))))
-        # remove old connection
-        if toplintold > 0:
-            toplintold = int(toplintold)
-            topairold = int(topairold)
-            if not((toplintold==toplint) and (topairold==topair)):
-                fo = get_pair_fields(topairold - 1)
-                db.plint_table[toplintold] = dict(zip(fo[0:5], ('- - -', None, '', request.now.date(), auth.user)))
-        redirect(urlback)
-    response.view='default/plint.html'
-    return locals()
+    #return locals()
+    return {'form': form}
 
 @auth.requires_membership('managers')
-def manage():
-    u = request.url
-    #p = .split('/')
-    #func = p[4]
-    #if func == 'index':
-    #    mydb = db.cross_table
-    #if func == 'cross':
-    #    idx = p[5]
-        #mydb = db(db.vertical_table.cross_table == idx).select()
-        #tablegrid = SQLFORM.grid(db.vertical_table.cross_table == idx).select()
-        #mydb = db.vertical_table.cross_table == idx
-    #mydb = db.vertical_table
-    #return dict(tablegrid=SQLFORM.smartgrid(mydb))
-    #return dict(tablegrid=SQLFORM.grid(mydb))
-    return dict(u=u, tablegrid=SQLFORM.smartgrid(db.cross_table))
+def editpair():
+    pair = Pair(request.args(0, cast = int), request.args(1, cast = int))
+    urlback = URL('vertical', args=[pair.plint.vertical.index])
+    response.verticalmainmenu = appendVerticalMenu(pair.plint.cross)
+    response.menu.append((pair.plint.vertical.title, False, urlback))
+    response.menu.append((pair.plint.title, False, URL('editplint', args=[pair.index])))
+    response.title = pair.address
+    response.crossed_info = pair.crossed_info
+    response.plintcrossindex = pair.plint.cross.index
+    form = PFORM(pair.header,
+                 FLABEL(I(pair.modified_info)),
+                 FTEXT(v=pair.title),
+                 FCHECK(_LOOP_, 'loop', pair.loop),
+                 FLABEL(B(_CROSS_TO_)),
+                 FCHECK(_REPLACE_TITLE_, 'replace_title', True, T("Autofill 'Title' field")),
+                 DIV(TABLE(TR(TD(_VERTICAL_), TD(_PLINT_), TD(_PAIR_)),
+                           TR(get_select(0), get_select(1), get_select(2))), _class='form-row'),
+                 FLABEL(pair.crossed_info[0]),
+                 FOK())
+    if form.process().accepted:
+        pair.update(form.vars)
+        redirect(urlback)
+    return {'form': form}
+
+@auth.requires_membership('administrators')
+def backup():
+    import gluon.contenttype
+    import cStringIO
+    stream=cStringIO.StringIO()
+    #db(db.cross_table.id).select().export_to_csv_file(stream)
+    db.export_to_csv_file(stream)
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
+    response.headers['Content-disposition'] = 'attachment; filename=dbcross-%s.csv' % request.now.date()
+    return stream.getvalue()
+
+@auth.requires_membership('administrators')
+def restore():
+    response.title = _NEW_CROSS_
+    form = PFORM(T('Import database'),
+                 DIV(INPUT(_type='file',_name='csvfile'), _class='form-row'),
+                 DIV(INPUT(_type='submit',_value='Upload', _class='default'), _class='submit-row'))     
+    if form.process().accepted:
+        try:
+            f = request.vars.csvfile.file
+            for table in db.tables:
+                db[table].truncate()
+            #db.cross_table.truncate()
+            #db.cross_table.import_from_csv_file(f)
+            db.import_from_csv_file(form.vars.csvfile.file)
+            m = T('Database restored')
+        except:
+            m = _ERROR_
+        session.flash = m
+        redirect_updatemenu(URL('index'))
+    response.view='default/newitem.html'
+    return {'form': form}    
+
+def ajax_getPlintList():     # for AJAX request
+    rows = db(db.plint_table.parent == int(request.vars.id)).select()
+    plints = [[i.id, i.title, i.numeration_start_1] for i in rows]
+    return gluon.contrib.simplejson.dumps({'plints': plints})
 
 def user():
     """
@@ -246,7 +219,6 @@ def call():
     supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
     """
     return service()
-
 
 @auth.requires_login() 
 def api():
