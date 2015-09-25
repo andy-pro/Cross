@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import time
+
 def index():
+    makemenu()
     items = db(db.cross_table).select()
     item_name = 'cross'
     response.view='review/cross.html'
@@ -14,6 +17,7 @@ def cross():
     return locals()
 
 def vertical():
+    timestart = time.time()
     rec_id = request.args(0, cast = int)
     rec = db.vertical_table[rec_id]
     parent = db.cross_table[rec.parent]
@@ -23,7 +27,7 @@ def vertical():
     verticalmainmenu = appendVerticalMenu(parent)
     response.menu.append((vt, False, ''))
     plints = db(db.plint_table.parent == rec_id).select()
-    return {'plints': plints, 'verticalmainmenu': verticalmainmenu}
+    return {'plints': plints, 'verticalmainmenu': verticalmainmenu, 'timestart': timestart}
 
 @auth.requires_login()
 def plintmod():

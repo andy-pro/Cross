@@ -8,6 +8,8 @@ _CROSSED_TO_ = T('Crossed to ')
 _NOT_CROSSED_ = T('Not crossed')
 _COME_FROM_ = T('Come from: ')
 _LAST_MODIFIED_ON_ = T('Last modified on')
+_SEARCH_ = T('Search')
+_MANAGE_ = T('Manage')
 _SIZE_ = 10 # size of <select> input fields
 
 def get_pair_fields(i):
@@ -152,9 +154,9 @@ class Pair:
         dx = 0 if _rec.numeration_start_1 else -1
         self.header = self.plint.header + ', %s %s' % (_PAIR_, _pair + dx)
         self.address = self.title + ' ' + self.plint.address
-        self.toplintold = _rec(f[1])   # crossed_to_plint, reference plint_table
-        self.topairold = _rec(f[2])    # crossed_to_pair, string
-        self.crossed_info = get_pair_crossed_info(self.toplintold, self.topairold)        
+        self.to_plint = _rec(f[1])   # crossed_to_plint, reference plint_table
+        self.to_pair = _rec(f[2])    # crossed_to_pair, string
+        self.crossed_info = get_pair_crossed_info(self.to_plint, self.to_pair)        
         self.loop = _rec(f[5])                
                         
     def update(self, vars):
@@ -173,7 +175,7 @@ class Pair:
             outplint = int(vars[1])  # cross to new plint
             outpair = int(vars[2])  # cross to new pair
             if outplint==self.index and outpair==self.pair: raise Exception
-            if oldpair<1 or outpair>10: raise Exception
+            if outpair<1 or outpair>10: raise Exception
             fd = get_pair_fields(outpair)  # get fieldset tuple of destination plint
             dictout = dict(zip(fd[1:5], (self.index, self.pair, vars[3], vars[4])))
             if cd_en: dictout[fd[0]] = vars[0]
@@ -185,58 +187,15 @@ class Pair:
         
         # remove old connection
         try:
-            oldpair = int(self.topairold)
-            oldplint = 0<oldpair<11 and db.plint_table(self.toplintold)
+            oldpair = int(self.to_pair)
+            oldplint = 0<oldpair<11 and db.plint_table(self.to_plint)
             if oldplint:
                 if not((oldplint.id==self.index) and (oldpair==self.pair)):
                     if not((oldplint.id==outplint) and (oldpair==outpair)):
                         fd = get_pair_fields(oldpair)
-                        f1 = int(oldpair(fd[1]))
-                        f2 = int(oldpair(fd[2]))
+                        f1 = int(oldplint(fd[1]))
+                        f2 = int(oldplint(fd[2]))
                         if (f1==self.index) and (f2==self.pair):
-                            db.plint_table[oldplint] = dict(zip(fd[0:5], ('-----', None, '', vars[3], vars[4])))
+                            db.plint_table[self.to_plint] = dict(zip(fd[0:5], ('-----', None, '', vars[3], vars[4])))
         except:
-            pass        
-        
-        '''
-        cd_en = vars[6]
-        try:
-            outplint = int(vars[1])  # cross to new plint
-            outpair = int(vars[2])  # cross to new pair
-        except:
-            outplint = None
-            outpair = ''
-        if outplint and outpair:
-            if (outplint==self.index) and (outpair==self.pair):
-                outplint = None
-                outpair = ''
-            else:
-                # get fieldset tuple of destination plint
-                fd = get_pair_fields(outpair)  # new pair fields
-                # update to new plint crossing data
-                dictout = dict(zip(fd[1:5], (self.index, self.pair, vars[3], vars[4])))
-                if cd_en:
-                    dictout[fd[0]] = vars[0]
-                db.plint_table[outplint] = dictout                
-        db.plint_table[self.index] = dict(zip(self.fp, (vars[0], outplint, outpair, vars[3], vars[4], vars[5])))   # update this plint
-        
-        # remove old connection
-        oldplint = self.toplintold  # None or <class 'gluon.dal.helpers.classes.Reference'>
-        oldpair = self.topairold    # string
-        #print toplintold
-        #print type(toplintold)        
-        if oldplint and oldpair:
-            oldplint = int(oldplint)
-            oldpair = int(oldpair)
-            if not((oldplint==self.index) and (oldpair==self.pair)):
-                if not((oldplint==outplint) and (oldpair==outpair)):
-                    fd = get_pair_fields(oldpair)
-                    p = db.plint_table(oldplint)
-                    try:
-                        f1 = int(p(fd[1]))
-                        f2 = int(p(fd[2]))
-                        if (f1==self.index) and (f2==self.pair):
-                            db.plint_table[oldplint] = dict(zip(fd[0:5], ('-----', None, '', vars[3], vars[4])))
-                    except:
-                        pass
-        '''
+            pass
