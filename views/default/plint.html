@@ -1,0 +1,145 @@
+{{extend 'layout.html'}}
+<script>
+jQuery(document).ready(function() {
+
+    PlintCrossToggle = function(cb) {
+      var e = jQuery('#sel_cross_to');
+      (cb.checked) ? e.slideDown('slow') : e.slideUp('fast');
+    }
+
+    const _notcrossed = '{{=T('Not crossed')}}';
+    jQuery.fn.settofirst = function () {
+      jQuery(':nth-child(1)', this).attr('selected', 'selected');
+    }
+    jQuery.fn.settovalue = function (value) {
+      jQuery('[value='+value+']' , this).attr('selected', 'selected');
+    }
+
+    jQuery.fn.addoptions = function (data) {
+      var e = this;
+      jQuery.each(data, function(i, item) {e.append(jQuery('<option>').text(item[1]).attr('value', item[0]));});
+      this.prop("disabled", false);
+    }
+
+    jQuery.fn.getoptions = function (localdata, parent) {
+      var e = this;
+      if (localdata[2] == '') { // child list is empty?
+          jQuery.ajax({
+            url: '{{=URL('default', 'getinstancelist')}}',
+            data: {'parent': parent, 'id': localdata[0]}, // send table name, record primary key
+            dataType: "json",
+            type: "POST",
+            async: false,
+            success: function( serverdata ) {
+              localdata[2] = serverdata.instances;
+              e.addoptions(localdata[2]);
+            }
+          });
+      } else {
+          e.addoptions(localdata[2]);
+        }
+    }
+
+    jQuery(document).ajaxStart(function() { jQuery("body").addClass("loading"); });
+    jQuery(document).ajaxStop(function() { jQuery("body").removeClass("loading"); });
+
+    jQuery.fn.enumoptions = function (vj, pj) {
+        start = +vlist[vj][2][pj][2]; // convert Boolean to int
+        var e = jQuery('option', this) // get options set of select
+        var x = e.length; // get options count
+        if (x) {
+            for (i= 0; i < x; i++) {
+                e[i].text=(i+start);
+            }
+        } else {
+            this.prop('disabled', false);
+            for (i= 1; i <= 10; i++) {
+                this.append(jQuery('<option>').text(i+start-1).attr('value', i));
+            }
+         }
+    }
+
+{{if 'clist' in locals():}}
+
+    var w1 = jQuery('#fromcrosssel');
+    var w2 = jQuery('#fromvertsel');
+    var w3 = jQuery('#fromplintsel');
+    var clist = [[0, _notcrossed, ''], {{=clist}}];
+    w1.addoptions(clist);
+    w1.settovalue({{=outside_info[1]}}); // cross id
+    var k1 = w1[0].selectedIndex;
+    var k2 = 0;
+    if (k1 > 0) {
+        w2.getoptions(clist[k1], 'cross');
+    }
+
+    w1.change(function(){ // from new cross
+      w2.empty();
+      w3.empty();
+      k1 = w1[0].selectedIndex;
+      if (k1 > 0) {
+          w2.getoptions(clist[k1], 'cross');
+          w2.settofirst();
+          
+      }
+        else {
+          w2.prop("disabled", true);
+          w3.prop('disabled', true);
+        }
+    });
+
+{{pass}}
+
+    var h1 = jQuery('#vertsel');
+    var h2 = jQuery('#plintsel');
+    var h3 = jQuery('#pairsel');
+    var vlist = [[0, _notcrossed, ''], {{=vlist}}];
+    console.log(vlist);
+    h1.addoptions(vlist);
+    h1.settovalue({{=crossed_info[1]}}); // vertical id
+    var j1 = h1[0].selectedIndex;
+    var j2 = 0;
+    if (j1 > 0) {
+        h2.getoptions(vlist[j1], 'vertical');
+        h2.settovalue({{=crossed_info[2]}}); // plint id
+        j2 = h2[0].selectedIndex;
+        h3.enumoptions(j1, j2);
+        h3.settovalue({{=crossed_info[3]}}); // pair number
+    }
+      else {
+        h2.prop('disabled', true);
+        h3.prop('disabled', true);
+    }
+
+    h1.change(function(){ // cross to new vertical
+      h2.empty();
+      h3.empty();
+      //vj = vh.val(); // record id select by value
+      j1 = h1[0].selectedIndex;    // select by index of selection
+      //if (isNaN(v_id) || (to_vert_id == 0))
+      if (j1 > 0) {
+          h2.getoptions(vlist[j1], 'vertical');
+          h2.settofirst();
+          if (h3[0]) {
+              h3.enumoptions(j1, 0);
+              h3.settofirst();
+          }
+      }
+        else {
+          h2.prop("disabled", true);
+          if (h3[0]) {
+              h3.prop('disabled', true); 
+          }
+        }
+    });
+
+    h2.change(function(){
+      if (h3[0]) h3.enumoptions(j1, h2[0].selectedIndex);
+    });
+});
+</script>
+
+<div class="well {{=div_class}}">
+{{=form}}
+</div>
+<div class="ajaxanimation"></div>

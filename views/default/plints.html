@@ -1,0 +1,29 @@
+{{extend 'layout.html'}}
+<table class="cross">
+<!--   <col span="10" class="coln"> -->
+  {{for k in plints:
+    plint = db.plint_table[k]
+    dx = 1 * plint.numeration_start_1}}
+    <tr>
+      <td class="colv1"><a href="{{=URL('plintmod', args = [plint.id])}}">{{=plint.title}}</a></td>
+      {{for i in range(10):
+        pairtitle = plint('pair_id_%d' % i)
+        start = i + dx
+        pair_loop = 'noloop'
+        if plint('loopback_id_%d' % i) == True:
+          pair_loop = 'loop'
+        pass}}
+        <td class="{{=pair_loop}}">
+        {{if pairtitle == '':}}
+          <a href="{{=URL('pairmod', args = [plint.id, i])}}"><sup>{{=start}}&nbsp;&nbsp;</sup></a>
+        {{else:}}
+            <a href="{{=URL('pairmod', args = [plint.id, i])}}"><sup>{{=start}}&nbsp;&nbsp;</sup>{{=pairtitle}}</a>
+        {{pass}}
+        </td>
+      {{pass}}
+      <td class="commondata" style="border-left: 2px solid #ccc;">
+        {{=plint.common_data}}
+      </td>
+    </tr>
+  {{pass}}
+</table>

@@ -1,0 +1,34 @@
+{{extend 'layout.html'}}
+<script>
+jQuery(document).ready(function() {
+
+e = jQuery('li.web2py-menu-active');
+e.append('<ul class="dropdown-menu"></ul>');
+m = e.find('ul:first')
+m.append('<li class="dropdown"><a href="/Cross/default/cross/1">КДП </a><ul class="dropdown-menu"><li><a href="/Cross/default/vertical/1">Р12</a></li><li><a href="/Cross/default/vertical/2">Р22</a></li></ul></li>');
+m.append('<li class="dropdown"><a href="/Cross/default/cross/1">КДП 2</a><ul class="dropdown-menu"><li><a href="/Cross/default/vertical/1">Р12q</a></li><li><a href="/Cross/default/vertical/2">Р22q</a></li></ul></li>');
+
+});
+</script>
+{{=DIV(some_data,  _class='well')}}
+<table class="table">
+  {{reccnt = len(items)
+    rowcnt = 5
+    colcnt = int(reccnt / rowcnt)
+    if reccnt < rowcnt:
+      rowcnt = reccnt
+    pass
+    for j in range(0, rowcnt):}}
+      <tr>
+        {{for k in range(0, colcnt + 1):
+          idx = k * rowcnt + j}}
+          <td class="colc1">
+          {{if idx < reccnt:
+            item = items[idx]
+            =A(item.title, _href = URL(item_name, args = item.id))
+          pass}}
+          </td>
+        {{pass}}
+      </tr>
+    {{pass}}
+</table>

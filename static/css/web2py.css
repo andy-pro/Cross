@@ -11,7 +11,7 @@ h4 {font-size:1.50em}
 h5 {font-size:1.25em}
 h6 {font-size:1.12em}
 th,label {font-weight:bold; white-space:nowrap;}
-td,th {text-align:left; padding:2px 5px 2px 5px}
+td,th {text-align:left; padding:0px 5px 0px 0px}
 th {vertical-align:middle; border-right:1px solid white}
 td {vertical-align:top}
 form table tr td label {text-align:left}
@@ -31,7 +31,7 @@ textarea {width:100%}
 video {width:400px}
 audio {width:200px}
 [type="text"], [type="password"], select {
-  margin-right: 5px; width: 300px;
+  margin-right: 5px; width: 250px;
 }
 .hidden {display:none;visibility:visible}
 .right {float:right; text-align:right}

@@ -33,7 +33,7 @@
           when = plint('modified_on_id_%d' % i)
           who_id = plint('modified_by_id_%d' % i)
           who = who_id.first_name + ' ' + who_id.last_name
-          crossedto = 'test' #get_pair_crossed_info(plint.id, i)
+          crossedto = get_pair_crossed_info(plint.id, i)
           plintdata = '%s\n%s\n%s\n%s' % (pairtitle, who, when, crossedto)}}
             <a href="{{=URL('pairmod', args = [plint.id, i])}}" title="{{=plintdata}}"><sup>{{=start}}&nbsp;&nbsp;</sup>{{=pairtitle}}</a>
         {{pass}}
