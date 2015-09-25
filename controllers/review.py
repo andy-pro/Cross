@@ -38,7 +38,7 @@ def plintmod():
               (T('Common data:'), XML('&nbsp;&nbsp;'), INPUT(_name='common_data', _value = plint.common_data)),
               (T('Numeration start 1:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='numeration_start_1', value=plint.numeration_start_1)),
                HR(), B(plint.outside_info['title']),
-               (T('Raplace common data:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='replace_common_data', value=True))),
+               (SPAN(T('Raplace common data:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='replace_common_data', value=True),_title=T("Autofill 'Common data' field\nwith 'Cross Vertical Plint' format")))),
               TABLE(TR(TD('Cross:'), TD('Vertical:'), TD('Plint:')),
                     TR(TD(SELECT([], _id='fromcrosssel', _name='from_cross', _size=_SIZE_)),
                        TD(SELECT([], _id='fromvertsel', _name='from_vert', _size=_SIZE_)),
@@ -78,7 +78,9 @@ def pairmod():
     form=FORM(UL(B(pair.header), HR(), I(pair.plint.modified_info),
               (T('Title:'), XML('&nbsp;&nbsp;'), INPUT(_name='title', _value = pair.title, requires=IS_NOT_EMPTY())),
               (T('Loop:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='loop', value=pair.loop)),
-              HR(), B(T('Cross to:'))),
+              HR(), B(T('Cross to:')),
+              (SPAN(T('Raplace title:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='replace_title', value=True),_title=T("Autofill 'Title' field")))
+              ),
               TABLE(TR(TD('Vertical:'), TD('Plint:'), TD('Pair:')),
                     TR(TD(SELECT([], _id='vertsel', _name='cross_vert', _size=_SIZE_)),
                        TD(SELECT([], _id='plintsel', _name='cross_plint', _size=_SIZE_)),
@@ -93,7 +95,8 @@ def pairmod():
                 form.vars.cross_pair,
                 request.now.date(),
                 auth.user,                
-                bool(form.vars.loop))
+                bool(form.vars.loop),
+                bool(form.vars.replace_title))
         pair.update(vars)
         redirect(urlback)
     #response.view='review/plint.html'

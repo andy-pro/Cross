@@ -70,7 +70,7 @@ class Vertical:
         
 class Plint:
     def __init__(self, _index):
-        self.index = _index     # type 'int'
+        self.index = _index
         _rec = db.plint_table[_index]   # type <class 'gluon.dal.objects.Row'>
         self.record = _rec
         #self.cross = Cross(_rec.root)
@@ -110,22 +110,18 @@ class Plint:
         dictout  = dict(zip(self.fields[4:6], vars[4:6]))
         cd_en = vars[6]
         if outplint:
-            if outplint.id == self.index:   # outplint.id <type 'long'>          
-                # if connect to self - disconnect
-                outplint = 0
+            if outplint.id == self.index: # outplint.id <type 'long'>,  self.index <type 'int'>                
+                outplint = 0    # if connect to self - disconnect
                 dictself[self.fields[3]] = None     # come_from = None
+            else: # outplint is another plint, connect to him
+                dictout[self.fields[3]] = self.index
+                if cd_en:
+                    dictout[self.fields[2]] = '%s %s %s' % (self.cross.title, self.vertical.title, vars[0])
+                db.plint_table[outplint.id] = dictout   # update new remote plint             
         # update this plint
         if cd_en:
             dictself[self.fields[2]] = get_plint_info(outplint)
         db.plint_table[self.index] = dictself
-        
-        # update new remote plint
-        if outplint:    # outplint is a record?
-            if outplint.id != self.index:
-                dictout[self.fields[3]] = self.index
-                if cd_en:
-                    dictout[self.fields[2]] = '%s %s %s' % (self.cross.title, self.vertical.title, vars[0])
-                db.plint_table[outplint.id] = dictout
 
         # disconnect from old plint
         oldplint = db.plint_table(self.come_from)
@@ -153,44 +149,94 @@ class Pair:
         f = get_pair_fields(_pair)
         self.fp = f
         self.title = _rec(f[0])
-        dx = 1 if _rec.numeration_start_1 else 0        
+        dx = 0 if _rec.numeration_start_1 else -1
         self.header = self.plint.header + ', %s %s' % (_PAIR_, _pair + dx)
         self.address = self.title + ' ' + self.plint.address
-        self.toplintold = _rec(f[1])
-        self.topairold = _rec(f[2])
+        self.toplintold = _rec(f[1])   # crossed_to_plint, reference plint_table
+        self.topairold = _rec(f[2])    # crossed_to_pair, string
         self.crossed_info = get_pair_crossed_info(self.toplintold, self.topairold)        
         self.loop = _rec(f[5])                
                         
     def update(self, vars):
         '''
-        vars = (form.vars.title,          # 0
-                form.vars.cross_plint,    # 1
-                form.vars.cross_pair,     # 2
+        vars = (form.vars.title,          # 0   str
+                form.vars.cross_plint,    # 1   str; if not crossed, then = ''
+                form.vars.cross_pair,     # 2   str
                 request.now.date(),       # 3
                 auth.user,                # 4
                 bool(form.vars.loop))     # 5
+                bool(form.vars.replace_title)    # 6
         pair.fields = 'pair','crossed_to_plint','crossed_to_pair','modified_on','modified_by','loopback'
         '''
-
+        cd_en = vars[6]
         try:
-            toplint = int(vars[1])  # cross to new plint
-            topair = int(vars[2])  # cross to new pair
+            outplint = int(vars[1])  # cross to new plint
+            outpair = int(vars[2])  # cross to new pair
+            if outplint==self.index and outpair==self.pair: raise Exception
+            if oldpair<1 or outpair>10: raise Exception
+            fd = get_pair_fields(outpair)  # get fieldset tuple of destination plint
+            dictout = dict(zip(fd[1:5], (self.index, self.pair, vars[3], vars[4])))
+            if cd_en: dictout[fd[0]] = vars[0]
+            db.plint_table[outplint] = dictout # update to new plint crossing data
         except:
-            toplint = None
-            topair = ''
-        if (toplint > 0):
-            # get fieldset tuple of destination plint
-            fd = get_pair_fields(topair - 1)  # new pair fields, value from <select> 1-10, pair_id 0-9 ==> topair-1
-            # update to new plint crossing data
-            db.plint_table[toplint] = dict(zip(fd[0:5], (vars[0], self.index, self.pair+1, vars[3], vars[4])))  # pair_id+1 - convert to <select> value
-        db.plint_table[self.index] = dict(zip(self.fp, (vars[0], toplint, topair, vars[3], vars[4], vars[5])))
+            outplint = None
+            outpair = ''
+        db.plint_table[self.index] = dict(zip(self.fp, (vars[0], outplint, outpair, vars[3], vars[4], vars[5])))   # update this plint
+        
         # remove old connection
-        toplintold = self.toplintold
-        topairold = self.topairold
-        if toplintold > 0:
-            toplintold = int(toplintold)
-            topairold = int(topairold)
-            if not((toplintold==toplint) and (topairold==topair)):
-                fo = get_pair_fields(topairold - 1)
-                db.plint_table[toplintold] = dict(zip(fo[0:5], ('- - -', None, '', vars[3], vars[4])))
-                
+        try:
+            oldpair = int(self.topairold)
+            oldplint = 0<oldpair<11 and db.plint_table(self.toplintold)
+            if oldplint:
+                if not((oldplint.id==self.index) and (oldpair==self.pair)):
+                    if not((oldplint.id==outplint) and (oldpair==outpair)):
+                        fd = get_pair_fields(oldpair)
+                        f1 = int(oldpair(fd[1]))
+                        f2 = int(oldpair(fd[2]))
+                        if (f1==self.index) and (f2==self.pair):
+                            db.plint_table[oldplint] = dict(zip(fd[0:5], ('-----', None, '', vars[3], vars[4])))
+        except:
+            pass        
+        
+        '''
+        cd_en = vars[6]
+        try:
+            outplint = int(vars[1])  # cross to new plint
+            outpair = int(vars[2])  # cross to new pair
+        except:
+            outplint = None
+            outpair = ''
+        if outplint and outpair:
+            if (outplint==self.index) and (outpair==self.pair):
+                outplint = None
+                outpair = ''
+            else:
+                # get fieldset tuple of destination plint
+                fd = get_pair_fields(outpair)  # new pair fields
+                # update to new plint crossing data
+                dictout = dict(zip(fd[1:5], (self.index, self.pair, vars[3], vars[4])))
+                if cd_en:
+                    dictout[fd[0]] = vars[0]
+                db.plint_table[outplint] = dictout                
+        db.plint_table[self.index] = dict(zip(self.fp, (vars[0], outplint, outpair, vars[3], vars[4], vars[5])))   # update this plint
+        
+        # remove old connection
+        oldplint = self.toplintold  # None or <class 'gluon.dal.helpers.classes.Reference'>
+        oldpair = self.topairold    # string
+        #print toplintold
+        #print type(toplintold)        
+        if oldplint and oldpair:
+            oldplint = int(oldplint)
+            oldpair = int(oldpair)
+            if not((oldplint==self.index) and (oldpair==self.pair)):
+                if not((oldplint==outplint) and (oldpair==outpair)):
+                    fd = get_pair_fields(oldpair)
+                    p = db.plint_table(oldplint)
+                    try:
+                        f1 = int(p(fd[1]))
+                        f2 = int(p(fd[2]))
+                        if (f1==self.index) and (f2==self.pair):
+                            db.plint_table[oldplint] = dict(zip(fd[0:5], ('-----', None, '', vars[3], vars[4])))
+                    except:
+                        pass
+        '''

@@ -24,13 +24,6 @@ db.define_table('plint_table',
                 Field('modified_on', 'date', readable = False, writable = False),
                 Field('modified_by', db.auth_user, readable = False, writable = False),
 
-                Field('pair_id_0'),
-                Field('loopback_id_0', 'boolean', default = False),
-                Field('crossed_to_plint_id_0', 'reference plint_table'), #requires = IS_IN_DB(db, 'plint_table.id', '%(title)s')),
-                Field('crossed_to_pair_id_0'), #requires = IS_INT_IN_RANGE(0, 10, error_message='Too small or too large!')),
-                Field('modified_on_id_0', 'date', readable = False, writable = False),
-                Field('modified_by_id_0', 'reference auth_user', readable = False, writable = False),
-
                 Field('pair_id_1'),
                 Field('loopback_id_1', 'boolean', default = False),
                 Field('crossed_to_plint_id_1', 'reference plint_table'),
@@ -93,6 +86,13 @@ db.define_table('plint_table',
                 Field('crossed_to_pair_id_9'),
                 Field('modified_on_id_9', 'date', readable = False, writable = False),
                 Field('modified_by_id_9', 'reference auth_user', readable = False, writable = False),
+                
+                Field('pair_id_10'),
+                Field('loopback_id_10', 'boolean', default = False),
+                Field('crossed_to_plint_id_10', 'reference plint_table'),
+                Field('crossed_to_pair_id_10'),
+                Field('modified_on_id_10', 'date', readable = False, writable = False),
+                Field('modified_by_id_10', 'reference auth_user', readable = False, writable = False),                
                )
 
 db.define_table('menu_table',
