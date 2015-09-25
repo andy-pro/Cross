@@ -5,7 +5,7 @@ cross_storage = Storage()
 
 db.define_table('cross_table',
                 Field('title', requires = IS_NOT_EMPTY()),
-                Field('menu', 'json', readable = False, writable = False, requires = IS_JSON()),
+                #Field('menu', 'json', readable = False, writable = False, requires = IS_JSON()),
                )
 
 db.define_table('vertical_table',
@@ -94,6 +94,7 @@ db.define_table('plint_table',
                 Field('modified_on_id_9', 'date', readable = False, writable = False),
                 Field('modified_by_id_9', 'reference auth_user', readable = False, writable = False),
                )
+
 db.define_table('menu_table',
                 Field('menu', 'json', readable = False, writable = False, requires = IS_JSON()),
                 Field('title'),

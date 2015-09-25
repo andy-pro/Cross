@@ -194,11 +194,6 @@ def pairmod():
     response.view='default/plint.html'
     return locals()
 
-def getPlintList():
-    rows = db(db.plint_table.parent == int(request.vars.id)).select()
-    plints = [[i.id, i.title, i.numeration_start_1] for i in rows]
-    return gluon.contrib.simplejson.dumps({'plints': plints})
-
 @auth.requires_membership('managers')
 def manage():
     u = request.url

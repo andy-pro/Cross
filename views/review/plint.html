@@ -9,12 +9,6 @@ jQuery(document).ready(function() {
       (cb.checked) ? e.slideDown('slow') : e.slideUp('fast');
     }
 
-    getCrossIndex = function(data, id) {
-      var i = 0;
-      while (data[i][0] != id) i += 1;
-      return i;
-    }
-
     jQuery.fn.settofirst = function () {
       jQuery(':nth-child(1)', this).attr('selected', 'selected');
     }
@@ -39,7 +33,7 @@ jQuery(document).ready(function() {
       var e = this;
       if (!cachearray[vert_id])  { // cache point is empty?
           jQuery.ajax({
-            url: '{{=URL('default', 'getPlintList')}}',
+            url: '{{=URL('review', 'getPlintList')}}',
             data: {'id': vert_id}, // vertical table id
             dataType: "json",
             type: "POST",
@@ -112,7 +106,7 @@ jQuery(document).ready(function() {
     var h1 = jQuery('#vertsel');
     var h2 = jQuery('#plintsel');
     var h3 = jQuery('#pairsel');
-    var self_cross_index = getCrossIndex(menuarray, {{=plint.cross.index}}); // jQuery, convert table record id to array index
+    var self_cross_index = getCrossIndex(menuarray, {{=plintcrossindex}}); // jQuery, convert table record id to array index
     h1.addoptions(menuarray[self_cross_index][2], true);
     h1.settovalue({{=crossed_info[1]}}); // vertical id
     var j1 = h1[0].selectedIndex;
@@ -155,7 +149,7 @@ jQuery(document).ready(function() {
 });
 </script>
 
-<div class="well {{=div_class}}">
+<div class="well plint">
 {{=form}}
 </div>
 <div class="ajaxanimation"></div>
