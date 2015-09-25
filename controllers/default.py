@@ -1,4 +1,38 @@
 # -*- coding: utf-8 -*-
+import time
+
+def makemenu():
+    import json
+
+    t1 = time.time()
+    # ~ 20ms
+    c_items = db(db.cross_table).select()
+    #c_items = c_items[15:16]
+    m = [None] * len(c_items)
+    for i, cr in enumerate(c_items):
+        j = cr.id
+        v_items = db(db.vertical_table.parent == j).select()
+        n = [None] * len(v_items)
+        for k, vr in enumerate(v_items):
+            n[k] = [vr.id, vr.title]
+        m[i] = [j, cr.title, n]
+    #data_json1 = json.dumps(m)
+    data_json1 = gluon.contrib.simplejson.dumps(m)
+    db.menu_table.truncate()
+    db.menu_table.insert(menu = data_json1)
+    t2 = time.time()
+    d1 = '%f ms' % ((t2 - t1)*1000.0)
+
+    t1 = time.time()
+    m = [ [r.id, r.title, [ [w.id, w.title] for w in db(db.vertical_table.parent == r.id).select() ] ] for r in db(db.cross_table).select()]
+    data_json2 = json.dumps(m)
+    #data_json2 = gluon.contrib.simplejson.dumps(m)
+    t2 = time.time()
+    d2 = '%f ms' % ((t2 - t1)*1000.0)
+    
+    e = 'equ' if data_json1 == data_json2 else 'not equ'
+
+    return {'menu1':data_json1, 'time1': d1, 'menu2':data_json2, 'time2': d2, 'a summary': e}
 
 def test():
     import time

@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 response.meta.author = 'Andrey Protsenko <andy.pro.1972@gmail.com>'
-cross_list = []
+#cross_list = []
 #cross_items = db(db.cross_table).select()
 #for cross_item in cross_items:
-for cross_item in db(db.cross_table).select():
+#for cross_item in db(db.cross_table).select():
     #================================calculating menu from database
-    '''    idx = cross_item.id
+'''
+    idx = cross_item.id
     vertical_list = []
     #=================
     vertical_items = db(db.vertical_table.parent == idx).select()
@@ -20,13 +21,22 @@ for cross_item in db(db.cross_table).select():
     #cross_list.append((cross_item.title, False, URL('default', 'cross', args=idx), vertical_list))
     '''
     #==================loading ready menu from fields of database
-    cross_list.append(gluon.contrib.simplejson.loads(cross_item.menu))
+    #cross_list.append(gluon.contrib.simplejson.loads(cross_item.menu))
     #------------------
 response.menu = [
-    (SPAN(B('CROSS',XML('&trade;&nbsp;')), _class='highlighted', _id='mainmenu'), True, URL('default', 'index'), []),#cross_list),
+    (SPAN(B('CROSS',XML('&trade;&nbsp;')), _class='highlighted'), True, URL('default', 'index')),#cross_list),
     #(T('Кросс'), False, '', cross_list)
 ]
-
+#import json
+#menuarray = XML(gluon.contrib.simplejson.loads(db.menu_table[1].menu))
+menuarray = XML(db.menu_table[1].menu)
+#a=['1234', '5678']
+#b=json.dumps(a)
+#b=b.decode('utf-8')
+#a=json.JSONEncoder().encode(a)
+#a=json.loads(b)
+#menuarray = XML(a)
+#menuarray = b
 #if auth.has_membership('managers'):
     #p = request.env.path_info.split('/')
     #response.flash = p[3]

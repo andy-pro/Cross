@@ -1,15 +1,4 @@
 {{extend 'layout.html'}}
-<script>
-jQuery(document).ready(function() {
-
-e = jQuery('li.web2py-menu-active');
-e.append('<ul class="dropdown-menu"></ul>');
-m = e.find('ul:first')
-m.append('<li class="dropdown"><a href="/Cross/default/cross/1">КДП </a><ul class="dropdown-menu"><li><a href="/Cross/default/vertical/1">Р12</a></li><li><a href="/Cross/default/vertical/2">Р22</a></li></ul></li>');
-m.append('<li class="dropdown"><a href="/Cross/default/cross/1">КДП 2</a><ul class="dropdown-menu"><li><a href="/Cross/default/vertical/1">Р12q</a></li><li><a href="/Cross/default/vertical/2">Р22q</a></li></ul></li>');
-
-});
-</script>
 {{=DIV(some_data,  _class='well')}}
 <table class="table">
   {{reccnt = len(items)

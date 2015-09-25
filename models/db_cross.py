@@ -94,6 +94,10 @@ db.define_table('plint_table',
                 Field('modified_on_id_9', 'date', readable = False, writable = False),
                 Field('modified_by_id_9', 'reference auth_user', readable = False, writable = False),
                )
+db.define_table('menu_table',
+                Field('menu', 'json', readable = False, writable = False, requires = IS_JSON()),
+                Field('title'),
+               )
 
 def get_pair_crossed_info(plint, pair):
     lst = [0,0,0,0]
