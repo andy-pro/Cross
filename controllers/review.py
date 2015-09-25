@@ -63,7 +63,7 @@ def plintmod():
                 bool(form.vars.replace_common_data))
         plint.update(vars)
         redirect(urlback)
-    response.view='review/plint.html'
+    #response.view='review/plint.html'
     #return locals()
     return {'plint': plint, 'form': form, 'crossed_info': [0,0,0,0], 'plintcrossindex': plint.cross.id, 'verticalmainmenu': verticalmainmenu}
 
@@ -96,7 +96,7 @@ def pairmod():
                 bool(form.vars.loop))
         pair.update(vars)
         redirect(urlback)
-    response.view='review/plint.html'
+    #response.view='review/plint.html'
     #return locals()
     return {'form': form, 'crossed_info': pair.crossed_info, 'plintcrossindex': pair.plint.cross.id, 'verticalmainmenu': verticalmainmenu}
 

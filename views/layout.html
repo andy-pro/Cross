@@ -64,9 +64,8 @@
        uncomment to load jquery-ui //-->
   <noscript><link href="{{=URL('static', 'css/web2py_bootstrap_nojs.css')}}" rel="stylesheet" type="text/css" /></noscript>
   <script>
-  var menuarray = {{=menuarray}};
-  jQuery(document).ready(function() {
-    const root_path = "/Cross/review/";
+var menuarray = {{=menuarray}};
+jQuery(document).ready(function() {
     
     getCrossIndex = function(data, id) {
       var i = 0;
@@ -74,32 +73,35 @@
       return i;
     }
     
-    function buildMainMenu(li, data, func) {
+    function buildMainMenu(li, data, href) {
       var ul = jQuery('<ul/>', {class:'dropdown-menu'});
       li.addClass('dropdown').append(ul);
       jQuery.each(data, function() {
           var li = jQuery('<li/>');
           li.wrapInner(
               jQuery('<a/>', {
-                  "href": root_path + func + '/' + this[0],
+                  "href": href + '/' + this[0],
                   text: this[1]
               })).appendTo(ul);
           if (this[2]) {
-          buildMainMenu(li, this[2], 'vertical');}
+          buildMainMenu(li, this[2], '{{=URL('vertical')}}');}
       });
     };
 
     r = jQuery("#crossmainmenu").closest('li')
-    if (r.length) buildMainMenu(r, menuarray, 'cross');
+    if (r.length) buildMainMenu(r, menuarray, '{{=URL('cross')}}');
+    
     {{if 'verticalmainmenu' in locals():}}
-    r = jQuery("#verticalmainmenu").closest('li')
-    if (r.length) {
-      var i = getCrossIndex(menuarray, {{=verticalmainmenu}});
-      buildMainMenu(r, menuarray[i][2], 'vertical');
-      }
+      r = jQuery("#verticalmainmenu").closest('li')
+      if (r.length) {
+        var i = getCrossIndex(menuarray, {{=verticalmainmenu}});
+        buildMainMenu(r, menuarray[i][2], '{{=URL('vertical')}}');
+        }
     {{pass}}
+    
+    {{block review_scripts}}{{end}}
 
-  });
+});
   </script>
   {{block head}}{{end}}
 </head>
@@ -136,6 +138,7 @@
             {{include}}
             {{end}}
         </div>
+        <div class="ajaxanimation"></div>
     </section><!--/main-->
 
     <!-- Footer ================================================== -->
