@@ -1,0 +1,33 @@
+table.cross {
+    table-layout: fixed;
+    width: 100%;
+    border:2px solid #ccc;
+   }
+table.cross td {
+    overflow: hidden;
+    overflow-x: hidden;
+    /*border:2px solid green;*/
+    white-space: nowrap;
+    border:1px solid #aaa;
+}
+table.cross a {
+    font-size: 9pt;
+    color:#026688;
+    text-decoration:none;
+}
+table.cross a:hover,a:focus {
+    /*font-size: 9pt;*/
+    color:#003060;
+    text-decoration:none;
+}
+.col1 { width: 45px; }
+/*.coln { width: 80px; }*/
+
+tr.oddrow {background: #e8e8e8;}
+td.loop {background: #f99;}
+td.commondata {color:#00f}
+
+/*
+a span.tooltip {display:none;}
+a:hover span.tooltip {position:absolute;top:30px;left:20px;display:inline;border:2px solid green;}
+*/

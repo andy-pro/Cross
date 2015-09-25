@@ -1,0 +1,14 @@
+#----------in file appadmin.py added line 181:
+
+def import_csv(table, file):
+    table.truncate()
+    table.import_from_csv_file(file)
+#---------------------------------------
+
+#----------in file appadmin.py added line 282:
+
+        formcsv = FORM(str(T('or import from csv file')) + " ",
+                       INPUT(_type='file', _name='csvfile'),
+                       INPUT(_type='hidden', _value=csv_table, _name='table'),
+                       INPUT(_type='submit', _value=T('truncate & import')))
+#---------------------------------------

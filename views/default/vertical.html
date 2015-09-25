@@ -1,0 +1,54 @@
+{{extend 'layout.html'}}
+<table class="cross">
+<!--   <col span="10" class="coln"> -->
+  {{tr_odd = True
+  for plint in plints:
+    pid = 'pid%s' % plint.id
+    tr_is_odd = 'evenrow'
+    if tr_odd:
+      tr_is_odd = 'oddrow'
+    pass
+    tr_odd = not tr_odd}}
+    <tr class="{{=tr_is_odd}}">
+      {{comefrom = ''
+      i = plint('come_from')
+      if i != None:
+        h = db.plint_table[i]
+        s1 = h.title
+        s2 = db.vertical_table[h.vertical_table].title
+        s3 = db.cross_table[h.cross_table].title
+        comefrom = '%s %s %s' % (s1, s2, s3)
+      pass
+      s1 = plint('common_data')
+      if s1 == comefrom:
+        comefrom = ''
+      pass
+      plintdata = '%s\n%s\n%s %s\n%s\n%s' % (plint.title, plint('modified_on'), plint('modified_by').first_name, plint('modified_by').last_name,  s1, comefrom)}}
+      <td class="colv1"><a href="{{=URL('plintmod', args = [plint.id])}}" title="{{=plintdata}}">{{=plint.title}}</a></td>
+      {{for i in range(10):
+        pairtitle = plint('pair_id_%d' % i)
+        start = i
+        if plint('numeration_start_1') == True:
+          start += 1
+        pass
+        pair_loop = 'noloop'
+        if plint('loopback_id_%d' % i) == True:
+          pair_loop = 'loop'
+        pass}}
+        <td class="{{=pair_loop}}">
+        {{if pairtitle == '':}}
+          <a href="{{=URL('pairmod', args = [plint.id, i])}}"><sup>{{=start}}&nbsp;&nbsp;</sup></a>
+        {{else:
+          when = plint('modified_on_id_%d' % i)
+          who_id = plint('modified_by_id_%d' % i)
+          who = who_id.first_name + ' ' + who_id.last_name}}
+            <a href="{{=URL('pairmod', args = [plint.id, i])}}" title="{{=pairtitle}}&#13;{{=who}}&#13;{{=when}}"><sup>{{=start}}&nbsp;&nbsp;</sup>{{=pairtitle}}</a>
+        {{pass}}
+        </td>
+      {{pass}}
+      <td class="commondata" style="border-left: 2px solid #ccc;">
+        {{=plint.common_data}}
+      </td>
+    </tr>
+  {{pass}}
+</table>
