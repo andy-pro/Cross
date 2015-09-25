@@ -99,6 +99,11 @@ db.define_table('menu_table',
                 Field('title'),
                )
 
+def get_pair_fields(i):
+    i = str(i)
+    t = 'pair_id_'+i,'crossed_to_plint_id_'+i,'crossed_to_pair_id_'+i,'modified_on_id_'+i,'modified_by_id_'+i,'loopback_id_'+i
+    return t
+
 def get_pair_crossed_info(plint, pair):
     lst = [0,0,0,0]
     if (plint > 0):
@@ -119,3 +124,41 @@ def get_pair_crossed_info(plint, pair):
     else:
         lst[0] = T('Not crossed.')
         return lst
+
+def get_plint_info(plint):
+    return ('%s %s %s') % (plint.root.title, plint.parent.title, plint.title)
+
+def get_plint_outside_info(plint):
+    lst = ['',None,None,None,'']
+    fromplint_id = plint.come_from
+    s1 = T('Come from: ')
+    if fromplint_id:
+        lst[1] = fromplint_id.root
+        lst[2] = fromplint_id.parent
+        lst[3] = fromplint_id
+        lst[4] = ('%s %s %s') % (lst[1].title, lst[2].title, lst[3].title)
+        s1 = s1 + lst[4]
+    lst[0] = s1
+    return lst
+
+def get_plint_outside_info4(plint):
+    #---------- 410 ms
+
+    #info = {}.fromkeys(['cross', 'vertical', 'plint'], None)
+    #info['title'] = ''
+    #info['address'] = ''
+
+    #----------
+    info = {'title':'', 'cross':None, 'vertical':None, 'plint':None, 'address':''} # 290 ms
+    #info = dict(zip(('title','cross','vertical','plint','address'),('',None,None,None,''))) # 580 ms
+    #info = dict(title='', cross=None, vertical=None, plint=None, address='') # 360 ms
+    fromplint_id = 500
+    s1 = 'Come from: '
+    if fromplint_id:
+        info['cross'] = 100
+        info['vertical'] = 200
+        info['plint'] = 300
+        info['address'] = ('%s: %s %s %s') % (plint, info['cross'], info['vertical'], info['plint'])
+        s1 = s1 + info['address']
+    info['title'] = s1
+    return info

@@ -2,55 +2,68 @@
 <script>
 jQuery(document).ready(function() {
 
+    const _notcrossed = '{{=T('Not crossed')}}';
+    var cachearray = [];
+
     PlintCrossToggle = function(cb) {
       var e = jQuery('#sel_cross_to');
       (cb.checked) ? e.slideDown('slow') : e.slideUp('fast');
     }
 
-    const _notcrossed = '{{=T('Not crossed')}}';
+    getCrossIndex = function(data, id) {
+      var i = 0;
+      while (data[i][0] != id) i += 1;
+      return i;
+    }
+
     jQuery.fn.settofirst = function () {
       jQuery(':nth-child(1)', this).attr('selected', 'selected');
     }
+
     jQuery.fn.settovalue = function (value) {
       jQuery('[value='+value+']' , this).attr('selected', 'selected');
     }
 
-    jQuery.fn.addoptions = function (data) {
-      var e = this;
-      jQuery.each(data, function(i, item) {e.append(jQuery('<option>').text(item[1]).attr('value', item[0]));});
-      this.prop("disabled", false);
+    jQuery.fn.addoptions = function (data, add_none) {
+      if (add_none) this.append(jQuery('<option>').text(_notcrossed).attr('value', 0));
+      if (data.length) {
+          var e = this;
+          jQuery.each(data, function() {e.append(jQuery('<option>').text(this[1]).attr('value', this[0]));});
+          this.prop('disabled', false);
+      } else {
+          this.prop('disabled', true);
+      }
     }
 
-    jQuery.fn.getoptions = function (localdata, parent) {
+    jQuery.fn.getPlintList = function (cross_index, vert_index) {
+      vert_id = menuarray[cross_index][2][vert_index][0];
       var e = this;
-      if (localdata[2] == '') { // child list is empty?
+      if (!cachearray[vert_id])  { // cache point is empty?
           jQuery.ajax({
-            url: '{{=URL('default', 'getinstancelist')}}',
-            data: {'parent': parent, 'id': localdata[0]}, // send table name, record primary key
+            url: '{{=URL('default', 'getPlintList')}}',
+            data: {'id': vert_id}, // vertical table id
             dataType: "json",
             type: "POST",
             async: false,
             success: function( serverdata ) {
-              localdata[2] = serverdata.instances;
-              e.addoptions(localdata[2]);
+              cachearray[vert_id] = serverdata.plints;
+              e.addoptions(cachearray[vert_id]);
             }
           });
       } else {
-          e.addoptions(localdata[2]);
+          e.addoptions(cachearray[vert_id]);
         }
     }
 
     jQuery(document).ajaxStart(function() { jQuery("body").addClass("loading"); });
     jQuery(document).ajaxStop(function() { jQuery("body").removeClass("loading"); });
 
-    jQuery.fn.enumoptions = function (vj, pj) {
-        start = +vlist[vj][2][pj][2]; // convert Boolean to int
+    jQuery.fn.enumoptions = function (cj, vj, pj) {
+        vert_id = menuarray[cj][2][vj][0];
+        start = +cachearray[vert_id][pj][2]; // convert Boolean to int
         var e = jQuery('option', this) // get options set of select
-        var x = e.length; // get options count
-        if (x) {
-            for (i= 0; i < x; i++) {
-                e[i].text=(i+start);
-            }
+        if (e.length) {  // check options count
+            jQuery.each(e, function (i) {this.text = i + start});
         } else {
             this.prop('disabled', false);
             for (i= 1; i <= 10; i++) {
@@ -59,51 +72,58 @@ jQuery(document).ready(function() {
          }
     }
 
-{{if 'clist' in locals():}}
-
+{{if 'outside_info' in locals():}}
     var w1 = jQuery('#fromcrosssel');
     var w2 = jQuery('#fromvertsel');
     var w3 = jQuery('#fromplintsel');
-    var clist = [[0, _notcrossed, ''], {{=clist}}];
-    w1.addoptions(clist);
+    w1.addoptions(menuarray, true);
     w1.settovalue({{=outside_info[1]}}); // cross id
     var k1 = w1[0].selectedIndex;
     var k2 = 0;
     if (k1 > 0) {
-        w2.getoptions(clist[k1], 'cross');
+        k1 -= 1
+        w2.addoptions(menuarray[k1][2]);
+        w2.settovalue({{=outside_info[2]}}); // vertical id
+        k2 = w2[0].selectedIndex; // vertical index
+        w3.getPlintList(k1, k2);
+        w3.settovalue({{=outside_info[3]}}); // plint id
     }
-
     w1.change(function(){ // from new cross
-      w2.empty();
-      w3.empty();
-      k1 = w1[0].selectedIndex;
-      if (k1 > 0) {
-          w2.getoptions(clist[k1], 'cross');
-          w2.settofirst();
-          
+        w2.empty();
+        w2.prop("disabled", true);
+        w3.empty();
+        w3.prop('disabled', true);
+        k1 = w1[0].selectedIndex;
+        if (k1 > 0) {
+            k1 -= 1
+            w2.addoptions(menuarray[k1][2]);
+            w2.settofirst();
+            w3.getPlintList(k1, 0);
+            w3.settofirst();
       }
-        else {
-          w2.prop("disabled", true);
-          w3.prop('disabled', true);
-        }
     });
-
+    w2.change(function(){
+      w3.empty();
+      w3.prop('disabled', true);
+      w3.getPlintList(k1, w2[0].selectedIndex);
+      w3.settofirst();
+    });
 {{pass}}
 
     var h1 = jQuery('#vertsel');
     var h2 = jQuery('#plintsel');
     var h3 = jQuery('#pairsel');
-    var vlist = [[0, _notcrossed, ''], {{=vlist}}];
-    console.log(vlist);
-    h1.addoptions(vlist);
+    var self_cross_index = getCrossIndex(menuarray, {{=plint.cross.index}}); // jQuery, convert table record id to array index
+    h1.addoptions(menuarray[self_cross_index][2], true);
     h1.settovalue({{=crossed_info[1]}}); // vertical id
     var j1 = h1[0].selectedIndex;
     var j2 = 0;
     if (j1 > 0) {
-        h2.getoptions(vlist[j1], 'vertical');
+        j1 -= 1
+        h2.getPlintList(self_cross_index, j1);
         h2.settovalue({{=crossed_info[2]}}); // plint id
         j2 = h2[0].selectedIndex;
-        h3.enumoptions(j1, j2);
+        h3.enumoptions(self_cross_index, j1, j2);
         h3.settovalue({{=crossed_info[3]}}); // pair number
     }
       else {
@@ -113,28 +133,25 @@ jQuery(document).ready(function() {
 
     h1.change(function(){ // cross to new vertical
       h2.empty();
-      h3.empty();
-      //vj = vh.val(); // record id select by value
+      h2.prop("disabled", true);
+      if (h3[0]) {
+          h3.empty();
+          h3.prop('disabled', true);
+      }
       j1 = h1[0].selectedIndex;    // select by index of selection
-      //if (isNaN(v_id) || (to_vert_id == 0))
       if (j1 > 0) {
-          h2.getoptions(vlist[j1], 'vertical');
+          j1 -= 1
+          h2.getPlintList(self_cross_index, j1)
           h2.settofirst();
           if (h3[0]) {
-              h3.enumoptions(j1, 0);
+              h3.enumoptions(self_cross_index, j1, 0);
               h3.settofirst();
           }
       }
-        else {
-          h2.prop("disabled", true);
-          if (h3[0]) {
-              h3.prop('disabled', true); 
-          }
-        }
     });
 
     h2.change(function(){
-      if (h3[0]) h3.enumoptions(j1, h2[0].selectedIndex);
+      if (h3[0]) h3.enumoptions(self_cross_index, j1, h2[0].selectedIndex);
     });
 });
 </script>

@@ -64,27 +64,35 @@
        uncomment to load jquery-ui //-->
   <noscript><link href="{{=URL('static', 'css/web2py_bootstrap_nojs.css')}}" rel="stylesheet" type="text/css" /></noscript>
   <script>
+  var menuarray = {{=menuarray}};
   jQuery(document).ready(function() {
-    var menuarray = {{=menuarray}};
-    const root_path = "/Cross/default/"
-    const func_lev1 = "cross/"
-    const func_lev2 = "vertical/"
-    function appendMenu() {
-      var m = jQuery('<ul class="dropdown-menu"></ul>')
-      jQuery('li.web2py-menu-active').append(m);
-      for (var i=0;i<menuarray.length;i++) {
-        var li = jQuery('<li class="dropdown"><a href="'+root_path+func_lev1+menuarray[i][0]+'">'+menuarray[i][1]+'</a></li>');
-        var ul = jQuery('<ul class="dropdown-menu"></ul>');
-        m.append(li);
-        li.append(ul);
-        for (var j=0;j<menuarray[i][2].length;j++) {
-          ul.append('<li><a href="/Cross/default/vertical/'+menuarray[i][2][j][0]+'">'+menuarray[i][2][j][1]+'</a></li>');
-        }
-      }
-    }
-
-appendMenu();
+    const root_path = "/Cross/default/";
+    const func_lev1 = "cross/";
+    const func_lev2 = "vertical/";
+    function buildMainMenu() {
+      var m = jQuery('<ul class="dropdown-menu"></ul>');
+      jQuery('li.web2py-menu-first + li').addClass('dropdown').append(m);
+      jQuery.each(menuarray, function() {
+//var li = jQuery('<li class="dropdown"><a href="'+root_path+func_lev1+menuarray[i][0]+'">'+menuarray[i][1]+'</a></li>').appendTo(m);
+          var li = jQuery('<li/>', {class: 'dropdown'});
+          li.wrapInner(
+              jQuery('<a/>', {
+                  "href": root_path + func_lev1 + this[0],
+                  text: this[1]
+              })).appendTo(m);
+          var ul = jQuery('<ul/>', {class:'dropdown-menu'}).appendTo(li);
+          jQuery.each(this[2], function() {
+//ul.append('<li><a href="/Cross/default/vertical/'+menuarray[i][2][j][0]+'">'+menuarray[i][2][j][1]+'</a></li>');
+              ul.append(jQuery('<li/>').wrapInner(
+                  jQuery('<a/>', {
+                      "href": root_path + func_lev2 + this[0],
+                      text:this[1]
+                  })))
+          });
       });
+    };
+  buildMainMenu();
+  });
   </script>
   {{block head}}{{end}}
 </head>

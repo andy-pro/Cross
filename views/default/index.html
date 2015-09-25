@@ -1,0 +1,23 @@
+{{extend 'layout.html'}}
+{{=DIV(some_data, _class='well')}}
+<table class="table">
+  {{reccnt = len(items)
+    rowcnt = 5
+    colcnt = int(reccnt / rowcnt)
+    if reccnt < rowcnt:
+      rowcnt = reccnt
+    pass
+    for j in range(0, rowcnt):}}
+      <tr>
+        {{for k in range(0, colcnt + 1):
+          idx = k * rowcnt + j}}
+          <td class="colc1">
+          {{if idx < reccnt:
+            item = items[idx]
+            =A(item.title, _href = URL(item_name, args = item.id))
+          pass}}
+          </td>
+        {{pass}}
+      </tr>
+    {{pass}}
+</table>

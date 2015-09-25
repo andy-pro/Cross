@@ -2,16 +2,13 @@
 <table class="cross">
 <!--   <col span="10" class="coln"> -->
   {{for plint in plints:
-      dx = 1 * plint.numeration_start_1}}
+      dx = 1 if plint.numeration_start_1 else 0}}
     <tr>
       <td class="colv1"><a href="{{=URL('plintmod', args = [plint.id])}}">{{=plint.title}}</a></td>
       {{for i in range(10):
         pairtitle = plint('pair_id_%d' % i)
         start = i + dx
-        pair_loop = 'noloop'
-        if plint('loopback_id_%d' % i) == True:
-          pair_loop = 'loop'
-        pass}}
+        pair_loop = 'loop' if plint('loopback_id_%d' % i) else 'noloop'}}
         <td class="{{=pair_loop}}">
         {{if pairtitle == '':}}
           <a href="{{=URL('pairmod', args = [plint.id, i])}}"><sup>{{=start}}&nbsp;&nbsp;</sup></a>

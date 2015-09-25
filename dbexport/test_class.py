@@ -8,14 +8,16 @@ class Vertical:
         self.title = '1B'+str(idx)
 
 class Plint:
-    def __init__(self, idx):
-        self.index = idx
+    def __init__(self, _index):
+        self.index = _index
         #plint.root = 1
         self.root = 'asd'
         self.cross = Cross(self.root)
         parent = 10
         self.title ='M1'
         self.pair=5
+        s = 'Plint is '
+        self.header = '%s%s %s %s' % (s, self.cross.title, self.vertical.title, self.title)
 
     vertical = Vertical(10)
 
@@ -37,5 +39,6 @@ class Pair:
 
 pair = Pair(3, 10)
 print pair.plint.vertical.title
+print p.header
 
 

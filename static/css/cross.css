@@ -44,8 +44,8 @@ td.commondata {
     font-size: 9pt;
     color:#808;
 }
-div.pair{width: 482px;}
-div.plint{width: 482px;}
+div.pair{width: 460px;}
+div.plint{width: 460px;}
 /* div.plint{width: auto;}  */
 .ajaxanimation {
     display:    none;
@@ -60,7 +60,8 @@ div.plint{width: 482px;}
                 50% 50% 
                 no-repeat;
 }
-body.loading {overflow: hidden;}/* When the body has the loading class, we turn the scrollbar off with overflow:hidden */
+/* When the body has the loading class, we turn the scrollbar off with overflow:hidden */
+/*body.loading {overflow: hidden;}*/
 body.loading .ajaxanimation {display: block;}/* Anytime the body has the loading class, our ajaxanimation element will be visible */
 /*
 a span.tooltip {display:none;}
