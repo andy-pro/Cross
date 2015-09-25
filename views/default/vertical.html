@@ -5,7 +5,7 @@
       dx = 1 if plint.numeration_start_1 else 0
       comefrom = get_plint_outside_info(plint)
       s1 = 'Info: ' + plint.common_data
-      plintdata = '%s\n%s\n%s %s\n%s\n%s' % (plint.title, plint.modified_on, plint.modified_by.first_name, plint.modified_by.last_name, s1, comefrom[0])}}
+      plintdata = '%s\n%s\n%s %s\n%s\n%s' % (plint.title, plint.modified_on, plint.modified_by.first_name, plint.modified_by.last_name, s1, comefrom['title'])}}
     <tr>
       <td class="colv1"><a href="{{=URL('plintmod', args = [plint.id])}}" title="{{=plintdata}}">{{=plint.title}}</a></td>
       {{for i in range(10):

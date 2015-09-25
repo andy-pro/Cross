@@ -92,28 +92,18 @@ def vertical():
 
 @auth.requires_login()
 def plintmod():
-    rec_id = request.args(0, cast = int)
-
-
-    plint = Plint(rec_id)
-
-
-    rec = db.plint_table[rec_id]
+    plint = Plint(request.args(0, cast = int))
     crossed_info = [0,0,0,0]
-    outside_info = get_plint_outside_info(rec)
-    pstatus0 = outside_info[0]
     urlback = URL('vertical', args=[plint.vertical.index])
     response.menu.append(gluon.contrib.simplejson.loads(plint.cross.menu))
     response.menu.append((plint.vertical.title, False, urlback))
     response.menu.append((plint.title, False, ''))
     response.title = plint.address
-    #pstatus1 = I('%s %s, %s %s' % (T('Last modified on'), rec.modified_on, rec.modified_by.first_name, rec.modified_by.last_name))
-    pstatus1 = I(plint.modified_info)
-    form=FORM(UL(B(plint.header), HR(), pstatus1,
+    form=FORM(UL(B(plint.header), HR(), I(plint.modified_info),
               (T('Title:'), XML('&nbsp;&nbsp;'), INPUT(_name='title', _value = plint.title, requires=IS_NOT_EMPTY())),
-              (T('Common data:'), XML('&nbsp;&nbsp;'), INPUT(_name='common_data', _value = rec.common_data)),
-              (T('Numeration start 1:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='numeration_start_1', value=rec.numeration_start_1)),
-               HR(), B(pstatus0),
+              (T('Common data:'), XML('&nbsp;&nbsp;'), INPUT(_name='common_data', _value = plint.common_data)),
+              (T('Numeration start 1:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='numeration_start_1', value=plint.numeration_start_1)),
+               HR(), B(plint.outside_info['title']),
                (T('Raplace common data:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='replace_common_data', value=False))),
               TABLE(TR(TD('Cross:'), TD('Vertical:'), TD('Plint:')),
                     TR(TD(SELECT([], _id='fromcrosssel', _name='from_cross', _size=15)),
@@ -132,34 +122,31 @@ def plintmod():
     div_class = 'plint'    # form width in css
     if form.process().accepted:
         dict1 = {'modified_on': request.now.date(), 'modified_by': auth.user}
-        new_common_data = form.vars.common_data
         cd_en = bool(form.vars.replace_common_data)
-        try:
-            outplint = int(form.vars.from_plint)
-        except:
-            outplint = None
-        if outplint > 0:
-            dict1['come_from'] = rec
+        outplint = db.plint_table[form.vars.from_plint]
+        if outplint:
+            dict1['come_from'] = plint.index
             # update new remote plint
-            db.plint_table[outplint] = dict1
+            db.plint_table[outplint.id] = dict1
             if cd_en:
-                new_common_data = get_plint_info(db.plint_table[outplint])
-                db.plint_table[outplint] = {'common_data': outside_info[4]}
+                form.vars.common_data = get_plint_info(outplint)
+                db.plint_table[outplint.id] = {'common_data': plint.address}
 
         # update this plint
-        db.plint_table[rec_id] = {'title': form.vars.title, 'common_data': new_common_data, 'numeration_start_1': bool(form.vars.numeration_start_1)}
+        db.plint_table[plint.index] = {'title': form.vars.title, 'common_data': form.vars.common_data, 'numeration_start_1': bool(form.vars.numeration_start_1)}
         dict1['come_from'] = outplint
-        db.plint_table[rec_id] = dict1
+        db.plint_table[plint.index] = dict1
 
         # remove old outside connection
-        if outside_info[3] > 0:
-            toplintold = int(outside_info[3])
-            if toplintold != outplint:
-                dict1['come_from'] = None
+        oldoutplint = db.plint_table[plint.come_from]
+        # if connection existed and now connecting to new plint
+        if oldoutplint and (oldoutplint.id != outplint.id):
+            if oldoutplint.come_from == plint.index:
+                dict1['come_from'] = None  # remove connection
                 if cd_en:
                     dict1['common_data'] = ''
                 # update old remote plint
-                db.plint_table[toplintold] = dict1
+                db.plint_table[oldoutplint.id] = dict1
 
         redirect(urlback)
     response.view='default/plint.html'

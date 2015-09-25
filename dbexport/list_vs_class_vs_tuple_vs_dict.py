@@ -67,20 +67,29 @@ def get_plint_outside_info4(plint):
     #info['address'] = ''
 
     #----------
-    info = {'title':'', 'cross':None, 'vertical':None, 'plint':None, 'address':''} # 290 ms
+    info = {} # 223 ms
+    #info = dict() # 258 ms
+    #info = {'title':'', 'cross':None, 'vertical':None, 'plint':None, 'address':''} # 290 ms
     #info = dict(zip(('title','cross','vertical','plint','address'),('',None,None,None,''))) # 580 ms
     #info = dict(title='', cross=None, vertical=None, plint=None, address='') # 360 ms
     fromplint_id = 500
-    s1 = 'Come from: '
+    #s1 = 'Come from: '
+    s1 = _COME_FROM_
     if fromplint_id:
-        info['cross'] = 100
-        info['vertical'] = 200
-        info['plint'] = 300
-        info['address'] = ('%s: %s %s %s') % (plint, info['cross'], info['vertical'], info['plint'])
-        s1 = s1 + info['address']
+        a1 = '100'
+        a2 = '200'
+        a3 = '300'
+        info['cross'] = a1
+        info['vertical'] = a2
+        info['plint'] = a3
+        info['address'] = ('%s: %s %s %s') % (plint, a1, a2, a3)
+        s1 += info['address']
     info['title'] = s1
+    #s1=info['title'] # 295 ms
+    #s1=info.get('title') # 316 ms
     return info
 
+_COME_FROM_ = 'Come from: '
 loop_count = 100000
 
 @print_timing
