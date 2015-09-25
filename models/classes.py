@@ -70,8 +70,8 @@ class Vertical:
         
 class Plint:
     def __init__(self, _index):
-        self.index = _index
-        _rec = db.plint_table[_index]
+        self.index = _index     # type 'int'
+        _rec = db.plint_table[_index]   # type <class 'gluon.dal.objects.Row'>
         self.record = _rec
         #self.cross = Cross(_rec.root)
         self.cross = db.cross_table[_rec.root]
@@ -90,15 +90,15 @@ class Plint:
 
     def update(self, vars):
         '''
-        vars = (form.vars.title,                  # 0 title
-            bool(form.vars.numeration_start_1),   # 1 numeration_start_1
-            form.vars.common_data,                # 2 common_data
-            form.vars.from_plint,                 # 3 come_from
-            request.now.date(),                   # 4 modified_on
-            auth.user,                            # 5 modified_by
-            bool(form.vars.replace_common_data))  # 6 common_data auto fill
+        vars = (form.vars.title,                  # 0 title str
+            bool(form.vars.numeration_start_1),   # 1 numeration_start_1 bool
+            form.vars.common_data,                # 2 common_data str
+            form.vars.from_plint,                 # 3 come_from str
+            request.now.date(),                   # 4 modified_on <type 'datetime.date'>
+            auth.user,                            # 5 modified_by type <class 'gluon.dal.objects.Row'>
+            bool(form.vars.replace_common_data))  # 6 common_data auto fill bool
         
-        plint.fields = 'title',                   # 0 
+        plint.fields = 'title',                   # 0
                        'numeration_start_1',      # 1
                        'common_data',             # 2
                        'come_from',               # 3
@@ -110,9 +110,10 @@ class Plint:
         dictout  = dict(zip(self.fields[4:6], vars[4:6]))
         cd_en = vars[6]
         if outplint:
-            if outplint.id == self.index:   # if connec to selt - disconnect
+            if outplint.id == self.index:   # outplint.id <type 'long'>          
+                # if connect to self - disconnect
                 outplint = 0
-                dictself[self.fields[3]] = None
+                dictself[self.fields[3]] = None     # come_from = None
         # update this plint
         if cd_en:
             dictself[self.fields[2]] = get_plint_info(outplint)
