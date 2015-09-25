@@ -1,3 +1,4 @@
 errors
 databases
 sessions
+*.bak

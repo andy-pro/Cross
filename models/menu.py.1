@@ -10,24 +10,24 @@ for cross_item in cross_items:
     #    vertical_list.append((vertical_item.title, False, URL('default', 'vertical', args=vertical_item.id)))
     cross_list.append((cross_item.title, False, URL('default', 'cross', args=idx), vertical_list))
 response.menu = [
-    (SPAN(B('CROSS',XML('&trade;&nbsp;')), _class='highlighted'), True, URL('default', 'index'), cross_list),
+    (SPAN(B('CROSS',XML('&trade;&nbsp;')), _class='highlighted'), False, URL('default', 'index'), cross_list),
     #(T('Кросс'), False, '', cross_list)
 ]
 
 if (request.function == 'cross'):
     idx = request.args(0, cast = int)
-    response.menu.append((cross_list[idx-1][0], False, ''))
+    response.menu.append(cross_list[idx-1])
 
 if (request.function == 'vertical'):
     vertical_item = db.vertical_table(request.args(0, cast = int))
     t = vertical_item.title
-    idx = vertical_item.parent
+    idx = vertical_item.cross_table
     vertical_list = []
-    vertical_items = db(db.vertical_table.parent == idx).select()
+    vertical_items = db(db.vertical_table.cross_table == idx).select()
     for vertical_item in vertical_items:
         vertical_list.append((vertical_item.title, False, URL('default', 'vertical', args=vertical_item.id)))
     response.menu.append((cross_list[idx-1][0], False, '', vertical_list))
-    response.menu.append((t, False, ''))
+    response.menu.append((t))
 
 if auth.has_membership('managers'):
     p = request.env.path_info.split('/')

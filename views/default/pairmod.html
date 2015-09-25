@@ -1,2 +1,42 @@
 {{extend 'layout.html'}}
+<div class="well">
+{{=ptitle}}
+</div>
+<hr/>
 {{=form}}
+<script>
+jQuery(document).ready(function() {
+    jQuery.fn.addoptions = function (parent_id, table_id) {
+      e = this;
+      jQuery.ajax({
+        url: '{{=URL('default', 'getfellowlist')}}',
+        data: {'parent_id': parent_id, 'table_id': table_id},
+        dataType: "json",
+        success: function( data ) {
+          //alert(data.fid_list+data.ftitle_list);
+          e.empty();
+          e.append($('<option>').text('{{=T('Not crossed')}}').attr('value', '0'));
+          jQuery.each(data.fid_list, function(i, item) { e.append($('<option>').text(data.ftitle_list[i]).attr('value', item)); });
+          //jQuery.each(eval(data.fid_list), function(i, item) { e.append($('<option>').text(data.ftitle_list[i]).attr('value', item)); });
+         }
+      });
+    }
+    //jQuery('#vselect  :nth-child()').attr('selected', 'selected');
+    //jQuery('#pselect  :nth-child()').attr('selected', 'selected');
+    var vertical_id = {{=vertical_id}};    // parent
+    var cross_id = {{=cross_id}};    // root
+    var vh = jQuery('#vselect');
+    var ph = jQuery('#pselect');
+    vh.addoptions(cross_id, 7);
+    jQuery('#vselect').change(function(){
+      //var v = jQuery('#vselect')[0].selectedIndex;
+      var v_id = vh.val();    // crossed to vertical record id
+      if (isNaN(v_id) || (v_id == 0)) {
+          ph.empty();
+      }
+        else {
+            ph.addoptions(v_id, 8);
+        }
+   });
+});
+</script>

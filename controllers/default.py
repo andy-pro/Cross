@@ -4,29 +4,53 @@ def index():
     #cross_items = db(db.cross_table).select(orderby = db.cross_table.id)
     items = db(db.cross_table).select()
     item_name = 'cross'
-    return locals()
+    return dict(items = items, item_name = item_name)
 
 def cross():
-    idx = request.args(0, cast = int)
-    cross_item = db.cross_table(idx)
-    items = db(db.vertical_table.cross_table == idx).select()
+    rec_id = request.args(0, cast = int)
+    # 6 - cross_table
+    # 7 - vertical_table
+    # 8 - plint_table
+    #items = db(db[db.tables[7]].parent == rec_id).select()
+    table_id=7
+    parent_id=rec_id
+    items = db(db[db.tables[table_id]].parent == parent_id).select()
+    #items = db(db.vertical_table.parent == rec_id).select()
     item_name = 'vertical'
     response.view='default/index.html'
     #response.flash='%d, %d' % (reccnt, reccnt/20)
     return dict(items = items, item_name = item_name)
 
 def vertical():
-    idx = request.args(0, cast = int)
-    vertical_item = db.vertical_table(idx)
-    cross_item = vertical_item.cross_table
+    rec_id = request.args(0, cast = int)
+    vertical_item = db.vertical_table(rec_id)
+    cross_item = vertical_item.parent
     #response.flash=type(cross_item)
-    plints = db(db.plint_table.vertical_table == idx).select()
+    plints = db(db.plint_table.parent == rec_id).select()
     return locals()
 
 @auth.requires_login()
 def plintmod():
     idx = request.args(0, cast = int)
-    form = SQLFORM(db.plint_table, record = idx, fields=['title', 'come_from', 'common_data', 'numeration_start_1']).process()
+    rec = db.plint_table[idx]
+    vertical_item = rec.vertical_table
+    cross_item = rec.cross_table
+    vertical_items = db(db.cross_table == cross_item).select()
+    lst_vert = []
+    lst_plint = []
+    for i in vertical_items:
+        lst_vert.append(i.title)
+    form=FORM(TABLE(TR(TD(T('Title: ')), TD(INPUT(_name='name', _value = rec.title, requires=IS_NOT_EMPTY()))),
+                    TR(TD(T('Numeration start 1')), TD(INPUT(_type='checkbox', _name='start', _value=rec.numeration_start_1))),
+                    TR(TD(T('Crossed to:')), TD()),
+                    TR(TD('Vertical:'), TD(SELECT(lst_vert, _class='test', _id='vselect'))),
+                    TR(TD('Plint:'), TD(SELECT(lst_plint, _class='test', _id='pselect'))),
+                    TR(TD(), TD(INPUT(_type='submit'))),
+               ))
+
+
+
+    #form = SQLFORM(db.plint_table, record = idx, fields=['title', 'come_from', 'common_data', 'numeration_start_1'], labels = {'title': T('Plint  title'), 'come_from': T('Come from'), 'common_data': T('Common data'), 'numeration_start_1': T('Numeration start 1')}, showid = False).process()
     if form.accepted:
         #session.flash = T("Saved!")
         #db(db.plint_table.id == (idx)).update(modified_date = request.now.date(), modified_by = auth.user)
@@ -37,13 +61,65 @@ def plintmod():
 
 @auth.requires_login()
 def pairmod():
-    idx = request.args(0, cast = int)
-    pair_idx = request.args(1, cast = int)
-    form = SQLFORM(db.plint_table, record = idx, fields=['pair_id_%d' % pair_idx, 'loopback_id_%d' % pair_idx]).process()
-    if form.accepted:
-        db.plint_table[idx] = {'modified_date_id_%d' % pair_idx: request.now.date(), 'modified_by_id_%d' % pair_idx: auth.user}
-        redirect(URL('vertical', args=[db.plint_table[idx].vertical_table]))
+    rec_id = request.args(0, cast = int)
+    pair_id = request.args(1, cast = int)
+    f_pair_title = 'pair_id_%d' % pair_id
+    f_pair_loop = 'loopback_id_%d' % pair_id
+    f_crosstovert = 'crossed_to_vertical_id_%d' % pair_id
+    f_crosstoplint = 'crossed_to_plint_id_%d' % pair_id
+    f_crosstopair = 'crossed_to_pair_id_%d' % pair_id
+    f_mod_on = 'modified_on_id_%d' % pair_id
+    f_mod_by = 'modified_by_id_%d' % pair_id
+    rec = db.plint_table(rec_id)
+    vertical_id = rec.parent
+    cross_id = rec.root
+    ptitle = DIV(T('Cross '), db.cross_table(cross_id).title, ', ', T('Vertical '), db.vertical_table(vertical_id).title, ', ', T('Pair '), pair_id, BR(), I(T('Last modified on ')))
+    #verticals = db(db.vertical_table.parent == cross_id).select()
+    #vid_list = XML(','.join(["'%s'" % (i.id) for i in verticals]))
+    #vtitle_list = XML(','.join(["'%s'" % (i.title) for i in verticals]))
+    form=FORM(TABLE(TR(TD(T('Title: ')), TD(INPUT(_name='title', _value = rec(f_pair_title)))),
+                    TR(TD(T('Loop')), TD(INPUT(_type='checkbox', _class='boolean', _name='loop', value=rec(f_pair_loop)))),
+                    TR(TD(HR(), _colspan='2')),
+                    TR(TD(T('Crossed to:')), TD()),
+                    TR(TD('Vertical:'), TD(SELECT([], _id='vselect', _name='cross_vert'))),
+                    TR(TD('Plint:'), TD(SELECT([], _id='pselect'))),
+                    TR(TD(), TD(INPUT(_type='submit'))),
+               ))
+    if form.process().accepted:
+        if int(form.vars.cross_vert) == 0:
+            form.vars.cross_vert = None
+        #rec.update_record(**dict(form.vars))
+        db.plint_table[rec_id] = {f_pair_title: form.vars.title, f_pair_loop: form.vars.loop, f_crosstovert: form.vars.cross_vert, f_mod_on: request.now.date(), f_mod_by: auth.user}
+        #redirect(URL('vertical', args=[db.plint_table[rec_id].vertical_table]))
+        response.flash=form.vars
+    #return dict(ptitle=ptitle, form=form, vert_i=0, plint_i=0)
+    #return dict(form=form, vtitle_list=XML(vtitle_list), vid_list=XML(vid_list), ptitle=ptitle)
     return locals()
+
+def getfellowlist():
+    import json
+    parent_id = int(request.vars.parent_id)
+    table_id = int(request.vars.table_id)   # 6 - cross_table, 7 - vertical_table, 8 - plint_table
+    items = db(db[db.tables[table_id]].parent == parent_id).select()
+    fid_list = []
+    ftitle_list = []
+    for i in items:
+        fid_list.append(i.id)
+        ftitle_list.append(i.title)
+    return json.dumps({'fid_list': fid_list, 'ftitle_list': ftitle_list})
+
+def ajaxquery():
+    import json
+    rec_id = request.vars.vertical_id
+    vertical_item = db.vertical_table(rec_id)
+    plints = db(db.plint_table.vertical_table == rec_id).select()
+    pid_list = []
+    ptitle_list = []
+    for i in plints:
+        pid_list.append(i.id)
+        ptitle_list.append(i.title)
+    plint_list = XML(''.join(["'%s'" % (i.title) for i in plints]))
+    return json.dumps({'vertical_id': rec_id, 'pid_list': pid_list, 'ptitle_list': ptitle_list})
 
 @auth.requires_membership('managers')
 def manage():
@@ -99,7 +175,7 @@ def call():
     return service()
 
 
-@auth.requires_login() 
+@auth.requires_login()
 def api():
     """
     this is example of API with access control

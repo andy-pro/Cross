@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-import os
+import os, time
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
@@ -7,13 +7,18 @@ def readstring(f):
     return f.readline().strip('\n').replace(',', '.')
 
 def main():
+    datenow = '2015-03-03'
+    dateold = '2014-11-12'
     f = open( 'BD.txt' )
     x = f.readline()
 
     crosses = []
     verticals = []
     plintnames = []
-    plints = []
+
+    cross_table = []
+    vertical_table = []
+    plint_table = []
 
     for i in xrange(1, int(x) + 1):
         s1 = readstring(f)   # cross title
@@ -26,16 +31,26 @@ def main():
     plint_csv = open( 'plint_table.csv', 'w' )
 
     cross_csv.write('cross_table.id,cross_table.title\n')
-    vertical_csv.write('vertical_table.id,vertical_table.cross_table,vertical_table.title\n')
-    plint_csv.write('plint_table.id,plint_table.cross_table,plint_table.vertical_table,plint_table.numeration_start_1,plint_table.title,plint_table.common_data,plint_table.modified_date,plint_table.modified_by,plint_table.pair_id_0,plint_table.loopback_id_0,plint_table.modified_date_id_0,plint_table.modified_by_id_0,plint_table.pair_id_1,plint_table.loopback_id_1,plint_table.modified_date_id_1,plint_table.modified_by_id_1,plint_table.pair_id_2,plint_table.loopback_id_2,plint_table.modified_date_id_2,plint_table.modified_by_id_2,plint_table.pair_id_3,plint_table.loopback_id_3,plint_table.modified_date_id_3,plint_table.modified_by_id_3,plint_table.pair_id_4,plint_table.loopback_id_4,plint_table.modified_date_id_4,plint_table.modified_by_id_4,plint_table.pair_id_5,plint_table.loopback_id_5,plint_table.modified_date_id_5,plint_table.modified_by_id_5,plint_table.pair_id_6,plint_table.loopback_id_6,plint_table.modified_date_id_6,plint_table.modified_by_id_6,plint_table.pair_id_7,plint_table.loopback_id_7,plint_table.modified_date_id_7,plint_table.modified_by_id_7,plint_table.pair_id_8,plint_table.loopback_id_8,plint_table.modified_date_id_8,plint_table.modified_by_id_8,plint_table.pair_id_9,plint_table.loopback_id_9,plint_table.modified_date_id_9,plint_table.modified_by_id_9\n')
-
+    vertical_csv.write('vertical_table.id,vertical_table.parent,vertical_table.title\n')
+    fields = ('pair_id_','loopback_id_','crossed_to_vertical_id_','crossed_to_plint_id_','crossed_to_pair_id_','modified_on_id_','modified_by_id_')
+    s1 = ''
+    for i in xrange(0, 10):
+        for j in xrange(0, len(fields)):
+            s1 += ',plint_table.%s%d' % (fields[j], i)
+    s2 = 'plint_table.id,plint_table.root,plint_table.parent,plint_table.title,plint_table.numeration_start_1,\
+plint_table.come_from,plint_table.common_data,plint_table.modified_on,plint_table.modified_by' + s1 +'\n'
+    plint_csv.write(s2)
     for cross_index, crossitem in enumerate(crosses, start = 1):
-        cross_csv.write(',%s\n' % crossitem[0])  # crossitem[0] is a cross_title
+        a = ',%s\n' % crossitem[0]    # crossitem[0] is a cross_title
+        cross_table.append(a)
+        cross_csv.write(a)
         for i in xrange(1, int(crossitem[1]) + 1):    # crossitem[1] is a vertical_count
             s1 = readstring(f)   # vertical title
             s2 = readstring(f)   # plint count in vertical
             s3 = readstring(f)   # numeration_start_1 vertical
-            vertical_csv.write(',%d,%s\n' % (cross_index, s1))
+            a = ',%d,%s\n' % (cross_index, s1)
+            vertical_table.append(a)
+            vertical_csv.write(a)
             lst = [s1, s2, s3, cross_index]
             verticals.append(lst)
 
@@ -54,7 +69,7 @@ def main():
             s1 = readstring(f)   # pair name
             s2 = readstring(f)   # pair loopback
             lb = str(bool(int(s2)))
-            spx = (',%s,%s,2015-03-03,1' % (s1,lb))
+            spx = (',%s,%s,,,,%s,1' % (s1,lb,datenow))
             if i == 0:
                 sp0 = spx
             else:
@@ -70,19 +85,26 @@ def main():
             sp = sp + sp0
         else:
             sp = sp0 + sp
-        #                                                cross_index, vertical_index, start_with_1,      plint_name
-        plint_csv.write(',%d,%d,%s,%s,%s,2014-11-12,1' % (plintitem[2], plintitem[3], str(start_with_1), plintitem[0], s1) + sp + '\n')
+        #                              root,         parent,      title,         start_with_1, common_data
+        a = ',%d,%d,%s,%s,,%s,%s,1' % (plintitem[2], plintitem[3], plintitem[0], str(start_with_1), s1, dateold) + sp + '\n'
+        plint_table.append(a)
+        plint_csv.write(a)
 
     cross_csv.close()
     vertical_csv.close()
     plint_csv.close()
 
     f.close()
-
+    print 'cross_table count %d' % len(cross_table)
+    print 'vertical_table count %d' % len(vertical_table)
+    print 'plint_table count %d' % len(plint_table)
     print 'Ok'
 
 if __name__ == '__main__':
+    t1 = time.time()
     main()
+    t2 = time.time()
+    print "\ttime is \t%.1f" % ((t2 - t1))
 
 # plint_table.id
 # plint_table.cross_table

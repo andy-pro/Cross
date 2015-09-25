@@ -1,9 +1,12 @@
 {{extend 'layout.html'}}
+<div class="well">
+    
+</div>
 <table class="table">
   {{reccnt = len(items)
     rowcnt = 5
     colcnt = int(reccnt / rowcnt)
-    if reccnt < rowcnt: 
+    if reccnt < rowcnt:
       rowcnt = reccnt
     pass
     for j in range(0, rowcnt):}}
