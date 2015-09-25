@@ -1,28 +1,2 @@
 {{extend 'layout.html'}}
-<table class="table">
-  {{reccnt = len(items)
-    if reccnt == 0:
-      rowcnt = 1
-    elif reccnt > 22:
-      rowcnt = 4 + (reccnt-10)/10
-    else:
-      rowcnt = reccnt
-    pass
-    colcnt = int(reccnt / rowcnt)
-    if reccnt < rowcnt:
-      rowcnt = reccnt
-    pass
-    for j in range(0, rowcnt):}}
-      <tr>
-        {{for k in range(0, colcnt + 1):
-          idx = k * rowcnt + j}}
-          <td class="colc1">
-          {{if idx < reccnt:
-            item = items[idx]
-            =A(item.title, _href = URL(urlfunc, args = item.id))
-          pass}}
-          </td>
-        {{pass}}
-      </tr>
-    {{pass}}
-</table>
+{{=table}}

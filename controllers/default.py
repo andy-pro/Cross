@@ -1,36 +1,35 @@
 # -*- coding: utf-8 -*-
 
-
 def index():
     #updatemenu()
     items = db(db.cross_table).select()
-    urlfunc = 'cross'
     response.view='default/cross.html'
     appendManageMenu()
-    return locals()
+    return {'table': get_index_table(items, 'cross')}
 
 def cross():
     cross = Cross(request.args(0, cast = int))
     items = db(db.vertical_table.parent == cross.index).select()
-    urlfunc = 'vertical'
     response.title = cross.header
     appendManageMenu(cross.title)
-    return locals()
+    return {'table': get_index_table(items, 'vertical')}
 
 def vertical():
-    import time
-    timestart = time.time()     # for Debug    
+    tm = TimeMeter()     # for Debug
     vertical = Vertical(request.args(0, cast = int))
     response.title = vertical.header
     response.verticalmainmenu = appendVerticalMenu(vertical.cross)
     appendManageMenu(vertical.title)
     plints = db(db.plint_table.parent == vertical.index).select()
-    return {'plints': plints, 'timestart': timestart}
+    tm.append('DB query')
+    table = get_vertical_table(plints)    # <col span="10" class="coln">
+    #response.timemeter = tm.show('Rendering table')
+    return {'table': table}
 
 @auth.requires_membership('managers')
 def newcross():
     response.title = _NEW_CROSS_
-    form = PFORM(_NEW_CROSS_, FTEXT(r=IS_NOT_EMPTY()), FOK())     
+    form = PFORM(_NEW_CROSS_, FTEXT(r=IS_NOT_EMPTY()), FOK())
     if form.process().accepted:
         i = db.cross_table.update_or_insert(title=form.vars.title)
         redirect_updatemenu(URL('editcross', args = [i])) if i else redirect(URL('index'))
@@ -41,7 +40,8 @@ def newcross():
 def editcross():
     cross = Cross(request.args(0, cast = int))
     urlback = URL('cross', args=[cross.index])
-    response.menu.append((cross.title, False, urlback))
+    response.verticalmainmenu = appendVerticalMenu(cross)
+    #response.menu.append((cross.title, False, urlback))
     response.title = _EDIT_CROSS_ + ' ' + cross.title
     form = PFORM(cross.header,
                 FTEXT(v=cross.title, r=IS_NOT_EMPTY()),
@@ -57,7 +57,7 @@ def editcross():
             i = cross.update(form.vars.title, form.vars.child)
             redirect_updatemenu(URL('editvertical', args = [i])) if i else redirect_updatemenu(urlback)
     response.view='default/newitem.html'
-    return {'form': form}    
+    return {'form': form}
 
 @auth.requires_membership('managers')
 def editvertical():
@@ -67,6 +67,9 @@ def editvertical():
     response.menu.append((vertical.title, False, urlback))
     response.title = _EDIT_VERTICAL_ + ' ' + vertical.title
     response.outside_info = (0,0,0,0,0)
+    response.plintoutside = True
+    response.view='default/edititem.html'
+    response.files.append(URL('static','js/plintmain.js'))
     form = PFORM(vertical.header,
                  FTEXT(v=vertical.title, r=IS_NOT_EMPTY()),
                  FDEL(T('Delete vertical')),
@@ -76,15 +79,14 @@ def editvertical():
                  FCDATA(''),
                  FSTART(True),
                  BCOME(_COME_FROM_),
-                 FOK())    
+                 ANIME, FOK())
     if form.process().accepted:
         if form.vars.delete:
             vertical.delete()
             redirect_updatemenu(URL('cross', args=[vertical.cross.index]))
         else:
             vertical.update(form.vars)
-            redirect_updatemenu(urlback)        
-    #response.view='default/editplint.html'
+            redirect_updatemenu(urlback)
     return {'form': form}
 
 @auth.requires_membership('managers')
@@ -98,6 +100,10 @@ def editplint():
     response.crossed_info = (0,0,0,0)
     response.plintcrossindex = plint.cross.index
     response.outside_info = plint.outside_info
+    response.plintoutside = True
+    response.pairoutside = True
+    response.view='default/edititem.html'
+    response.files.append(URL('static','js/plintmain.js'))
     form = PFORM(plint.header,
                  FLABEL(I(plint.modified_info)),
                  FTEXT(v=plint.title, r=IS_NOT_EMPTY()),
@@ -108,14 +114,16 @@ def editplint():
                  FCHECK(T('Cross entire plint:'), 'crossall', False, '', 'PlintCrossToggle(this)'),
                  DIV(TABLE(DIV(TABLE(TR(TD(_VERTICAL_), TD(_PLINT_), TD(_TITLE_)),
                                      TR(get_select(0), get_select(1),
-                                        TEXTAREA('\n'.join(plint.get_pair_titles()), _name='pairtitles', _rows='9', _wrap='off', _class='intotd'))),
-                                     _class='sel_hide', _id='sel_cross_to')), _class='form-row'), FOK())    
+                                        TEXTAREA('\n'.join(plint.get_pair_titles()), _name='pairtitles', _rows=str(_SIZE_-1), _wrap='off', _class='intotd'))),
+                                     _class='sel_hide', _id='sel_cross_to')), _class='form-row'), ANIME, FOK())
     if form.process().accepted:
         if form.vars.delete:
             plint.delete()
-        else:        
+        else:
             plint.update_come_from(form.vars)
-            if bool(form.vars.crossall):
+            #if bool(form.vars.crossall):
+            #c=form.vars.crossall
+            if form.vars.crossall:
                 plint.update_crossing(form.vars)
         redirect(urlback)
     #return locals()
@@ -131,6 +139,9 @@ def editpair():
     response.title = pair.address
     response.crossed_info = pair.crossed_info
     response.plintcrossindex = pair.plint.cross.index
+    response.pairoutside = True
+    response.view='default/edititem.html'
+    response.files.append(URL('static','js/plintmain.js'))
     form = PFORM(pair.header,
                  FLABEL(I(pair.modified_info)),
                  FTEXT(v=pair.title),
@@ -140,7 +151,7 @@ def editpair():
                  DIV(TABLE(TR(TD(_VERTICAL_), TD(_PLINT_), TD(_PAIR_)),
                            TR(get_select(0), get_select(1), get_select(2))), _class='form-row'),
                  FLABEL(pair.crossed_info[0]),
-                 FOK())
+                 ANIME, FOK())
     if form.process().accepted:
         pair.update(form.vars)
         redirect(urlback)
@@ -162,7 +173,7 @@ def restore():
     response.title = _NEW_CROSS_
     form = PFORM(T('Import database'),
                  DIV(INPUT(_type='file',_name='csvfile'), _class='form-row'),
-                 DIV(INPUT(_type='submit',_value='Upload', _class='default'), _class='submit-row'))     
+                 DIV(INPUT(_type='submit',_value='Upload', _class='pull-right'), _class='submit-row'))
     if form.process().accepted:
         try:
             f = request.vars.csvfile.file
@@ -177,12 +188,119 @@ def restore():
         session.flash = m
         redirect_updatemenu(URL('index'))
     response.view='default/newitem.html'
-    return {'form': form}    
+    return {'form': form}
 
-def ajax_getPlintList():     # for AJAX request
+def search():
+    tm = TimeMeter()     # for Debug
+    q = request.get_vars.q
+    if q == None:
+        q = ''
+    try:
+        uq = unicode(q, 'utf-8')
+    except:
+        uq = q
+    if len(uq) > 2:
+        response.title = T('Search result for "%s"') % q
+        plints = search_plints(q)
+    else:
+        response.flash = 'Too short query!'
+        plints = []
+    response.view='default/vertical.html'
+    tm.append('DB query')
+    table = get_vertical_table(plints, parents=True)
+    #response.timemeter = tm.show('Rendering table')
+    if plints:
+        response.files.append(URL('static','js/drawpull.js'))
+        response.drawpull = True
+    return {'table': table}
+
+def ajax_getPairData():     # for AJAX search
+    q = request.vars.likestr
+    plints = search_plints(q)
+    items = []
+    for plint in plints:
+        for field in pairfields:
+            word = plint[field]
+            if q in word and word not in items:
+                items.append(word)
+    items.sort()
+    w = [DIV(A(item, _class="ajaxresult", _href="#")) for item in items]
+    return TAG[''](*w)
+
+def ajax_getPlintList():     # for AJAX plint list
     rows = db(db.plint_table.parent == int(request.vars.id)).select()
     plints = [[i.id, i.title, i.numeration_start_1] for i in rows]
     return gluon.contrib.simplejson.dumps({'plints': plints})
+
+def search_plints(q):
+    queries = [db.plint_table[field].contains(q, case_sensitive=False) for field in pairfields]
+    query = reduce(lambda a, b: (a | b), queries)
+    return db(query).select()
+
+def get_index_table(items, f):
+    rec = len(items)
+    if rec == 0: row = 1
+    elif rec > 20: row = 4 + (rec-10)/10
+    else: row = rec
+    col = int(rec / row)
+    if rec < row: row = rec
+    tr = []
+    for j in range(0, row):
+        td = []
+        for k in range(0, col + 1):
+            idx = k * row + j
+            if idx < rec: a = TD(A(items[idx].title, _href = URL(f, args = items[idx].id)), _class='colc1')
+            else: a = ''
+            td.append(a)
+        tr.append(TR(td))
+    return TABLE(tr, _class='table table-condensed')
+
+def get_vertical_table(plints, parents=False):
+    tr = []
+    #a_attr = {'_data-toggle': 'tooltip', '_data-placement': 'bottom' }
+    a_attr = {}
+    for plint in plints:
+        td = []
+        if parents:
+            s1 = plint.root.title
+            td.append(TD(A(s1, _href=URL('cross', args = [plint.root]), _title=_CROSS_+' '+s1), _class="colv0"))
+            s1 = plint.parent.title
+            td.append(TD(A(s1, _href=URL('vertical', args = [plint.parent]), _title=_VERTICAL_+' '+s1), _class="colv1"))
+        dx = 0 if plint.numeration_start_1 else -1
+        comefrom = get_plint_outside_info(plint)
+        s1 = _COMMON_DATA_ + str(plint.common_data)
+        who = get_user_name(plint.modified_by)
+        a_attr['_title'] = _PLINT_+' %s\n%s\n%s\n%s\n%s' % (plint.title, plint.modified_on, who, s1, comefrom[0])
+        a_attr['_href'] = _href=URL('editplint', args = [plint.id])
+        td.append(TD(A(plint.title, **a_attr), _class="colv1"))
+        for i in xrange(1, 11):
+            a_attr = {}
+            td_attr = {}
+            z = str(i)
+            pairtitle = plint(pairfields[i-1])
+            start = i + dx
+            tdcl = ''
+            if pairtitle:
+                when = plint('modified_on_id_' + z)
+                who = get_user_name(plint('modified_by_id_' + z))
+                crossedto = get_pair_crossed_info(plint('crossed_to_plint_id_' + z), plint('crossed_to_pair_id_' + z))
+                a_attr['_title'] = '%s\n%s\n%s\n%s' % (pairtitle, when, who, crossedto[0])
+                if request.get_vars.q and request.get_vars.q in pairtitle:
+                    tdcl = 'finded'
+                    if crossedto[2] and crossedto[3]:
+                        a_attr['_id'] = 'p%im%i' % (crossedto[3], crossedto[2])
+                if plint('loopback_id_' + z):
+                    tdcl += ' loop'
+                if tdcl:
+                    td_attr = {'_class': tdcl}
+            a_attr['_href'] = _href=URL('editpair', args = [plint.id, i])
+            td.append(TD(A(XML('<sup>%s&nbsp;&nbsp;</sup>%s' % (start, pairtitle)), **a_attr), **td_attr))
+        tdcl = 'commondata'
+        if request.get_vars.q and request.get_vars.q in plint.common_data:
+            tdcl += ' cdfinded'
+        td.append(TD(plint.common_data, _class=tdcl, _style="border-left: 2px solid #ccc;"))
+        tr.append(TR(td))
+    return TABLE(tr, _class='cross')
 
 def user():
     """
@@ -220,7 +338,7 @@ def call():
     """
     return service()
 
-@auth.requires_login() 
+@auth.requires_login()
 def api():
     """
     this is example of API with access control

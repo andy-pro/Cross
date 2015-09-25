@@ -14,7 +14,7 @@ jQuery.fn.settovalue = function (value) {
 }
 
 jQuery.fn.addoptions = function (data, add_none) {
-  if (add_none) this.append(jQuery('<option>').text('{{=_NOT_CROSSED_}}').attr('value', 0));
+  if (add_none) this.append(jQuery('<option>').text('Not crossed').attr('value', 0));
   if (data.length) {
       var e = this;
       jQuery.each(data, function() {e.append(jQuery('<option>').text(this[1]).attr('value', this[0]));});
@@ -29,7 +29,7 @@ jQuery.fn.getPlintList = function (cross_index, vert_index) {
   var e = this;
   if (!cachearray[vert_id])  { // cache point is empty?
       jQuery.ajax({
-        url: "{{=URL('default', 'ajax_getPlintList')}}",
+        url: "/Cross/default/ajax_getPlintList",
         data: {'id': vert_id}, // vertical table id
         dataType: "json",
         type: "POST",
@@ -43,9 +43,6 @@ jQuery.fn.getPlintList = function (cross_index, vert_index) {
       e.addoptions(cachearray[vert_id]);
     }
 }
-
-jQuery(document).ajaxStart(function() { jQuery("body").addClass("loading"); });
-jQuery(document).ajaxStop(function() { jQuery("body").removeClass("loading"); });
 
 jQuery.fn.enumoptions = function (cj, vj, pj) {
     vert_id = menuarray[cj][2][vj][0];

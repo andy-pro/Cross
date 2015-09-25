@@ -185,12 +185,6 @@
           var active = $(this).data('w2p_datetime');
           var format = (typeof tformat != 'undefined') ? tformat : datetime_format;
           if(active === undefined) {
-            Calendar.setup({
-              inputField: this,
-              ifFormat: format,
-              showsTime: true,
-              timeFormat: "24"
-            });
             $(this).attr('autocomplete', 'off');
             $(this).data('w2p_datetime', 1);
             $(this).trigger('click');
@@ -202,11 +196,6 @@
           var active = $(this).data('w2p_date');
           var format = (typeof tformat != 'undefined') ? tformat : date_format;
           if(active === undefined) {
-            Calendar.setup({
-              inputField: this,
-              ifFormat: format,
-              showsTime: false
-            });
             $(this).data('w2p_date', 1);
             $(this).attr('autocomplete', 'off');
             $(this).trigger('click');

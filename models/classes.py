@@ -7,6 +7,7 @@ _VERTICAL_ = T('Vertical')
 _PLINT_ = T('Plint')
 _PAIR_ = T('Pair')
 _TITLE_ = T('Title')
+_COMMON_DATA_ = T('Common data: ')
 _LOOP_ = T('Loop')
 _CROSS_TO_ = T('Cross to ')
 _CROSSED_TO_ = T('Crossed to ')
@@ -19,35 +20,47 @@ _NEW_CROSS_ = T('New cross')
 _EDIT_ = T('Edit ')
 _EDIT_CROSS_ = T('Edit cross')
 _EDIT_VERTICAL_ = T('Edit vertical')
-_SIZE_ = 10 # size of <select> input fields
+_SIZE_ = 11 # size of <select> input fields
 _404_ = URL('static', '404.html')
 _ERROR_ = T('Error')
-_BACKUP_ = T('Backup database')
-_RESTORE_ = T('Restore database')
+_BACKUP_ = T(' Backup database')
+_RESTORE_ = T(' Restore database')
 
 plintfields = 'title','numeration_start_1','common_data','come_from','modified_on','modified_by'
+pairfields = ['pair_id_'+`z` for z in xrange(1, 11)]    # this fields contains pair titles
+pairfields.append('common_data')
 selfields = (('vertsel','cross_vert'), ('plintsel','cross_plint'), ('pairsel', 'cross_pair'), ('fromcrosssel','from_cross'), ('fromvertsel','from_vert'), ('fromplintsel','from_plint'))
 
 PFORM = lambda t, *a: FORM(DIV(t, _class='form-header'), DIV(*a, _class='form-body'))
 FHEAD = lambda t: DIV(t, _class='form-header')
 FTEXT = lambda t=_TITLE_, n='title', v='', h='', r='': DIV(LABEL(t), INPUT(_name=n, _value=v, requires=r), _title=h, _class='form-row')
-FCDATA = lambda v: FTEXT(T('Common data:'), 'common_data', v)
+FCDATA = lambda v: FTEXT(_COMMON_DATA_, 'common_data', v)
 FCHECK = lambda t, n, v=True, h='', f='': DIV(LABEL(t), INPUT(_type='checkbox', _class='boolean', _name=n, value=v, _onclick=f), _title=h, _class='form-row')
 FSTART = lambda v: FCHECK(T('Numeration start 1:'), 'numeration_start_1', v)
 FDEL = lambda t: DIV(LABEL(t), INPUT(_type='checkbox', _class='delete', _name='delete', value=False), _class='form-row')
 FLABEL = lambda t: DIV(t, _class='form-row')
-FOK = lambda: DIV(INPUT(_type='submit', _class='default'), _class='submit-row')
+FOK = lambda: DIV(INPUT(_type='submit', _class='pull-right'), _class='submit-row')
 BCOME = lambda t: DIV(FLABEL(B(t)),
                       FCHECK(T('Replace common data:'), 'replace_common_data', True, T("Autofill 'Common data' field\nwith 'Cross Vertical Plint' format")),
                       DIV(TABLE(TR(TD(_CROSS_), TD(_VERTICAL_), TD(_PLINT_)),
                                 TR(get_select(3), get_select(4), get_select(5))), _class='form-row'))
-
+ANIME = DIV(_class='ajaxanimation')
 get_title = lambda t='', n='title', r='': (_TITLE_, INPUT(_name=n, _value = t, requires=r))
 get_check = lambda t, n, v=True, h='', f='': SPAN(t, INPUT(_type='checkbox', _class='boolean', _name=n, value=v, _onclick=f),_title=h)
 get_select = lambda i: TD(SELECT([], _id=selfields[i][0], _name=selfields[i][1], _size=_SIZE_))
 
-get_user_name = lambda uid: uid and uid.first_name + ' ' + uid.last_name or ''
 get_plint_info = lambda plint: plint and " ".join((plint.root.title, plint.parent.title, plint.title)) or ''
+
+users = {}  # global dictionary, cashe type, contains printable user name
+def get_user_name(uid):
+    if uid:
+        who = users.get(uid)
+        if not who:
+            who = uid.first_name + ' ' + uid.last_name
+            users[uid] = who
+    else:
+        who = ''
+    return who
 
 def get_pair_fields(i):
     i = str(i)
@@ -56,14 +69,14 @@ def get_pair_fields(i):
 def get_pair_crossed_info(plint, pair):
     lst = [0,0,0,0]
     if (plint > 0):
-        lst[2] = int(plint)
+        lst[2] = int(plint)     # crossed to plint
         vert = db.vertical_table(plint.parent)
-        lst[1] = int(vert)
-        s1 = _CROSSED_TO_ + vert.title + ', ' + plint.title
+        lst[1] = int(vert)      # crossed to vertical
+        s1 = _CROSSED_TO_ + vert.title + ', ' + plint.title     # [0]
         try:
             i = int(pair)
             if (i < 1) or (i > 10): raise Exception
-            lst[3] = i
+            lst[3] = i      # crossed to pair
             s2 = int(pair) - (not(plint.numeration_start_1))
             lst[0] = s1 + ', ' + str(s2)
             return lst
@@ -107,7 +120,8 @@ def get_iter_label(s):
         s2 = 1
         s3 = s[p1+1:]
     return s1, s2, s3
-    
+#==================================================================
+
 class Cross:
     def __init__(self, _index):
         self.index = _index
@@ -123,6 +137,7 @@ class Cross:
 
     def delete(self):
         del db.cross_table[self.index]
+#==================================================================
 
 class Vertical:
     def __init__(self, _index):
@@ -160,7 +175,7 @@ class Vertical:
                 k = -1
             try:
                 fp = int(vars.from_plint)
-                fv = int(vars.from_vert)                
+                fv = int(vars.from_vert)
                 plints = db((db.plint_table.parent == fv) & (db.plint_table.id >= fp)).select(limitby = (0, cnt))
                 pc = len(plints)
                 pi = 0
@@ -181,6 +196,7 @@ class Vertical:
                     vars.from_plint = None
                 vars.title = s
                 plint.update_come_from(vars)
+#==================================================================
 
 class Plint:
     def __init__(self, _index):
@@ -204,7 +220,7 @@ class Plint:
 
     def delete(self):
         del db.plint_table[self.index]
-    
+
     def update_crossing(self, formvars):
         v = formvars.pairtitles.splitlines()
         if v:
@@ -241,14 +257,14 @@ class Plint:
         dictout  = dict(zip(plintfields[4:6], vars[4:6]))
         cd_en = vars[6]
         if outplint:
-            if outplint.id == self.index: # outplint.id <type 'long'>,  self.index <type 'int'>                
+            if outplint.id == self.index: # outplint.id <type 'long'>,  self.index <type 'int'>
                 outplint = 0    # if connect to self - disconnect
                 dictself[plintfields[3]] = None     # come_from = None
             else: # outplint is another plint, connect to him
                 dictout[plintfields[3]] = self.index
                 if cd_en:
                     dictout[plintfields[2]] = '%s %s %s' % (self.cross.title, self.vertical.title, vars[0])
-                db.plint_table[outplint.id] = dictout   # update new remote plint             
+                db.plint_table[outplint.id] = dictout   # update new remote plint
         # update this plint
         if cd_en:
             dictself[plintfields[2]] = get_plint_info(outplint)
@@ -269,8 +285,8 @@ class Plint:
                             dictout[plintfields[2]] = ''
                         # update old remote plint
                         db.plint_table[self.come_from] = dictout
-#==================================================================                        
-                        
+#==================================================================
+
 class Pair:
     def __init__(self, _plint, _pair):
         if _pair>10 or _pair<1: raise HTTP(404)
@@ -287,9 +303,9 @@ class Pair:
         self.modified_info = '%s %s, %s' % (_LAST_MODIFIED_ON_, _rec(f[3]), get_user_name(_rec(f[4])))
         self.to_plint = _rec(f[1])   # crossed_to_plint, reference plint_table
         self.to_pair = _rec(f[2])    # crossed_to_pair, string
-        self.crossed_info = get_pair_crossed_info(self.to_plint, self.to_pair)        
-        self.loop = _rec(f[5])                
-                        
+        self.crossed_info = get_pair_crossed_info(self.to_plint, self.to_pair)
+        self.loop = _rec(f[5])
+
     def update(self, formvars):
         vars = (formvars.title,                 # 0   str
                 formvars.cross_plint,           # 1   str; if not crossed, then = ''
@@ -313,7 +329,7 @@ class Pair:
             outplint = None
             outpair = ''
         db.plint_table[self.index] = dict(zip(self.fp, (vars[0], outplint, outpair, vars[3], vars[4], vars[5])))   # update this plint
-        
+
         # remove old connection
         try:
             oldpair = int(self.to_pair)
@@ -328,3 +344,19 @@ class Pair:
                             db.plint_table[self.to_plint] = dict(zip(fd[0:5], ('-----', None, '', vars[3], vars[4])))
         except:
             pass
+#==================================================================
+
+import time
+class TimeMeter:
+    def __init__(self):
+        self.points = []
+        self.timestart = time.time()
+
+    def append(self, s):
+        qt = int((time.time() - self.timestart)*1000.0)
+        self.points.append(s+' time = %sms'%qt)
+        self.timestart = time.time()
+
+    def show(self, s):
+        self.append(s)
+        return DIV([DIV(I(s)) for s in self.points], _class='well')

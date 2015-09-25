@@ -29,8 +29,14 @@ menuarray = XML(db.menu_table[1].menu)
 
 if auth.has_membership('administrators'):
     response.toolsmenu = UL(LI(A(T('Tools'), _href='#'),
-                               UL(LI(A(_BACKUP_, _href=URL('default', 'backup')), _class="dropdown"),
+                               UL(LI(A(I(_class="icon icon-share"), _BACKUP_, _href=URL('default', 'backup')), _class="dropdown"),
                                   LI(_class="divider"),
-                                  LI(A(_RESTORE_, _href=URL('default', 'restore')), _class="dropdown"),
+                                  LI(A(I(_class="icon icon-edit"), _RESTORE_, _href=URL('default', 'restore')), _class="dropdown"),
                                   _class="dropdown-menu"),
                                _class="dropdown"), _class="nav pull-right")
+
+_q = request.get_vars.q if request.get_vars.q else ''
+response.searchform = UL(LI(FORM(INPUT(_id="searchinput", _name="q", _value=_q, _class="input-medium search-query", _autocomplete="off", _oninput="getPairTitles(this.value)"),
+                                 INPUT(_type="submit", _class="btn btn-inverse", _value=_SEARCH_),
+                                 DIV(_id="ajaxpairresults"),
+                                 _method="GET", _action=URL('search'))), _class="nav pull-right")
