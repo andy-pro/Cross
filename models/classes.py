@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os, time
+
 _UKSATSE_ = T('Uksatse')  #T('Украэрорух')
 _CREATE_NEW_CROSS_ = T('Create new cross')
 _CROSS_ = T('Cross')
@@ -26,29 +28,21 @@ _ERROR_ = T('Error')
 _BACKUP_ = T(' Backup database')
 _RESTORE_ = T(' Restore database')
 
-plintfields = 'title','numeration_start_1','common_data','come_from','modified_on','modified_by'
-pairfields = ['pair_id_'+`z` for z in xrange(1, 11)]    # this fields contains pair titles
-pairfields.append('common_data')
-selfields = (('vertsel','cross_vert'), ('plintsel','cross_plint'), ('pairsel', 'cross_pair'), ('fromcrosssel','from_cross'), ('fromvertsel','from_vert'), ('fromplintsel','from_plint'))
-
 PFORM = lambda t, *a: FORM(DIV(t, _class='form-header'), DIV(*a, _class='form-body'))
 FHEAD = lambda t: DIV(t, _class='form-header')
 FTEXT = lambda t=_TITLE_, n='title', v='', h='', r='': DIV(LABEL(t), INPUT(_name=n, _value=v, requires=r), _title=h, _class='form-row')
-FCDATA = lambda v: FTEXT(_COMMON_DATA_, 'common_data', v)
+FCDATA = lambda v: FTEXT(_COMMON_DATA_, 'comdata', v)
 FCHECK = lambda t, n, v=True, h='', f='': DIV(LABEL(t), INPUT(_type='checkbox', _class='boolean', _name=n, value=v, _onclick=f), _title=h, _class='form-row')
-FSTART = lambda v: FCHECK(T('Numeration start 1:'), 'numeration_start_1', v)
+FSTART = lambda v: FCHECK(T('Numeration start 1:'), 'start1', v)
 FDEL = lambda t: DIV(LABEL(t), INPUT(_type='checkbox', _class='delete', _name='delete', value=False), _class='form-row')
 FLABEL = lambda t: DIV(t, _class='form-row')
 FOK = lambda: DIV(INPUT(_type='submit', _class='pull-right'), _class='submit-row')
 BCOME = lambda t: DIV(FLABEL(B(t)),
-                      FCHECK(T('Replace common data:'), 'replace_common_data', True, T("Autofill 'Common data' field\nwith 'Cross Vertical Plint' format")),
+                      FCHECK(T('Replace common data:'), 'replace_comdata', True, T("Autofill 'Common data' field\nwith 'Cross Vertical Plint' format")),
                       DIV(TABLE(TR(TD(_CROSS_), TD(_VERTICAL_), TD(_PLINT_)),
                                 TR(get_select(3), get_select(4), get_select(5))), _class='form-row'))
 ANIME = DIV(_class='ajaxanimation')
-get_title = lambda t='', n='title', r='': (_TITLE_, INPUT(_name=n, _value = t, requires=r))
-get_check = lambda t, n, v=True, h='', f='': SPAN(t, INPUT(_type='checkbox', _class='boolean', _name=n, value=v, _onclick=f),_title=h)
 get_select = lambda i: TD(SELECT([], _id=selfields[i][0], _name=selfields[i][1], _size=_SIZE_))
-
 get_plint_info = lambda plint: plint and " ".join((plint.root.title, plint.parent.title, plint.title)) or ''
 
 users = {}  # global dictionary, cashe type, contains printable user name
@@ -62,22 +56,19 @@ def get_user_name(uid):
         who = ''
     return who
 
-def get_pair_fields(i):
-    i = str(i)
-    return 'pair_id_'+i,'crossed_to_plint_id_'+i,'crossed_to_pair_id_'+i,'modified_on_id_'+i,'modified_by_id_'+i,'loopback_id_'+i
-
 def get_pair_crossed_info(plint, pair):
     lst = [0,0,0,0]
     if (plint > 0):
-        lst[2] = int(plint)     # crossed to plint
+        lst[2] = plint   # crossed to plint
+        plint = db.plint_table(plint)
         vert = db.vertical_table(plint.parent)
         lst[1] = int(vert)      # crossed to vertical
         s1 = _CROSSED_TO_ + vert.title + ', ' + plint.title     # [0]
         try:
-            i = int(pair)
+            i = pair
             if (i < 1) or (i > 10): raise Exception
             lst[3] = i      # crossed to pair
-            s2 = int(pair) - (not(plint.numeration_start_1))
+            s2 = int(pair) - (not(plint.start1))
             lst[0] = s1 + ', ' + str(s2)
             return lst
         except Exception:
@@ -87,17 +78,17 @@ def get_pair_crossed_info(plint, pair):
         lst[0] = _NOT_CROSSED_
         return lst
 
-
 def get_plint_outside_info(plint):
     t0 = _COME_FROM_
     t1 = t2 = t3 = 0
     t4 = ''
-    fromplint_id = plint.come_from
+    #fromplint_id = plint.comefrom
+    fromplint_id = db.plint_table(plint.comefrom)
     if fromplint_id:
         try:
             t1 = fromplint_id.root
             t2 = fromplint_id.parent
-            t3 = fromplint_id
+            t3 = fromplint_id.id
             t4 = ('%s %s %s') % (t1.title, t2.title, fromplint_id.title)
             t0 += t4
         except:
@@ -156,11 +147,11 @@ class Vertical:
         '''vars = (form.vars.title,
                     form.vars.child,
                     form.vars.count,
-                    bool(form.vars.numeration_start_1),
+                    bool(form.vars.start1),
                     form.vars.from_plint,
                     request.now.date(),
                     auth.user,
-                    bool(form.vars.replace_common_data))
+                    bool(form.vars.replace_comdata))
                     '''
 
         db.vertical_table[self.index] = {'title': vars.title}
@@ -193,9 +184,9 @@ class Vertical:
                     vars.from_plint = plints[pi].id
                     pi += 1
                 else:
-                    vars.from_plint = None
+                    vars.from_plint = 0
                 vars.title = s
-                plint.update_come_from(vars)
+                plint.update_comefrom(vars)
 #==================================================================
 
 class Plint:
@@ -210,13 +201,13 @@ class Plint:
         self.titles = self.cross.title, self.vertical.title,  self.title
         self.header = self.vertical.header + ', %s %s' % (_PLINT_, self.title)
         self.address = '%s %s %s' % self.titles
-        self.modified_info = '%s %s, %s' % (_LAST_MODIFIED_ON_, _rec.modified_on, get_user_name(_rec.modified_by))
+        self.modified_info = '%s %s, %s' % (_LAST_MODIFIED_ON_, _rec.modon, get_user_name(_rec.modby))
         self.outside_info = get_plint_outside_info(_rec)
-        self.common_data = _rec.common_data
-        self.numeration_start_1 = _rec.numeration_start_1
-        self.come_from = _rec.come_from
+        self.comdata = _rec.comdata
+        self.start1 = _rec.start1
+        self.comefrom = _rec.comefrom
 
-    get_pair_titles = lambda self: (self.record('pair_id_' + `i`) for i in xrange(1, 11))
+    get_pair_titles = lambda self: (self.record('pid' + `i`) for i in xrange(1, 11))
 
     def delete(self):
         del db.plint_table[self.index]
@@ -234,23 +225,23 @@ class Plint:
                 formvars.replace_title = True
                 pair.update(formvars)
 
-    def update_come_from(self, formvars):
-        vars = (formvars.title,                      # 0 title str
-                bool(formvars.numeration_start_1),   # 1 numeration_start_1 bool
-                formvars.common_data,                # 2 common_data str
-                formvars.from_plint,                 # 3 come_from str
-                request.now.date(),                  # 4 modified_on <type 'datetime.date'>
-                auth.user,                           # 5 modified_by type <class 'gluon.dal.objects.Row'>
-                bool(formvars.replace_common_data))  # 6 common_data auto fill bool
-                #formvars.cross_plint,               # 7 cross to that plint
-                #formvars.pairtitles)                # 8 pairtitles textarea
+    def update_comefrom(self, formvars):
+        vars = (formvars.title,                  # 0 title str
+                bool(formvars.start1),           # 1 start1 bool
+                formvars.comdata,                # 2 common data str
+                formvars.from_plint,             # 3 come from str
+                request.now.date(),              # 4 modified_on <type 'datetime.date'>
+                auth.user,                       # 5 modified_by type <class 'gluon.dal.objects.Row'>
+                bool(formvars.replace_comdata))  # 6 comdata auto fill bool
+                #formvars.cross_plint,           # 7 cross to that plint
+                #formvars.pairtitles)            # 8 pairtitles textarea
         '''
-        plintfields =  'title',                      # 0
-                       'numeration_start_1',         # 1
-                       'common_data',                # 2
-                       'come_from',                  # 3
-                       'modified_on',                # 4
-                       'modified_by'                 # 5
+        plintfields =  'title',      # 0
+                       'start1',     # 1
+                       'comdata',    # 2
+                       'comefrom',   # 3
+                       'modon',      # 4
+                       'modby'       # 5
         '''
         outplint = db.plint_table(vars[3])
         dictself = dict(zip(plintfields, vars[0:6]))
@@ -259,7 +250,7 @@ class Plint:
         if outplint:
             if outplint.id == self.index: # outplint.id <type 'long'>,  self.index <type 'int'>
                 outplint = 0    # if connect to self - disconnect
-                dictself[plintfields[3]] = None     # come_from = None
+                dictself[plintfields[3]] = 0     # come from = 0
             else: # outplint is another plint, connect to him
                 dictout[plintfields[3]] = self.index
                 if cd_en:
@@ -271,7 +262,7 @@ class Plint:
         db.plint_table[self.index] = dictself
 
         # disconnect from old plint
-        oldplint = db.plint_table(self.come_from)
+        oldplint = db.plint_table(self.comefrom)
         if oldplint:  # if connection exist
             if oldplint.id != self.index:
                 try:
@@ -279,12 +270,12 @@ class Plint:
                 except:
                     i = 0
                 if oldplint.id != i:
-                    if oldplint.come_from == self.index:    # old out plint was linked to this?
-                        dictout[plintfields[3]] = None  # remove connection
+                    if oldplint.comefrom == self.index:  # old out plint was linked to this?
+                        dictout[plintfields[3]] = 0      # remove connection
                         if cd_en:
                             dictout[plintfields[2]] = ''
                         # update old remote plint
-                        db.plint_table[self.come_from] = dictout
+                        db.plint_table[self.comefrom] = dictout
 #==================================================================
 
 class Pair:
@@ -294,10 +285,10 @@ class Pair:
         _rec = self.plint.record
         self.index = _rec.id
         self.pair = _pair
-        f = get_pair_fields(_pair)
+        f = pairfields[_pair-1]
         self.fp = f
         self.title = _rec(f[0])
-        dx = 0 if _rec.numeration_start_1 else -1
+        dx = 0 if _rec.start1 else -1
         self.header = self.plint.header + ', %s %s' % (_PAIR_, _pair + dx)
         self.address = self.title + ' ' + self.plint.address
         self.modified_info = '%s %s, %s' % (_LAST_MODIFIED_ON_, _rec(f[3]), get_user_name(_rec(f[4])))
@@ -321,13 +312,13 @@ class Pair:
             outpair = int(vars[2])  # cross to new pair
             if outplint==self.index and outpair==self.pair: raise Exception
             if outpair<1 or outpair>10: raise Exception
-            fd = get_pair_fields(outpair)  # get fieldset tuple of destination plint
+            fd = pairfields[outpair-1]  # get fieldset tuple of destination plint
             dictout = dict(zip(fd[1:5], (self.index, self.pair, vars[3], vars[4])))
             if cd_en: dictout[fd[0]] = vars[0]
             db.plint_table[outplint] = dictout # update to new plint crossing data
         except:
-            outplint = None
-            outpair = ''
+            outplint = 0
+            outpair = 0
         db.plint_table[self.index] = dict(zip(self.fp, (vars[0], outplint, outpair, vars[3], vars[4], vars[5])))   # update this plint
 
         # remove old connection
@@ -337,16 +328,15 @@ class Pair:
             if oldplint:
                 if not((oldplint.id==self.index) and (oldpair==self.pair)):
                     if not((oldplint.id==outplint) and (oldpair==outpair)):
-                        fd = get_pair_fields(oldpair)
+                        fd = pairfields[oldpair-1]
                         f1 = int(oldplint(fd[1]))
                         f2 = int(oldplint(fd[2]))
                         if (f1==self.index) and (f2==self.pair):
-                            db.plint_table[self.to_plint] = dict(zip(fd[0:5], ('-----', None, '', vars[3], vars[4])))
+                            db.plint_table[self.to_plint] = dict(zip(fd[0:5], ('-----', 0, 0, vars[3], vars[4])))
         except:
             pass
 #==================================================================
 
-import time
 class TimeMeter:
     def __init__(self):
         self.points = []
@@ -360,3 +350,93 @@ class TimeMeter:
     def show(self, s):
         self.append(s)
         return DIV([DIV(I(s)) for s in self.points], _class='well')
+#==================================================================
+
+def import_from_txt1(f):
+    import cStringIO
+
+    def readstring(f):
+        return f.readline().strip().replace(',', '.')
+
+    datenow = request.now.date()
+    dateold = '2014-11-12'
+
+    crosses = []
+    verticals = []
+    plintnames = []
+
+    csvfile = cStringIO.StringIO()
+    print >> csvfile, 'TABLE cross_table'
+    print >> csvfile, 'cross_table.id,cross_table.title'
+    for i in xrange(1, int(f.readline()) + 1):
+        s1 = readstring(f)   # is a cross_title
+        print >> csvfile, '%d,%s' % (i,s1)
+        crosses.append([s1, readstring(f)])  # [cross title, vertical count in cross]
+    table = 'vertical_table'
+    print >> csvfile, '\n\nTABLE ' + table
+    print >> csvfile, ','.join('%s.%s' % (table, i) for i in ('id', 'parent', 'title'))
+    x = 1
+    for cross_index, crossitem in enumerate(crosses, start = 1):
+        for i in xrange(1, int(crossitem[1]) + 1):    # crossitem[1] is a vertical_count
+            s1 = readstring(f)   # vertical title
+            s2 = readstring(f)   # plint count in vertical
+            s3 = readstring(f)   # numeration start 1 vertical
+            print >> csvfile, '%i,%d,%s' % (x, cross_index, s1)
+            x += 1
+            lst = [s1, s2, s3, cross_index]
+            verticals.append(lst)
+
+    for vertical_index, verticalitem in enumerate(verticals, start = 1):
+        for i in xrange(1, int(verticalitem[1]) + 1):
+            s1 = readstring(f)
+            lb = True   # rus to lat
+            if lb:
+                #s1 = s1.replace('БМ', 'BM')
+                #s1 = s1.replace('БКТ', 'BKT')
+                s1 = s1.replace('М', 'M')
+                #s1 = s1.replace('К', 'K')
+                #s1 = s1.replace('Р', 'P')
+            # plint title, start with?, cross_index,     vertical_index
+            lst = [s1, verticalitem[2], verticalitem[3], vertical_index]
+            plintnames.append(lst)
+
+    table = 'plint_table'
+    print >> csvfile, '\n\nTABLE ' + table
+    #print >> csvfile, ','.join('%s.%s' % (table, i) for i in ['id', 'root', 'parent'] + plintfields + [s1 for s2 in pairfields for s1 in s2])
+    print >> csvfile, ','.join('%s.%s'%(table,i) for i in ['id','root','parent']+plintfields+sum(pairfields,[]))
+    x = 1
+    for plintitem in plintnames:
+        sp = ''
+        for i in xrange(0, 10):
+            s1 = readstring(f)   # pair name
+            s2 = readstring(f)   # pair loopback
+            lb = str(bool(int(s2)))
+            # 'pid','ptopl','ptopr','pmodon','pmodby','ploop'
+            spx = (',%s,0,0,%s,1,%s' % (s1,datenow,lb))
+            if i == 0:
+                sp0 = spx
+            else:
+                sp = sp + spx
+        s1 = readstring(f)   # common data
+        s2 = readstring(f)   # start with?
+        start1 = True
+        if plintitem[1] == '0':
+            start1 = False
+        if s2 == '1':
+            start1 = not start1
+        if start1:
+            sp = sp + sp0
+        else:
+            sp = sp0 + sp
+        #   id                               root,         parent,      title,       start1,    comdata, comefrom, modon, modby
+        a = '%i,%d,%d,%s,%s,%s,0,%s,1' % (x, plintitem[2], plintitem[3], plintitem[0], str(start1), s1, dateold)
+        print >> csvfile, a + sp
+        x += 1
+
+    print >> csvfile, '\n\nEND'
+    #db.import_from_csv_file(csvfile, restore=True)
+    #return csvfile.getvalue()
+    csvfile.seek(0)
+    return csvfile
+
+    #csvfile.close()

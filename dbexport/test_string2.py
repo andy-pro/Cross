@@ -38,9 +38,18 @@ def method3():
 def method4():
   return ''.join([`num` for num in xrange(loop_count)])
 
+@print_timing
+def method5():
+    d={}
+    for num in xrange(dcnt):
+        d['num%s'%num]=`num`
+    return d
+
+dcnt=10
 loop_count = 1000000
-method1()
+#method1()
 method2()
 method3()
 method4()
+print method5()
 

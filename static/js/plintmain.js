@@ -45,15 +45,17 @@ jQuery.fn.getPlintList = function (cross_index, vert_index) {
 }
 
 jQuery.fn.enumoptions = function (cj, vj, pj) {
-    vert_id = menuarray[cj][2][vj][0];
-    start = +cachearray[vert_id][pj][2]; // convert Boolean to int
-    var e = jQuery('option', this) // get options set of select
-    if (e.length) {  // check options count
-        jQuery.each(e, function (i) {this.text = i + start});
-    } else {
-        this.prop('disabled', false);
-        for (i= 1; i <= 10; i++) {
-            this.append(jQuery('<option>').text(i+start-1).attr('value', i));
-        }
-     }
+    if (cachearray[vert_id][pj]) {
+        vert_id = menuarray[cj][2][vj][0];
+        start = +cachearray[vert_id][pj][2]; // convert Boolean to int
+        var e = jQuery('option', this) // get options set of select
+        if (e.length) {  // check options count
+            jQuery.each(e, function (i) {this.text = i + start});
+        } else {
+            this.prop('disabled', false);
+            for (i= 1; i <= 10; i++) {
+                this.append(jQuery('<option>').text(i+start-1).attr('value', i));
+            }
+         }
+    }
 }

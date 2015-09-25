@@ -25,15 +25,22 @@ response.menu = [(SPAN(B('CROSS',XML('&trade;&nbsp;')), _class='highlighted'), F
 # <li> type parent of element with id='crossmainmenu' will be complemented by a dropdown menu
 response.menu.append((SPAN(_CROSS_, _id='crossmainmenu'), False, URL('index')))
 # rendering menu from db to template layout.html
-menuarray = XML(db.menu_table[1].menu)
+if db(db.menu_table).count():
+    menuarray = XML(db.menu_table[1].menu)
+else:
+    menuarray = '[]'
 
 if auth.has_membership('administrators'):
     response.toolsmenu = UL(LI(A(T('Tools'), _href='#'),
-                               UL(LI(A(I(_class="icon icon-share"), _BACKUP_, _href=URL('default', 'backup')), _class="dropdown"),
-                                  LI(_class="divider"),
-                                  LI(A(I(_class="icon icon-edit"), _RESTORE_, _href=URL('default', 'restore')), _class="dropdown"),
-                                  _class="dropdown-menu"),
-                               _class="dropdown"), _class="nav pull-right")
+    UL(LI(A(I(_class="icon icon-upload"), _BACKUP_, _href=URL('default', 'backup')), _class="dropdown"),
+LI(_class="divider"),
+LI(A(I(_class="icon icon-download"), _RESTORE_, _href=URL('default', 'restore', args=['csv'])), _class="dropdown"),
+LI(_class="divider"),
+#LI(A(I(_class="icon icon-edit"), ' Import from txt', _href=URL('default', 'restore', vars=dict(mode='txt'))), _class="dropdown"),
+LI(A(I(_class="icon icon-edit"), ' Import from txt', _href=URL('default', 'restore', args=['txt'])), _class="dropdown"),
+LI(_class="divider"),
+LI(A(I(_class="icon icon-remove"), ' Clear database', _href=URL('default', 'cleardb')), _class="dropdown"),
+_class="dropdown-menu"), _class="dropdown"), _class="nav pull-right")
 
 _q = request.get_vars.q if request.get_vars.q else ''
 response.searchform = UL(LI(FORM(INPUT(_id="searchinput", _name="q", _value=_q, _class="input-medium search-query", _autocomplete="off", _oninput="getPairTitles(this.value)"),

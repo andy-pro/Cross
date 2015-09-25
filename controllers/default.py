@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 def index():
-    #updatemenu()
+    updatemenu()
     items = db(db.cross_table).select()
     response.view='default/cross.html'
     appendManageMenu()
@@ -108,8 +108,8 @@ def editplint():
                  FLABEL(I(plint.modified_info)),
                  FTEXT(v=plint.title, r=IS_NOT_EMPTY()),
                  FDEL(T('Delete plint')),
-                 FCDATA(plint.common_data),
-                 FSTART(plint.numeration_start_1),
+                 FCDATA(plint.comdata),
+                 FSTART(plint.start1),
                  BCOME(plint.outside_info[0]),
                  FCHECK(T('Cross entire plint:'), 'crossall', False, '', 'PlintCrossToggle(this)'),
                  DIV(TABLE(DIV(TABLE(TR(TD(_VERTICAL_), TD(_PLINT_), TD(_TITLE_)),
@@ -120,7 +120,7 @@ def editplint():
         if form.vars.delete:
             plint.delete()
         else:
-            plint.update_come_from(form.vars)
+            plint.update_comefrom(form.vars)
             #if bool(form.vars.crossall):
             #c=form.vars.crossall
             if form.vars.crossall:
@@ -162,33 +162,86 @@ def backup():
     import gluon.contenttype
     import cStringIO
     stream=cStringIO.StringIO()
-    #db(db.cross_table.id).select().export_to_csv_file(stream)
-    db.export_to_csv_file(stream)
+    print >> stream, 'TABLE cross_table'
+    db(db.cross_table.id).select().export_to_csv_file(stream)
+    print >> stream, '\n\nTABLE vertical_table'
+    db(db.vertical_table.id).select().export_to_csv_file(stream)
+    print >> stream, '\n\nTABLE plint_table'
+    db(db.plint_table.id).select().export_to_csv_file(stream)
+    print >> stream, '\n\nEND'
+    #db.export_to_csv_file(stream)  # all tables
     response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
     response.headers['Content-disposition'] = 'attachment; filename=dbcross-%s.csv' % request.now.date()
     return stream.getvalue()
 
 @auth.requires_membership('administrators')
 def restore():
-    response.title = _NEW_CROSS_
-    form = PFORM(T('Import database'),
-                 DIV(INPUT(_type='file',_name='csvfile'), _class='form-row'),
+    m = request.args(0)
+    response.title = _RESTORE_
+    form = PFORM(T('Import database from '+m),
+                 #DIV(INPUT(_type='file',_name=request.vars.mode), _class='form-row'),
+                 DIV(INPUT(_type='file',_name=m), _class='form-row'),
                  DIV(INPUT(_type='submit',_value='Upload', _class='pull-right'), _class='submit-row'))
     if form.process().accepted:
         try:
-            f = request.vars.csvfile.file
-            for table in db.tables:
-                db[table].truncate()
-            #db.cross_table.truncate()
-            #db.cross_table.import_from_csv_file(f)
-            db.import_from_csv_file(form.vars.csvfile.file)
-            m = T('Database restored')
+            if form.vars.csv != None:
+                csvfile = form.vars.csv.file
+                print type(csvfile)
+            elif form.vars.txt != None:
+                txtfile = form.vars.txt.file
+                csvfile = import_from_txt1(txtfile)
+            if csvfile:
+                db.import_from_csv_file(csvfile, restore=True)
+                m = T('Database restored')
         except:
             m = _ERROR_
         session.flash = m
         redirect_updatemenu(URL('index'))
     response.view='default/newitem.html'
     return {'form': form}
+'''
+@auth.requires_membership('administrators')
+def restorecsv():
+    form = restoreview('csv')
+    if form.process().accepted:
+        try:
+            db.import_from_csv_file(form.vars.csv.file, restore=True)
+            m = T('Database restored')
+        except:
+            m = _ERROR_
+        session.flash = m
+        redirect_updatemenu(URL('index'))
+    return {'form': form}
+
+@auth.requires_membership('administrators')
+def restoretxt():
+    form = restoreview('txt')
+    if form.process().accepted:
+        try:
+            csvfile = convert_txt_to_db(form.vars.txt.file)
+            db.import_from_csv_file(csvfile, restore=True)
+            m = T('Database restored')
+        except:
+            m = _ERROR_
+        session.flash = m
+        redirect_updatemenu(URL('index'))
+    return {'form': form}
+
+def restoreview(f):
+    response.title = _RESTORE_
+    response.view = 'default/newitem.html'
+    form = PFORM(T('Import database'),
+                 DIV(INPUT(_type='file', _name=f, _class='form-row')),
+                 DIV(INPUT(_type='submit',_value='Upload', _class='pull-right'), _class='submit-row'))
+    return form
+'''
+@auth.requires_membership('administrators')
+def cleardb():
+    db.plint_table.truncate()
+    db.vertical_table.truncate()
+    db.cross_table.truncate()
+    session.flash = 'Database cleared'
+    redirect_updatemenu(URL('index'))
 
 def search():
     tm = TimeMeter()     # for Debug
@@ -219,7 +272,7 @@ def ajax_getPairData():     # for AJAX search
     plints = search_plints(q)
     items = []
     for plint in plints:
-        for field in pairfields:
+        for field in pairtitles:
             word = plint[field]
             if q in word and word not in items:
                 items.append(word)
@@ -229,11 +282,11 @@ def ajax_getPairData():     # for AJAX search
 
 def ajax_getPlintList():     # for AJAX plint list
     rows = db(db.plint_table.parent == int(request.vars.id)).select()
-    plints = [[i.id, i.title, i.numeration_start_1] for i in rows]
+    plints = [[i.id, i.title, i.start1] for i in rows]
     return gluon.contrib.simplejson.dumps({'plints': plints})
 
 def search_plints(q):
-    queries = [db.plint_table[field].contains(q, case_sensitive=False) for field in pairfields]
+    queries = [db.plint_table[field].contains(q, case_sensitive=False) for field in pairtitles]
     query = reduce(lambda a, b: (a | b), queries)
     return db(query).select()
 
@@ -258,47 +311,46 @@ def get_index_table(items, f):
 def get_vertical_table(plints, parents=False):
     tr = []
     #a_attr = {'_data-toggle': 'tooltip', '_data-placement': 'bottom' }
-    a_attr = {}
     for plint in plints:
+        a_attr = {}
         td = []
         if parents:
             s1 = plint.root.title
             td.append(TD(A(s1, _href=URL('cross', args = [plint.root]), _title=_CROSS_+' '+s1), _class="colv0"))
             s1 = plint.parent.title
             td.append(TD(A(s1, _href=URL('vertical', args = [plint.parent]), _title=_VERTICAL_+' '+s1), _class="colv1"))
-        dx = 0 if plint.numeration_start_1 else -1
+        dx = 0 if plint.start1 else -1
         comefrom = get_plint_outside_info(plint)
-        s1 = _COMMON_DATA_ + str(plint.common_data)
-        who = get_user_name(plint.modified_by)
-        a_attr['_title'] = _PLINT_+' %s\n%s\n%s\n%s\n%s' % (plint.title, plint.modified_on, who, s1, comefrom[0])
+        s1 = _COMMON_DATA_ + str(plint.comdata)
+        who = get_user_name(plint.modby)
+        a_attr['_title'] = _PLINT_+' %s\n%s\n%s\n%s\n%s' % (plint.title, plint.modon, who, s1, comefrom[0])
         a_attr['_href'] = _href=URL('editplint', args = [plint.id])
         td.append(TD(A(plint.title, **a_attr), _class="colv1"))
-        for i in xrange(1, 11):
+        for i in xrange(0, 10):
             a_attr = {}
             td_attr = {}
-            z = str(i)
-            pairtitle = plint(pairfields[i-1])
-            start = i + dx
+            pairtitle = plint(pairtitles[i])
+            start = i+dx+1
             tdcl = ''
             if pairtitle:
-                when = plint('modified_on_id_' + z)
-                who = get_user_name(plint('modified_by_id_' + z))
-                crossedto = get_pair_crossed_info(plint('crossed_to_plint_id_' + z), plint('crossed_to_pair_id_' + z))
+                when = plint(pairfields[i][3])
+                who = get_user_name(plint(pairfields[i][4]))
+                crossedto = get_pair_crossed_info(plint(pairfields[i][1]), plint(pairfields[i][2]))
                 a_attr['_title'] = '%s\n%s\n%s\n%s' % (pairtitle, when, who, crossedto[0])
                 if request.get_vars.q and request.get_vars.q in pairtitle:
                     tdcl = 'finded'
                     if crossedto[2] and crossedto[3]:
                         a_attr['_id'] = 'p%im%i' % (crossedto[3], crossedto[2])
-                if plint('loopback_id_' + z):
+                if plint(pairfields[i][5]):
                     tdcl += ' loop'
                 if tdcl:
                     td_attr = {'_class': tdcl}
-            a_attr['_href'] = _href=URL('editpair', args = [plint.id, i])
+            a_attr['_href'] = _href=URL('editpair', args = [plint.id, i+1])
             td.append(TD(A(XML('<sup>%s&nbsp;&nbsp;</sup>%s' % (start, pairtitle)), **a_attr), **td_attr))
         tdcl = 'commondata'
-        if request.get_vars.q and request.get_vars.q in plint.common_data:
+        if request.get_vars.q and request.get_vars.q in plint.comdata:
             tdcl += ' cdfinded'
-        td.append(TD(plint.common_data, _class=tdcl, _style="border-left: 2px solid #ccc;"))
+        td.append(TD(plint.comdata, _class=tdcl, _style="border-left: 2px solid #ccc;"))
         tr.append(TR(td))
     return TABLE(tr, _class='cross')
 
