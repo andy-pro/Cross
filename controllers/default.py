@@ -104,16 +104,16 @@ def plintmod():
               (T('Common data:'), XML('&nbsp;&nbsp;'), INPUT(_name='common_data', _value = plint.common_data)),
               (T('Numeration start 1:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='numeration_start_1', value=plint.numeration_start_1)),
                HR(), B(plint.outside_info['title']),
-               (T('Raplace common data:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='replace_common_data', value=False))),
+               (T('Raplace common data:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='replace_common_data', value=True))),
               TABLE(TR(TD('Cross:'), TD('Vertical:'), TD('Plint:')),
-                    TR(TD(SELECT([], _id='fromcrosssel', _name='from_cross', _size=15)),
-                       TD(SELECT([], _id='fromvertsel', _name='from_vert', _size=15)),
-                       TD(SELECT([], _id='fromplintsel', _name='from_plint', _size=15))),
+                    TR(TD(SELECT([], _id='fromcrosssel', _name='from_cross', _size=_SIZE_)),
+                       TD(SELECT([], _id='fromvertsel', _name='from_vert', _size=_SIZE_)),
+                       TD(SELECT([], _id='fromplintsel', _name='from_plint', _size=_SIZE_))),
                     TR(TD(HR(), _colspan=3)),
                     TR(TD(B(T('Cross entire plint:')), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='crossall', value=False, _onclick='PlintCrossToggle(this)'), _colspan=3)),
                     TR(TD(DIV(TABLE(TR(TD('Vertical:'), TD('Plint:')),
-                                    TR(TD(SELECT([], _id='vertsel', _name='cross_vert', _size=15)),
-                                       TD(SELECT([], _id='plintsel', _name='cross_plint', _size=15)))
+                                    TR(TD(SELECT([], _id='vertsel', _name='cross_vert', _size=_SIZE_)),
+                                       TD(SELECT([], _id='plintsel', _name='cross_plint', _size=_SIZE_)))
                                    ),
                               _class='sel_hide', _id='sel_cross_to'), _colspan=3)),
                     TR(TD(HR(), _colspan=3)),
@@ -121,33 +121,12 @@ def plintmod():
               _class='plintset'))
     div_class = 'plint'    # form width in css
     if form.process().accepted:
-        dict1 = {'modified_on': request.now.date(), 'modified_by': auth.user}
-        cd_en = bool(form.vars.replace_common_data)
-        outplint = db.plint_table[form.vars.from_plint]
-        if outplint:
-            dict1['come_from'] = plint.index
-            # update new remote plint
-            db.plint_table[outplint.id] = dict1
-            if cd_en:
-                form.vars.common_data = get_plint_info(outplint)
-                db.plint_table[outplint.id] = {'common_data': plint.address}
-
-        # update this plint
-        db.plint_table[plint.index] = {'title': form.vars.title, 'common_data': form.vars.common_data, 'numeration_start_1': bool(form.vars.numeration_start_1)}
-        dict1['come_from'] = outplint
-        db.plint_table[plint.index] = dict1
-
-        # remove old outside connection
-        oldoutplint = db.plint_table[plint.come_from]
-        # if connection existed and now connecting to new plint
-        if oldoutplint and (oldoutplint.id != outplint.id):
-            if oldoutplint.come_from == plint.index:
-                dict1['come_from'] = None  # remove connection
-                if cd_en:
-                    dict1['common_data'] = ''
-                # update old remote plint
-                db.plint_table[oldoutplint.id] = dict1
-
+        vars = (form.vars.title,
+                bool(form.vars.numeration_start_1),
+                form.vars.common_data,
+                db.plint_table[form.vars.from_plint],
+                bool(form.vars.replace_common_data))
+        plint.update(vars)
         redirect(urlback)
     response.view='default/plint.html'
     return locals()
@@ -183,9 +162,9 @@ def pairmod():
               (T('Loop:'), XML('&nbsp;&nbsp;'), INPUT(_type='checkbox', _class='boolean', _name='loop', value=rec(fp[5]))),
               HR(), B(T('Cross to:'))),
               TABLE(TR(TD('Vertical:'), TD('Plint:'), TD('Pair:')),
-                    TR(TD(SELECT([], _id='vertsel', _name='cross_vert', _size=15)),
-                       TD(SELECT([], _id='plintsel', _name='cross_plint', _size=15)),
-                       TD(SELECT([], _id='pairsel', _name='cross_pair', _size=15))),
+                    TR(TD(SELECT([], _id='vertsel', _name='cross_vert', _size=_SIZE_)),
+                       TD(SELECT([], _id='plintsel', _name='cross_plint', _size=_SIZE_)),
+                       TD(SELECT([], _id='pairsel', _name='cross_pair', _size=_SIZE_))),
                     TR(TD(crossed_info[0], _colspan=3)),
                     TR(TD(HR(), _colspan=3)),
                     TR(TD(), TD(), TD(INPUT(_type='submit'))),

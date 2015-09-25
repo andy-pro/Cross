@@ -66,12 +66,12 @@
   <script>
   var menuarray = {{=menuarray}};
   jQuery(document).ready(function() {
-    const root_path = "/Cross/default/";
+    const root_path = "/Cross/review/";
     const func_lev1 = "cross/";
     const func_lev2 = "vertical/";
-    function buildMainMenu() {
+    function buildMainMenu(r) {
       var m = jQuery('<ul class="dropdown-menu"></ul>');
-      jQuery('li.web2py-menu-first + li').addClass('dropdown').append(m);
+      r.addClass('dropdown').append(m);
       jQuery.each(menuarray, function() {
 //var li = jQuery('<li class="dropdown"><a href="'+root_path+func_lev1+menuarray[i][0]+'">'+menuarray[i][1]+'</a></li>').appendTo(m);
           var li = jQuery('<li/>', {class: 'dropdown'});
@@ -91,7 +91,8 @@
           });
       });
     };
-  buildMainMenu();
+    r = jQuery("#crossmainmenu").closest('li')
+    if (r.length) buildMainMenu(r);
   });
   </script>
   {{block head}}{{end}}

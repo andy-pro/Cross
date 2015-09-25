@@ -17,17 +17,19 @@ class Plint:
         #plint.root = 1
         self.root = 'asd'
         self.cross = Cross(self.root)
-        _parent = 10
-        self.title ='M1'+str(_parent)
+        self.parent = 10
+        self.title ='M1'+str(self.parent)
         self.pair=5
         s = 'Plint is '
         self.header = '%s%s %s %s' % (s, self.cross.title, self.vertical.title, self.title)
         self.info = {}
         self.info['index'] = get_plint_outside_info(_index)
+
     vertical = Vertical(10)
 
     def get_title(self, short=True):
         s = 'Plint is ' if short else ''
+        k=self.parent
         result = '%s%s %s %s' % (s, self.cross.title, self.vertical.title, self.title)
         return result
 
@@ -46,4 +48,3 @@ class Pair:
 pair = Pair(3, 10)
 print pair.plint.vertical.title
 print p.title
-print p._parent
