@@ -18,6 +18,9 @@ jQuery(document).ready(function() {
           e.append($('<option>').text('{{=T('Not crossed')}}').attr('value', '0'));
           jQuery.each(data.fid_list, function(i, item) { e.append($('<option>').text(data.ftitle_list[i]).attr('value', item)); });
           //jQuery.each(eval(data.fid_list), function(i, item) { e.append($('<option>').text(data.ftitle_list[i]).attr('value', item)); });
+          //jQuery('#vselect  :nth-child(4)').attr('selected', 'selected');
+          //
+          jQuery('#vselect [value="{{=crossed_vert_id}}"]').attr('selected', 'selected');
          }
       });
     }
@@ -28,9 +31,12 @@ jQuery(document).ready(function() {
     var vh = jQuery('#vselect');
     var ph = jQuery('#pselect');
     vh.addoptions(cross_id, 7);
+    //vh.options['3'].attr('selected', 'selected');
+    //jQuery('#vselect  :nth-child(2)').attr('selected', 'selected');
+    //jQuery('#vselect [value="65"]').attr('selected', 'selected');
     jQuery('#vselect').change(function(){
       //var v = jQuery('#vselect')[0].selectedIndex;
-      var v_id = vh.val();    // crossed to vertical record id
+      var v_id = vh.val();    // crossed to new vertical record id
       if (isNaN(v_id) || (v_id == 0)) {
           ph.empty();
       }

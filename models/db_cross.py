@@ -99,3 +99,23 @@ db.define_table('plint_table',
                 Field('modified_on_id_9', 'date', readable = False, writable = False),
                 Field('modified_by_id_9', 'reference auth_user', readable = False, writable = False),
                )
+
+def get_pair_crossed_info(rec_id, pair_id):
+    rec = db.plint_table(rec_id)
+    f_crosstovert = 'crossed_to_vertical_id_%d' % pair_id
+    f_crosstoplint = 'crossed_to_plint_id_%d' % pair_id
+    f_crosstopair = 'crossed_to_pair_id_%d' % pair_id
+    try:
+        sx = T('Not crossed.')
+        s1 = db.vertical_table(rec(f_crosstovert)).title
+        sx = T('Crossed to ') + s1
+        s1 = db.plint_table(rec(f_crosstoplint)).title
+        sx += ', ' + s1
+        s1 = rec(f_crosstopair)
+        sx += ', ' + s1
+        return sx
+    except Exception:
+        return sx
+
+def helperFunction(a):
+    return a*a

@@ -30,7 +30,8 @@ table.cross a:hover,a:focus {
 table td.colc1 { width: 50px; }
 /*.coln { width: 80px; }*/
 
-tr.oddrow {background: #e8e8e8;}
+/*tr.oddrow {background: #e8e8e8;}*/
+table.cross tr:nth-child(odd) {background: #e8e8e8;}
 td.loop {background: #faa;}
 td.commondata {
     font-size: 9pt;

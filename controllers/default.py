@@ -4,7 +4,8 @@ def index():
     #cross_items = db(db.cross_table).select(orderby = db.cross_table.id)
     items = db(db.cross_table).select()
     item_name = 'cross'
-    return dict(items = items, item_name = item_name)
+    some_data = ''    #response.menu
+    return dict(items = items, item_name = item_name, some_data=some_data)
 
 def cross():
     rec_id = request.args(0, cast = int)
@@ -19,7 +20,8 @@ def cross():
     item_name = 'vertical'
     response.view='default/index.html'
     #response.flash='%d, %d' % (reccnt, reccnt/20)
-    return dict(items = items, item_name = item_name)
+    some_data = ''
+    return dict(items = items, item_name = item_name, some_data=some_data)
 
 def vertical():
     rec_id = request.args(0, cast = int)
@@ -47,9 +49,9 @@ def plintmod():
                     TR(TD('Plint:'), TD(SELECT(lst_plint, _class='test', _id='pselect'))),
                     TR(TD(), TD(INPUT(_type='submit'))),
                ))
-
-
-
+    
+    
+    
     #form = SQLFORM(db.plint_table, record = idx, fields=['title', 'come_from', 'common_data', 'numeration_start_1'], labels = {'title': T('Plint  title'), 'come_from': T('Come from'), 'common_data': T('Common data'), 'numeration_start_1': T('Numeration start 1')}, showid = False).process()
     if form.accepted:
         #session.flash = T("Saved!")
@@ -70,10 +72,11 @@ def pairmod():
     f_crosstopair = 'crossed_to_pair_id_%d' % pair_id
     f_mod_on = 'modified_on_id_%d' % pair_id
     f_mod_by = 'modified_by_id_%d' % pair_id
-    rec = db.plint_table(rec_id)
+    rec = db.plint_table(rec_id)    # read only?
     vertical_id = rec.parent
     cross_id = rec.root
-    ptitle = DIV(T('Cross '), db.cross_table(cross_id).title, ', ', T('Vertical '), db.vertical_table(vertical_id).title, ', ', T('Pair '), pair_id, BR(), I(T('Last modified on ')))
+    crossed_vert_id = rec(f_crosstovert)
+    ptitle = DIV(T('Cross %s, Vertical %s, Plint %s, Pair %s') % (db.cross_table(cross_id).title, db.vertical_table(vertical_id).title,  rec.title, pair_id), BR(), I('%s %s, %s %s' % (T('Last modified on'), rec(f_mod_on), rec(f_mod_by).first_name, rec(f_mod_by).last_name)), HR(), get_pair_crossed_info(rec_id, pair_id))
     #verticals = db(db.vertical_table.parent == cross_id).select()
     #vid_list = XML(','.join(["'%s'" % (i.id) for i in verticals]))
     #vtitle_list = XML(','.join(["'%s'" % (i.title) for i in verticals]))
@@ -90,8 +93,8 @@ def pairmod():
             form.vars.cross_vert = None
         #rec.update_record(**dict(form.vars))
         db.plint_table[rec_id] = {f_pair_title: form.vars.title, f_pair_loop: form.vars.loop, f_crosstovert: form.vars.cross_vert, f_mod_on: request.now.date(), f_mod_by: auth.user}
-        #redirect(URL('vertical', args=[db.plint_table[rec_id].vertical_table]))
-        response.flash=form.vars
+        redirect(URL('vertical', args=[vertical_id]))
+        #response.flash=form.vars
     #return dict(ptitle=ptitle, form=form, vert_i=0, plint_i=0)
     #return dict(form=form, vtitle_list=XML(vtitle_list), vid_list=XML(vid_list), ptitle=ptitle)
     return locals()
@@ -175,7 +178,7 @@ def call():
     return service()
 
 
-@auth.requires_login()
+@auth.requires_login() 
 def api():
     """
     this is example of API with access control

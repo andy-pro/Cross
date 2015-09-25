@@ -1,7 +1,5 @@
 {{extend 'layout.html'}}
-<div class="well">
-    
-</div>
+{{=DIV(some_data, _class='well')}}
 <table class="table">
   {{reccnt = len(items)
     rowcnt = 5
@@ -10,7 +8,7 @@
       rowcnt = reccnt
     pass
     for j in range(0, rowcnt):}}
-      <tr> <!-- <col width="250"> -->
+      <tr>
         {{for k in range(0, colcnt + 1):
           idx = k * rowcnt + j}}
           <td class="colc1">
