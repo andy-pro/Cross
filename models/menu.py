@@ -1,4 +1,33 @@
 # -*- coding: utf-8 -*-
+# this file is released under public domain and you can use without limitations
+
+#########################################################################
+## Customize your APP title, subtitle and menus here
+#########################################################################
+
+response.logo = A(B('CROSS'), XML('&trade;&nbsp;'), _class="navbar-brand",_href=URL('index'), _id="cross-logo")
+response.title = request.application.replace('_',' ').title()
+response.subtitle = ''
+
+## read more at http://dev.w3.org/html5/markup/meta.name.html
+response.meta.author = 'Your Name <you@example.com>'
+response.meta.description = 'a cool new app'
+response.meta.keywords = 'web2py, python, framework'
+response.meta.generator = 'Web2py Web Framework'
+
+## your http://google.com/analytics id
+response.google_analytics_id = None
+
+#########################################################################
+## this is the main application menu add/remove items as required
+#########################################################################
+
+response.menu = [
+    (T('Home'), False, URL('index'), [])
+]
+
+response.menu.append((T('Import DB'), False, URL('default', 'restore')))
+
 
 def updatemenu():
     m = [ [r.id, r.title, [ [w.id, w.title] for w in db(db.vertical_table.parent == r.id).select() ] ] for r in db(db.cross_table).select()]
@@ -9,41 +38,51 @@ def redirect_updatemenu(url):
     updatemenu()
     return redirect(url)
 
-def appendVerticalMenu(cross):
-    response.menu.append((SPAN(cross.title, _id='verticalmainmenu'), False, URL('cross', args = [cross.index])))
-    return cross.index
 
-def appendManageMenu(m=''):
-    if auth.has_membership('managers'):
-        response.menu.append(m and (_EDIT_ + m, False, URL('edit'+request.function , args = request.args)) or (_NEW_CROSS_, False, URL('newcross')))
-    else:
-        if m:
-            response.menu.append((m, False, ''))
+DEVELOPMENT_MENU = True
 
-response.meta.author = 'Andrey Protsenko <andy.pro.1972@gmail.com>'
-response.menu = [(SPAN(B('CROSS',XML('&trade;&nbsp;')), _class='highlighted'), False, URL('index'))]
-# <li> type parent of element with id='crossmainmenu' will be complemented by a dropdown menu
-response.menu.append((SPAN(_CROSS_, _id='crossmainmenu'), False, URL('index')))
-# rendering menu from db to template layout.html
-if db(db.menu_table).count():
-    menuarray = XML(db.menu_table[1].menu)
-else:
-    menuarray = '[]'
+#########################################################################
+## provide shortcuts for development. remove in production
+#########################################################################
 
-if auth.has_membership('administrators'):
-    response.toolsmenu = UL(LI(A(T('Tools'), _href='#'),
-    UL(LI(A(I(_class="icon icon-upload"), _BACKUP_, _href=URL('default', 'backup')), _class="dropdown"),
-LI(_class="divider"),
-LI(A(I(_class="icon icon-download"), _RESTORE_, _href=URL('default', 'restore', args=['csv'])), _class="dropdown"),
-LI(_class="divider"),
-#LI(A(I(_class="icon icon-edit"), ' Import from txt', _href=URL('default', 'restore', vars=dict(mode='txt'))), _class="dropdown"),
-LI(A(I(_class="icon icon-edit"), ' Import from txt', _href=URL('default', 'restore', args=['txt'])), _class="dropdown"),
-LI(_class="divider"),
-LI(A(I(_class="icon icon-remove"), ' Clear database', _href=URL('default', 'cleardb')), _class="dropdown"),
-_class="dropdown-menu"), _class="dropdown"), _class="nav pull-right")
+def _():
+    # shortcuts
+    app = request.application
+    ctr = request.controller
+    # useful links to internal and external resources
+    response.menu += [
+        (T('My Sites'), False, URL('admin', 'default', 'site')),
+          (T('This App'), False, '#', [
+              (T('Design'), False, URL('admin', 'default', 'design/%s' % app)),
+              LI(_class="divider"),
+              (T('Controller'), False,
+               URL(
+               'admin', 'default', 'edit/%s/controllers/%s.py' % (app, ctr))),
+              (T('View'), False,
+               URL(
+               'admin', 'default', 'edit/%s/views/%s' % (app, response.view))),
+              (T('DB Model'), False,
+               URL(
+               'admin', 'default', 'edit/%s/models/db.py' % app)),
+              (T('Menu Model'), False,
+               URL(
+               'admin', 'default', 'edit/%s/models/menu.py' % app)),
+              (T('Config.ini'), False,
+               URL(
+               'admin', 'default', 'edit/%s/private/appconfig.ini' % app)),
+              (T('Layout'), False,
+               URL(
+               'admin', 'default', 'edit/%s/views/layout.html' % app)),
+              (T('Stylesheet'), False,
+               URL(
+               'admin', 'default', 'edit/%s/static/css/web2py-bootstrap3.css' % app)),
+              (T('Database'), False, URL(app, 'appadmin', 'index')),
+              (T('Errors'), False, URL(
+               'admin', 'default', 'errors/' + app)),
+              (T('About'), False, URL(
+               'admin', 'default', 'about/' + app)),
+              ])
+        ]
+if DEVELOPMENT_MENU: _()
 
-_q = request.get_vars.q if request.get_vars.q else ''
-response.searchform = UL(LI(FORM(INPUT(_id="searchinput", _name="q", _value=_q, _class="input-medium search-query", _autocomplete="off", _oninput="getPairTitles(this.value)"),
-                                 INPUT(_type="submit", _class="btn btn-inverse", _value=_SEARCH_),
-                                 DIV(_id="ajaxpairresults"),
-                                 _method="GET", _action=URL('search'))), _class="nav pull-right")
+if "auth" in locals(): auth.wikimenu()

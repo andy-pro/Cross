@@ -1,0 +1,56 @@
+{{extend 'layout.html'}}
+<div class="col-md-6">
+
+<div class="panel panel-primary">
+    <div class="panel-heading">{{=title}}</div>
+    <div class="panel-body">
+      {{=form}}
+    </div>
+    <!--<div class="panel-footer"></div>-->
+  </div>
+
+</div>
+
+  <div class="col-md-4">
+Value = {?selectedItem?}
+jquery Value = {?jqvalue?}
+
+  <select ng-model="selectedItem" size="8" class="form-control">
+  <option ng-repeat="item in qwe2" value={?$index?}>{?item[0]?}</option>
+  </select>
+
+  <div class="panel panel-default">
+    <div class="panel-heading">$scope.chain</div>
+    <div class="panel-body">
+    cross change: {?crosschangecount?}
+    <br>
+    vertical change: {?vertichangecount?}
+    <br>
+    <br>
+    </div>
+      <table class="table table-bordered">
+      <tr class="info"><td></td><td>Cross</td><td>Vertical</td><td>Plint</td><td>Pair</td></tr>
+      <tr ng-repeat="link in chain">
+        <td class="warning">Index</td>
+        <td>{?link.crossId?}</td>
+        <td>{?link.verticalId?}</td>
+        <td>{?link.plintId?}</td>
+        <td>{?link.pairId?}</td>
+      </tr>
+      <tr ng-repeat="link in chain">
+        <td class="warning">Title</td>
+        <td>{?crosses[link.crossPos][1]?}</td>
+        <td>{?link.crossPos?}</td>
+        <td>{?link.plintId?}</td>
+        <td>{?link.pairId?}</td>
+      </tr>
+      <tr ng-repeat="link in chain">
+        <td class="warning">Capacity</td>
+        <td>{?verticals[link.crossId].length?} verts</td>
+        <td>{?plints[link.verticalId].length?} plints</td>
+        <td>{?link.plintId?}</td>
+        <td>{?link.pairId?}</td>
+      </tr>
+      </table>
+  </div>
+</div>
