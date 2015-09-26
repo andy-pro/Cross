@@ -92,9 +92,5 @@ pairtitles = [pairfields[z][0] for z in xrange(0, 10)]    # this fields contains
 pairtitles.append(plintfields[2])
 selfields = (('vertsel','cross_vert'), ('plintsel','cross_plint'), ('pairsel', 'cross_pair'), ('fromcrosssel','from_cross'), ('fromvertsel','from_vert'), ('fromplintsel','from_plint'))
 
-db.define_table('menu_table',
-                Field('menu', 'json')
-               )
-
 ## after defining tables, uncomment below to enable auditing
 # auth.enable_record_versioning(db)

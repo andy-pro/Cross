@@ -1,4 +1,3 @@
-{{extend 'layout.html'}}
 <div class="col-md-6">
 
 <div class="panel panel-primary">
@@ -15,20 +14,21 @@
   <div class="panel panel-default">
     <div class="panel-heading">Watch</div>
     <div class="panel-body">
-    <textarea rows="6" cols="64">
-
-    </textarea>
+    <!--<textarea rows="6" cols="64"></textarea>-->
+    <br>
+    <br>
 
     </div>
-      <table class="table table-bordered">
+    <input class="btn btn-warning" type="button" value="Refresh" onclick="refreshWatch()">
+      <table class="table table-bordered" id="chaintablewatch">
       <tr class="info"><td>Link</td><td>Cross</td><td>Vertical</td><td>Plint</td><td>Pair</td></tr>
-      <tr>
-        <td class="warning"></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-      </tr>
       </table>
   </div>
 </div>
+
+
+{{block page_js}}
+  <script>
+    chainCtrl();
+  </script>
+{{end page_js}}

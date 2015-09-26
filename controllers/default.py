@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 
 def index():
-    updatemenu()
+    #updatemenu()
+    #response.headers['web2py-component-content'] = 'replace'
+
     return dict()
+
+def crosses2():
+    return DIV(_id="crosshome")
 
 def demo():
     return dict()
@@ -68,6 +73,10 @@ def crosses():
         table.append(DIV(DIV(DIV(A(B(cross.title), _href=URL('cross', args=cross.id), cid=request.cid), _class='panel-heading'), DIV(*lst, _class='panel-body'), _class="panel panel-info"), _class='col-lg-4'))
     return DIV(table)
 
+def ajax_getMainArray():
+    items = [ [r.id, r.title, [ [w.id, w.title] for w in db(db.vertical_table.parent == r.id).select() ] ] for r in db(db.cross_table).select()]
+    return dict(items=items)
+
 def ajax_getCrossList():
     #return dict(crosses = db(db.cross_table).select().as_list())
     rows = db(db.cross_table).select()
@@ -84,6 +93,24 @@ def ajax_getPlintList():
     rows = db(db.plint_table.parent == request.args(0, cast = int)).select()
     items = [(i.id,i.title,int(i.start1)) for i in rows]
     return dict(items=items)
+
+def ajax_getPairList():
+    vertical = Vertical(request.args(0, cast = int))
+    plints = db(db.plint_table.parent == vertical.index).select()
+    items = []
+    pairs = []
+    for plint in plints:
+        get_user_name(plint.modby)
+        items.append((plint.id,plint.title,int(plint.start1),plint.comdata,plint.modon,plint.modby))
+        td = []
+        for i in xrange(0, 10):
+            pairtitle = plint(pairtitles[i])
+            when = plint(pairfields[i][1])
+            who = plint(pairfields[i][2])
+            get_user_name(who)
+            td.append((pairtitle,when,who))
+        pairs.append(td)
+    return dict(title=vertical.header,items=items, pairs=pairs, users=users)
 
     ## for AJAX request
     #def crossdata():
@@ -113,6 +140,13 @@ def cross():
     verticals = db(db.vertical_table.parent == cross.index).select()
     back = A('Back', _href=URL('crosses'), cid=request.cid)
     return DIV(back, P(), cross.title, verticals, back)
+
+def vertical_old():
+    vertical = Vertical(request.args(0, cast = int))
+    plints = db(db.plint_table.parent == vertical.index).select()
+    table = get_vertical_table(plints)    # <col span="10" class="coln">
+    back = A('Back', _href=URL('crosses'), cid=request.cid)
+    return common(DIV(back, P(), vertical.title, table, back))
 
 def vertical():
     vertical = Vertical(request.args(0, cast = int))
@@ -147,22 +181,25 @@ def editpair():
     #form = BSFORM(FTEXT(v=pair.title), get_add_panel(), get_chain(), get_select_chain(), FOKCANCEL(urlback))
     chain = []
     chain.append(dict(crossId=crossId, verticalId=verticalId, plintId=plintId, pairId=pairId))
-    #chain.append(dict(crossId=8, verticalId=60, plintId=785, pairId=9))
+    #chain.append(dict(crossId=8, verticalId=60, plintId=787, pairId=9))
     #chain.append(dict(crossId=8, verticalId=61, plintId=810, pairId=8))
     #chain.append(dict(crossId=8, verticalId=62, plintId=829, pairId=7))
     #chain.append(dict(crossId=8, verticalId=63, plintId=839, pairId=6))
     #chain.append(dict(crossId=8, verticalId=64, plintId=852, pairId=5))
     #chain.append(dict(crossId=8, verticalId=63, plintId=840, pairId=4))
     #chain.append(dict(crossId=8, verticalId=63, plintId=840, pairId=4))
+    #chain.append(dict(crossId=6, verticalId=47, plintId=840, pairId=4))    # empty vertical
+    #chain.append(dict(crossId=8, verticalId=67, plintId=840, pairId=4))
     #chain.append(dict(crossId=8, verticalId=63, plintId=840, pairId=4))
-    chain.append(dict(crossId=8, verticalId=63, plintId=840, pairId=4))
-    chain.append(dict(crossId=8, verticalId=63, plintId=840, pairId=4))
+    #chain.append(dict(crossId=0, verticalId=0, plintId=0, pairId=0))
+    #chain.append(dict(crossId=22, verticalId=0, plintId=0, pairId=0))       # empty cross
+    #chain.append(dict(crossId=4, verticalId=44, plintId=650, pairId=3))
     form = BSFORM(FTEXT(v=pair.title), get_add_panel(), get_chain(chain), FOKCANCEL(urlback))
     if form.process().accepted:
         pass
         #pair.update(form.vars)
         #redirect(urlback)
-    response.view='default/editform.html'
+    response.view='default/editdialog.html'
     return dict(form=form, title=pair.header)
     #return dict(form=form, title="title")
 
@@ -229,7 +266,8 @@ def call():
     """
     return service()
 
-#@auth.requires_membership('administrators')
+@auth.requires_membership('administrators')
+#@auth.requires_membership('managers')
 def restore():
     response.title = _RESTORE_
     form = FORM(INPUT(_type='file', _name='fn'),
@@ -265,7 +303,8 @@ def auxiliary3():
     if form.accepts(request.vars): return "Hello %s" % form.vars.name
     return form
 def auxiliary4():
-    ma = A('qu-qu',_href=URL('chmo'), cid=request.cid)
+
+    ma = DIV(A('qu-qu',_href=URL('chmo'), cid=request.cid), _id='testw2p')
     return ma
 
 def chmo():

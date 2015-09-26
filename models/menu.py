@@ -29,19 +29,14 @@ response.menu = [
 response.menu.append((T('Import DB'), False, URL('default', 'restore')))
 
 
-def updatemenu():
-    m = [ [r.id, r.title, [ [w.id, w.title] for w in db(db.vertical_table.parent == r.id).select() ] ] for r in db(db.cross_table).select()]
-    db.menu_table.truncate()
-    db.menu_table.insert(menu = simplejson.dumps(m))
+def updatemainarray():
+    return [ [r.id, r.title, [ [w.id, w.title] for w in db(db.vertical_table.parent == r.id).select() ] ] for r in db(db.cross_table).select()]
+
+#mainarray=XML(simplejson.dumps(updatemainarray()))
 
 def redirect_updatemenu(url):
-    updatemenu()
+    updatemainarray()
     return redirect(url)
-
-if db(db.menu_table).count():
-    mainarray = XML(db.menu_table[1].menu)
-else:
-    mainarray = '[]'
 
 
 DEVELOPMENT_MENU = True
