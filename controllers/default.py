@@ -82,20 +82,23 @@ def crosses():
 
 def ajax_getindexdata():
     #return dict((r.id, dict(title=r.title, verticals=dict((w.id, w.title) for w in db(db.vertical_table.parent == r.id).select() )))  for r in db(db.cross_table).select())
-    return dict((r.id, dict(title=r.title, verticals=dict((w.id, dict(title=w.title)) for w in db(db.vertical_table.parent == r.id).select() )))  for r in db(db.cross_table).select())
+    crosses = dict((r.id, dict(title=r.title, verticals=dict((w.id, dict(title=w.title)) for w in db(db.vertical_table.parent == r.id).select() )))  for r in db(db.cross_table).select())
+    return dict(crosses=crosses, user=get_user_id())
 
 def ajax_getverticaldata():
     #print request
     query = request.vars.search
     if query:
         #print query
-        header = T('Search result for "%s"') % query
         rows = search_plints(query)
+        vertical_id = False
+        header = T('Search result for "%s"') % query if rows else 'Too short query!'
     else:
         query = False
         vertical = Vertical(request.args(0, cast = int))
+        vertical_id = vertical.index
         header = vertical.header
-        rows = db(db.plint_table.parent == vertical.index).select()
+        rows = db(db.plint_table.parent == vertical_id).select()
     plints = {}
     for plint in rows:
         td = []
@@ -115,7 +118,14 @@ def ajax_getverticaldata():
         if query:
             plints[plint.id]['root'] = [plint.root, plint.root.title]
             plints[plint.id]['parent'] = [plint.parent, plint.parent.title]
-    return dict(header=header, plints=plints, users=users, query=query)
+
+    result = dict(header=header, query=query, plints=plints, users=users, vertical=vertical_id)
+    if query and rows:
+        formname = 'editfound'
+        result['formname'] = 'editfound'
+        result['formkey'] = formUUID(formname)
+    result['user'] = get_user_id()
+    return result
 
 def ajax_getplints():
     #rows = db(db.plint_table.parent == request.args(0, cast = int)).select(orderby=db.plint_table.id)
@@ -126,12 +136,16 @@ def ajax_getplints():
 @auth.requires_membership('managers')
 def ajax_getpairdata():
     pair = Pair(request.args(0, cast = int), request.args(1, cast = int))
-    formkey = web2py_uuid()
     formname = 'editpair'
+    formkey = formUUID(formname)
+    #print session
+    return dict(header=pair.header, address=pair.address, modinfo=pair.modified_info, title=pair.title, formkey=formkey, formname=formname)
+
+def formUUID(formname):
+    formkey = web2py_uuid()
     keyname = '_formkey[%s]' % formname
     session[keyname] = list(session.get(keyname, []))[-9:] + [formkey]
-    #print session
-    return dict(header=pair.header, modinfo=pair.modified_info, title=pair.title, formkey=formkey, formname=formname)
+    return formkey
 
 def ajax_getCrossList():
     #return dict(crosses = db(db.cross_table).select().as_list())
@@ -181,15 +195,24 @@ def ajax_getLiveSearch():     # live AJAX search
     return dict(search=[item for item in items])
 
 def search_plints(q):
-    queries = [db.plint_table[field].contains(q, case_sensitive=False) for field in pairtitles]
-    query = reduce(lambda a, b: (a | b), queries)
-    return db(query).select()
+    if q == None:
+        q = ''
+    try:
+        uq = unicode(q, 'utf-8')
+    except:
+        uq = q
+    if len(uq) > 2:
+        queries = [db.plint_table[field].contains(q, case_sensitive=False) for field in pairtitles]
+        query = reduce(lambda a, b: (a | b), queries)
+        return db(query).select()
+    else:
+        return []
 
+#@auth.requires_membership('managers')
 def ajax_getEditPair():
     #for var in request.vars:
         #print var+':'+request.vars[var]
 
-    status = True
     formname = request.vars.formname
     formkey = request.vars.formkey
     keyname = '_formkey[%s]' % formname
@@ -197,18 +220,34 @@ def ajax_getEditPair():
     if formkey and formkeys and formkey in formkeys:  # check if user tampering with form and void CSRF
         session[keyname].remove(formkey)
     else:
-        status = False
+        response.flash = 'Session expired!'
+        return dict(status=False)
+    if not auth.user:
+        response.flash = 'UNAUTHORIZED!'
+        return dict(status=False)
 
-    if status:
-        rec = request.vars.plint_this
-        pid  = 'pid'+request.vars.pair_this
-        db.plint_table[rec] = {pid : request.vars.title}
-        quo = 'Database update success!'
-    else:
-        quo = 'Session expired!'
-    #response.flash = quo
-    #print session
-    return dict(status=status)
+    sep = False
+    if formname == 'editpair':
+        title = request.vars.title
+    elif formname == 'editfound':
+        sep = True
+    idx = 0
+    while(request.vars['cross_'+str(idx)] and idx < 1000):
+        si = str(idx)
+        idx += 1
+        rec = 'plint_'+si
+        if (request.vars[rec]):
+            rec = request.vars[rec]
+            pid = request.vars['pair_'+si]
+            if sep:
+                title = request.vars['title_'+si]
+            print 'plint:%s pair:%s title:%s' % (rec, pid, title)
+            db.plint_table[rec] = {'pid'+pid : title,
+                                   'pmodon'+pid : request.now.date(),
+                                   'pmodby'+pid : auth.user}
+
+    response.flash = 'Database update success!'
+    return dict(status=True)
 
 
 

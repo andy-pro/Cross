@@ -19,69 +19,67 @@ var verticals = crosses[ci]["verticals"]; %>
 <script type="text/template" id="verticalTmpl">
   <div class="panel panel-<%= _class %>">
     <div class="panel-heading">
-      <% if (query) { print(header); %>&nbsp;&nbsp;<a class="mybtn-link" href="<%=href%>">Edit found</a>
-      <% } else { %><a class="mybtn-link" href="<%=href%>"><%=header%></a><% } %>
-      <button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="Back">&times;</button>
-    </div>
-    <table class="cross"><tbody>
+      <a href='javascript:edit(<%=href%>)'><%=header%></a>
+      <%=btnBack%> 
+        <div class="panel-menu right">
+          <input name="wrapcheck" type="checkbox" onclick="wrapToggle(this.checked)">
+          Wrap text
+        </div> 
+      </div>
+    <table class="vertical table table-bordered table-striped"><tbody>
       <% for ( var ci in plints) { 
       var pairs = plints[ci].pairs; 
       var start = parseInt(plints[ci].start); %>
         <tr>
           <% if (query) { %>
             <td class="colv0">
-              <a class="mybtn-link" title="Cross <%=plints[ci].root[1]%>"><%=plints[ci].root[1]%></a>            
+              <a title="Cross <%=plints[ci].root[1]%>"><%=plints[ci].root[1]%></a>            
             </td>
             <td class="colv1">
-              <a class="mybtn-link" href="#/vertical/<%=plints[ci].parent[0]%>"title="Vertical <%=plints[ci].parent[1]%>"><%=plints[ci].parent[1]%></a>            
+              <a href="#/vertical/<%=plints[ci].parent[0]%>"title="Vertical <%=plints[ci].parent[1]%>"><%=plints[ci].parent[1]%></a>            
             </td>        
           <% } %>
-          <td class="colv1">
+          <td class="colv1" style="border-right: 2px solid #ddd;">
           <% var _title = "Plint: "+plints[ci].title+"\n"+plints[ci].modon+"\n"+users[plints[ci].modby]+"\nCommon data: "+plints[ci].comdata; %>
-            <a class="mybtn-link" href="plintEdit/<%=ci%>" title="<%= _title %>"><%= plints[ci].title %></a>
+            <a href="#/plintEdit/<%=ci%>" title="<%= _title %>"><%= plints[ci].title %></a>
           </td>
           <% for ( var cj in pairs ) { 
             var t = pairs[cj][0]; 
-            var finded = '';
+            var found = '';
             if (t) { _title = t+"\n"+pairs[cj][1]+"\n"+users[pairs[cj][2]];
-                     if (t.indexOf(query) >= 0) finded = 'class="finded"'; }
+                     if (t.indexOf(query) >= 0) found = 'class="info"'; }
               else _title = ""; %>
-            <td <%=finded%>>
-            <a class="mybtn-link" title="<%= _title %>" href="#/pairEdit/<%=ci%>/<%=parseInt(cj)+1%>">
-              <sup><%=  parseInt(cj) + start %>&nbsp;&nbsp;</sup><%= t %>
-            </a>
+            <td <%=found%>>
+              <a title="<%= _title %>" href='javascript:edit("pair",<%=ci%>,<%=parseInt(cj)+1%>)'>
+              <sup><%=parseInt(cj)+start%></sup><%= t %></a>
             </td>
-          <% }; %>
-          <td class="commondata" style="border-left: 2px solid #ccc;"><%= plints[ci].comdata %></td>
+          <% }; 
+          t = plints[ci].comdata; 
+          found = "commondata";
+          if (t && query && t.indexOf(query) >= 0) found += " cdfound"; %>
+          <td class="<%=found%>" style="border-left: 2px solid #ddd;"><%= t %></td>
         </tr>
       <% }; %>
     </tbody></table>
   </div>
 </script>
 
-<script type="text/template" id="chainTmpl">
-<div class="col-md-<%=size%>">
-  <div class="panel panel-<%=_class%>">
-    <div class="panel-heading">
-      <%=data.header%>
-      <button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="Back">&times;</button>
-    </div>
+<script type="text/template" id="chainEditTmpl">
+<div class="col-md-6">
+  <div class="panel panel-primary">
+    <div class="panel-heading"><%=data.header%><%=btnBack%></div>
     <div class="panel-body">
       <p><i><%=data.modinfo%></i></p>
       <form class="form-horizontal chain" action="javascript:pairEditAccept()">
         <div class="form-group">
-          <label class="col-md-2 control-label"><%=T._TITLE_%></%=></label>
+          <label class="col-md-2 control-label"><%=T._TITLE_%></label>
           <div class="col-md-8"><input name="title" class="form-control" value="<%=data.title%>"></div>
         </div>
         <button type="button" class="btn-sm btn-success pull-right" title="Add link to chain" onclick="addLink()">+</button>
         <table id="chaintable">
           <tr><% for ( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %> </tr>
         </table>
-        <div>
-        <button class="btn pull-right btn-<%=_class%>" onclick="history.back();return false;">Cancel</button>
-        <input type="submit" class="btn pull-right btn-<%=_class%>">
-        </div>
-       
+        <%=btnOkCancel%>       
       </form>
     </div>
   </div>
@@ -112,34 +110,50 @@ var verticals = crosses[ci]["verticals"]; %>
 <% } %>
 </script>
 
+<script type="text/template" id="btnOkCancelTmpl">
+<div><button class="btn pull-right btn-primary" onclick="history.back();return false;">Cancel</button>
+<input type="submit" class="btn pull-right btn-primary"></div>
+</script>
+
+<script type="text/template" id="btnBackTmpl">
+<button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="Back (Escape)">&times;</button>
+</script>
+
 <script type="text/template" id="foundEditTmpl">
-<div class="col-md-5">
+<div class="col-md-7">
   <div class="panel panel-primary">
-    <div class="panel-heading">Edit found
-        <button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="Back">&times;</button>
-    </div>
-    <div class="panel-body">
+    <div class="panel-heading"><%=header%><%=btnBack%></div>
     
-      <form class="form-horizontal chain" action="javascript:foundEditAccept()">
-        <button type="button" class="btn-sm btn-success pull-right" title="Regex help" onclick="addLink()"><span class="glyphicon glyphicon-question-sign"></span></button>
+    <div class="panel-body">
+      <form class="form-horizontal found" action="javascript:foundEditAccept()">
+        <button type="button" class="btn-sm btn-default pull-right" title="RegExp help" onclick="regexpHelp()">?</button>
         <div class="form-group">
-          <label class="col-md-2 control-label"><%=T._FIND_%></%=></label>
-          <div class="col-md-8"><input name="title" class="form-control" value="<%=query%>"></div>
+          <label class="col-md-2 control-label"><%=T._FIND_%></label>
+          <div class="col-md-8"><input name="find" class="form-control" value="<%=query%>" oninput="refreshFoundTable()"></div>
         </div>
         <div class="form-group">
-          <label class="col-md-2 control-label"><%=T._REPLACE_%></%=></label>
-          <div class="col-md-8"><input name="title" class="form-control" value="<%=query%>"></div>
+          <label class="col-md-2 control-label"><%=T._REPLACE_%></label>
+          <div class="col-md-8"><input name="replace" class="form-control" value="<%=query%>" oninput="refreshFoundTable()"></div>
         </div>
-        <table class="table table-bordered" id="foundtable">
-          <tr class="info"><% for ( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %> </tr>
-        </table>
-        <div>
-        <button class="btn pull-right btn-primary" onclick="history.back();return false;">Cancel</button>
-        <input type="submit" class="btn pull-right btn-primary">
-        </div>       
+        <div class="form-group">
+          <label class="col-md-2 control-label"><%=T._FOLLOW_%></label>
+          <div class="col-md-8">
+          <input name="replacecheck" type="checkbox" checked="checked" onclick="refreshFoundTable()">
+          </div>
+        </div>
+        <%=btnOkCancel%>
       </form>
-      
     </div>
+    <table class="table table-bordered table-condensed" id="foundtable">
+      <tr class="info">
+      <th width="15%"><%=tbheaders[0]%></th>
+      <th width="12%"><%=tbheaders[1]%></th>
+      <th width="10%"><%=tbheaders[2]%></th>
+      <th width="8%"><%=tbheaders[3]%></th>
+      <th>Title</th>
+      </tr>
+    </table>
+    <div class="panel-footer"><div class="myright">Found <span id="footerstatus"></span> results.</div></div
   </div>
 </div>
 </script>

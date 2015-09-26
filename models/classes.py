@@ -110,6 +110,9 @@ def get_user_name(uid):
         who = ''
     return who
 
+def get_user_id():
+    return auth.user.id if auth.user else False
+
 def get_iter_label(s):
     import re
     x=list(re.finditer('%\d+', s))

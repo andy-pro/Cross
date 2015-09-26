@@ -184,6 +184,7 @@
 'Rows in Table': 'Строк в таблице',
 'Rows selected': 'Выделено строк',
 'Search': 'Search',
+'Search result for "%s"': 'Search result for "%s"',
 'Semantic': 'Semantic',
 'Services': 'Services',
 'Sign Up': 'Sign Up',

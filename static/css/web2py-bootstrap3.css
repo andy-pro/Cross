@@ -1,3 +1,15 @@
+div.panel-menu input{
+    margin: 0 5px;
+}
+div.panel-menu{
+    color: #337ab7;
+    padding: 0 85px 0 0;
+}
+
+.myright {
+    text-align: right;
+}
+
 #ajaxlivesearch{
     display: none;
     background: #ffc;
@@ -76,26 +88,28 @@ table#chaintable td {
     padding: 3px 3px;
 }
 
-/** cross table css rules **/
-table.cross {
+/** vertical table css rules **/
+table.vertical {
     table-layout: fixed;
-    width: 100%;
-    /*border:2px solid #ccc;*/
-    /*margin-bottom: 30px;*/
    }
-table.cross td {
+table.vertical td {
     overflow: hidden;
     overflow-x: hidden;
-    /*border:2px solid green;*/
     white-space: nowrap;
-    border:1px solid #bbb;
-    padding: 0px 3px;
+    /*vertical-align: baseline;*/
+    padding: 0px 3px!important;
 }
-table.cross a {
+table.vertical a {
     color:#147;
     display: block;
     font-size: 9pt;
     text-decoration:none;
+    margin: 2px 0;
+}
+table sup {
+    margin: 0 8px 0 0;
+    font-size: 7pt;
+    color:#111;
 }
 
 .colv0 { width: 50px; }
@@ -104,27 +118,20 @@ table td.colc1 { width: 50px; }
 /*.coln { width: 80px; }*/
 
 /*tr.oddrow {background: #e8e8e8;}*/
-table.cross tr:nth-child(odd) {background: #eeeeee;}
+/*table.cross tr:nth-child(odd) {background: #eeeeee;}*/
 
-table.cross tr:hover {
-color:#FFF;
+table.vertical tr:hover {
+/*color:#FFF;*/
 background: #ffc;
 }
 
-td.loop {background: #faa;}
-td.finded {background: #cfc;}
-td.cdfinded {background: #cfc;}
-td.finded.loop {
-/*background: #333;*/
-background: linear-gradient(to top, #cfc, #faa);
-}
+/*td.loop {background: #faa;}*/
+/*td.found {background: #cfc;}*/
+/*td.cdfound {background: #cfc;}*/
+/*td.found.loop {background: linear-gradient(to top, #cfc, #faa);}*/
 td.commondata {
     font-size: 9pt;
     color:#808;
-}
-table.cross a sup{
-    font-size: 7pt;
-    color:#111;
 }
 /** cross table css rules **/
 
@@ -136,14 +143,16 @@ div.flash {
     -webkit-border-radius: 4px;
     color: #333;
     font-weight: 400;
-    min-width: 28px;
-    max-width: 300px;
+    min-width: 50px;
+    max-width: 500px;
     opacity: 1;
     vertical-align: baseline;
     right: auto;
     border-width: 1px;
     margin: 0 0 20px;
     padding: 15px 35px 15px 15px;
+    max-height: 540px;
+    overflow: auto;
 }
 div.flash.alert:hover {
     opacity: 1;
@@ -168,8 +177,8 @@ div.error {
 div.flash.alert {
     display: none;
     position: fixed;
-    top: 97px;
-    right: 83px;
+    top: 70px;
+    right: 30px;
     cursor: pointer;
     z-index: 1000;
     background-color: #9eedbe;
@@ -439,7 +448,7 @@ td.w2p_fc,
     width: 100%;
 }
 input[type=checkbox], input[type=radio] {
-    margin: 4px 4px 0 0;
+    margin: 12px 4px 0 0;
 }
 .btn {
     margin-right: 4px;

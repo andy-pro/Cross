@@ -33,7 +33,6 @@
         <![endif]-->
     <!-- Favicons -->
     {{include 'web2py_ajax.html'}} <!-- this includes jquery.js, calendar.js/.css and web2py.js -->
-    {{include 'templates.html'}}
     {{block head}}{{end}}
     {{
     # using sidebars need to know what sidebar you want to use
@@ -136,9 +135,13 @@
 
 
     <!-- The javascript =============================== -->
+    {{include 'templates.html'}}
     <script src="{{=URL('static','js/bootstrap.min.js')}}"></script>
     <script src="{{=URL('static','js/web2py-bootstrap3.js')}}"></script>
-    <script src="{{=URL('static','js/controllers.js')}}"></script>
+    <script src="{{=URL('static','js/main.js')}}"></script>
+    <script src="{{=URL('static','js/chainctrl.js')}}"></script>
+    <script src="{{=URL('static','js/foundctrl.js')}}"></script>
+    <script src="{{=URL('static','js/livesearchctrl.js')}}"></script>
     {{block page_js}}{{end page_js}}
 
   </body>

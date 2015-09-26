@@ -22,11 +22,10 @@ response.google_analytics_id = None
 ## this is the main application menu add/remove items as required
 #########################################################################
 
-#(T('Home'), False, URL('index'), [])
 response.menu = [
-    (T('Import DB'), False, URL('default', 'restore'))
+    (T('Home'), False, URL('index#'), [])
 ]
-#response.menu.append()
+response.menu.append((T('Import DB'), False, URL('default', 'restore')))
 
 
 def updatemainarray():
