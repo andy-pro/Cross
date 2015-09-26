@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-from gluon.storage import Storage
 import gluon.contrib.simplejson
-cross_storage = Storage()
 
 db.define_table('cross_table',
                 Field('title')

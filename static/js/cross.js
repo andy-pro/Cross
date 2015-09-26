@@ -4,7 +4,7 @@ getPairTitles = function(value){
   searchvalue = value;
   if(value.length > 2){
   if(value != oldvalue) {
-    jQuery.post("/jCross/default/ajax_getPairData", {likestr: value}, function(result){ jQuery("#ajaxpairresults").html(result); });
+    jQuery.post("/Cross/default/ajax_getPairData", {likestr: value}, function(result){ jQuery("#ajaxpairresults").html(result); });
     oldvalue = value; }
   } else { hideAjaxResults(); oldvalue = value; }
 }
@@ -40,7 +40,7 @@ function buildMainMenu(li, data, href){
       var li = jQuery('<li/>');
       li.wrapInner(
           jQuery('<a/>', {
-              "href": '/jCross/default/' + href + '/' + this[0],
+              "href": '/Cross/default/' + href + '/' + this[0],
               text: this[1]
           })).appendTo(ul);
       if (this[2]) {

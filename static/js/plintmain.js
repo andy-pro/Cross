@@ -29,7 +29,7 @@ jQuery.fn.getPlintList = function (cross_index, vert_index) {
   var e = this;
   if (!cachearray[vert_id])  { // cache point is empty?
       jQuery.ajax({
-        url: "/jCross/default/ajax_getPlintList",
+        url: "/Cross/default/ajax_getPlintList",
         data: {'id': vert_id}, // vertical table id
         dataType: "json",
         type: "POST",
