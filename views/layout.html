@@ -78,11 +78,15 @@
           {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}
           {{pass}}
           <form class="navbar-form navbar-right search" action="javascript:masterSearchAccept()">
-            <div class="form-group">
-              <input id="master-search" class="form-control" type="text" placeholder="Search" value="" oninput="getPairTitles(this.value)" name="search" autocomplete="off">
+            <div class="col-lg-6">
+              <div class="input-group">
+                <input id="master-search" class="form-control" type="text" placeholder="Search" value="" oninput="getPairTitles(this.value)" name="search" autocomplete="off">
+                <span class="input-group-btn">
+                  <button type="none" class="btn btn-inverse"><span class="glyphicon glyphicon-search"></span></button>
+                </span>
+              </div>
+              <div id="ajaxlivesearch">test</div>
             </div>
-            <button type="none" class="btn btn-inverse"><span class="glyphicon glyphicon-search"></span></button>
-            <div id="ajaxlivesearch">test</div>
           </form>
         </div>
       </div>

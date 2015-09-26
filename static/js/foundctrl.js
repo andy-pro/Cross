@@ -58,14 +58,17 @@ function foundCtrl(params, route) {
 
     // start found Controller
 
-    var fdata = [];
     if (!$scope || $scope.query != params.vars.search) $scope = sLoad(route.ajaxData, params.args, params.vars);
     //route.targetEl.innerHTML = tmpl("foundEditTmpl", context);
     render(route, {query:$scope.query, header:$scope.header});
 
-    var findId = $("form.found input[name=find]");
-    var replaceId = $("form.found input[name=replace]");
-    var rcheckId = $("form.found input[name=replacecheck]");
+    var fdata = [],
+        findId = $("form.found input[name=find]"),
+        replaceId = $("form.found input[name=replace]"),
+        rcheckId = $("form.found input[name=replacecheck]");
+
+    //jQuery(function () { jQuery('[data-toggle="popover"]').popover('show'); });
+
     $.each($scope.plints, function(key, plint) {  // convert : array of plints to array of pairs
         var start = parseInt(plint.start);
         $.each(this.pairs, function(idx, pair) {
@@ -79,7 +82,6 @@ function foundCtrl(params, route) {
                             start: start});
         });
     });
-    //log(fdata);
     drawFoundTable();
     refreshFoundTable();
 

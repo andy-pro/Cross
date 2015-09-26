@@ -1,8 +1,8 @@
 <script type="text/template" id="crossTmpl">
 <% for (var ci in crosses ) { 
 var verticals = crosses[ci]["verticals"]; %>
-<div class="col-md-<%= size %>">
-  <div class="panel panel-<%= _class %>">
+<div class="col-md-4">
+  <div class="panel panel-default">
     <div class="panel-heading">
       <a class="mybtn-link" href="crossEdit/<%= ci %>"><%= crosses[ci]["title"] %></a>
     </div>
@@ -17,15 +17,17 @@ var verticals = crosses[ci]["verticals"]; %>
 </script>
 
 <script type="text/template" id="verticalTmpl">
-  <div class="panel panel-<%= _class %>">
+  <div class="panel panel-default">
     <div class="panel-heading">
       <a href='javascript:edit(<%=href%>)'><%=header%></a>
       <%=btnBack%> 
-        <div class="panel-menu right">
-          <input name="wrapcheck" type="checkbox" onclick="wrapToggle(this.checked)">
-          Wrap text
-        </div> 
+      <div class="checkbox inmenu right">
+        <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)">Wrap text</label>
       </div>
+      <div class="checkbox inmenu right">
+        <label><input id="editchain" type="checkbox" onclick="editChain(this.checked)">Edit chain</label>
+      </div>
+    </div>
     <table class="vertical table table-bordered table-striped"><tbody>
       <% for ( var ci in plints) { 
       var pairs = plints[ci].pairs; 
@@ -75,7 +77,7 @@ var verticals = crosses[ci]["verticals"]; %>
           <label class="col-md-2 control-label"><%=T._TITLE_%></label>
           <div class="col-md-8"><input name="title" class="form-control" value="<%=data.title%>"></div>
         </div>
-        <button type="button" class="btn-sm btn-success pull-right" title="Add link to chain" onclick="addLink()">+</button>
+        <button type="button" class="btn btn-sm btn-success pull-right" title="Add link to chain" onclick="addLink()">+</button>
         <table id="chaintable">
           <tr><% for ( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %> </tr>
         </table>
@@ -91,8 +93,7 @@ var verticals = crosses[ci]["verticals"]; %>
         <button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="Back">&times;</button>
     </div>
     <div class="panel-body">
-    <!--<textarea rows="6" cols="64"></textarea>-->
-    <br>
+
     <br>
 
     </div>
@@ -116,7 +117,7 @@ var verticals = crosses[ci]["verticals"]; %>
 </script>
 
 <script type="text/template" id="btnBackTmpl">
-<button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="Back (Escape)">&times;</button>
+<button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="Back (Esc)">&times;</button>
 </script>
 
 <script type="text/template" id="foundEditTmpl">
@@ -126,7 +127,7 @@ var verticals = crosses[ci]["verticals"]; %>
     
     <div class="panel-body">
       <form class="form-horizontal found" action="javascript:foundEditAccept()">
-        <button type="button" class="btn-sm btn-default pull-right" title="RegExp help" onclick="regexpHelp()">?</button>
+        <button type="button" class="btn btn-sm btn-default pull-right" title="RegExp help" onclick="regexpHelp()">?</button>
         <div class="form-group">
           <label class="col-md-2 control-label"><%=T._FIND_%></label>
           <div class="col-md-8"><input name="find" class="form-control" value="<%=query%>" oninput="refreshFoundTable()"></div>
@@ -136,11 +137,11 @@ var verticals = crosses[ci]["verticals"]; %>
           <div class="col-md-8"><input name="replace" class="form-control" value="<%=query%>" oninput="refreshFoundTable()"></div>
         </div>
         <div class="form-group">
-          <label class="col-md-2 control-label"><%=T._FOLLOW_%></label>
-          <div class="col-md-8">
-          <input name="replacecheck" type="checkbox" checked="checked" onclick="refreshFoundTable()">
-          </div>
+            <div class="checkbox col-md-offset-2 col-md-8"><label>
+                  <input name="replacecheck" type="checkbox" checked="checked" onclick="refreshFoundTable()"><%=T._FOLLOW_%>
+            </label></div>
         </div>
+        
         <%=btnOkCancel%>
       </form>
     </div>
@@ -153,7 +154,78 @@ var verticals = crosses[ci]["verticals"]; %>
       <th>Title</th>
       </tr>
     </table>
-    <div class="panel-footer"><div class="myright">Found <span id="footerstatus"></span> results.</div></div
+    <div class="panel-footer"><div class="myright">Found <span id="footerstatus"></span> results.</div></div>
+  </div>
+</div>
+</script>
+
+<script type="text/template" id="verticalEditTmpl">
+<div class="col-md-6">
+  <div class="panel panel-primary">
+    <div class="panel-heading"><%=header%><%=btnBack%></div>
+    <div class="panel-body">
+      <form class="form-horizontal chain" action="javascript:verticalEditAccept()">
+        <div class="form-group">
+          <label class="col-md-3 control-label"><%=T._TITLE_%></label>
+          <div class="col-md-8"><input name="title" class="form-control" value="<%=title%>"></div>
+        </div>
+        
+        <div class="form-group">
+          <div class="checkbox col-md-offset-3 col-md-8"><label>
+            <input name="delete" class="delete" type="checkbox">Delete vertical
+          </label></div>
+        </div>
+        
+        <div class="form-group">
+          <label class="col-md-3 control-label">Plint title</label>
+          <div class="col-md-3"><input name="title" class="form-control" value="M%1"></div>
+          <label class="col-md-2 control-label">Count</label>
+          <div class="col-md-3"><input type="number" min="0" max="100" name=title" class="form-control" value="0"></div>
+        </div>
+        
+        <div class="form-group">
+          <div class="checkbox col-md-offset-3 col-md-8"><label>
+            <input name="start1" type="checkbox">Numeration start 1
+          </label></div>
+        </div>
+        
+        <div class="form-group">
+          <label class="col-md-3 control-label">Common data</label>
+          <div class="col-md-8">
+            <div class="input-group">
+                <input type="text" class="form-control">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" title="Help" onclick="commondataHelp()">?</button>
+                </span>
+            </div>
+          </div>        
+        </div>        
+        
+        <div class="form-group">
+          <div class="checkbox col-md-offset-3 col-md-8"><label>
+            <input name="comdatareplace" class="delete" type="checkbox">Replace common data
+          </label></div>
+        </div>
+        
+        
+        <table id="chaintable">
+          <tr>
+          <td><%=tbheaders[0]%></td>
+          <td><%=tbheaders[1]%></td>
+          <td><%=tbheaders[2]%></td>
+          </tr>
+          <tr>
+          <td><selsect class="form-control"></selsect></td>
+          <td><selsect class="form-control"></selsect></td>
+          <td><selsect class="form-control"></selsect></td>
+          </tr>
+        </table>
+        
+        <%=btnOkCancel%>       
+      </form>
+    </div>
+
+    <div class="panel-footer"><div class="myright">Found <span id="footerstatus"></span> results.</div></div>
   </div>
 </div>
 </script>

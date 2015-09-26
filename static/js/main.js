@@ -1,7 +1,7 @@
 /*** Global constants  ***/
-rootpath = '/Cross/default/';
-staticpath = '/Cross/static/';
-rootpathajax = rootpath + 'ajax_get';
+const rootpath = '/Cross/default/';
+const staticpath = '/Cross/static/';
+const rootpathajax = rootpath + 'ajax_get';
 //======================================
 /*** log Helper  ***/
 function log(msg) {
@@ -87,8 +87,24 @@ function aLoad(cache, callback, ajaxData, args) {
             } });
         }
     if (cache[ajaxData].data) callback();
-        else cache[ajaxData].targets.push(callback);
+        else {cache[ajaxData].targets.push(callback);
+	//console.log(callback);
+	}
 }
+//======================================
+$( document ).ajaxStart(function( event, jqxhr, settings ) {
+    ajaxstate.inprogress = true;
+});
+
+jQuery(document).ajaxComplete(function( event, xhr, settings ) {
+    ajaxstate.inprogress = false;
+    $.each(ajaxstate.callback, function() {
+	this();
+	console.info('deferred start refreshing');
+    });
+    ajaxstate.callback = [];
+});
+
 //======================================
 /*** web2py flash message Helper  ***/
 (function(){
@@ -96,7 +112,7 @@ function aLoad(cache, callback, ajaxData, args) {
     web2pyflash = function(msg, status, delay) {
         status = typeof status !== 'undefined' ? status : 'success';
         delay = typeof delay !== 'undefined' ? delay : 3000;
-        flash.html('<button type="button" class="close">&times;</button>' + msg);
+        flash.html('<button type="button" class="close" aria-hidden="true">&times;</button>' + msg);
         var color;
         switch (status) {
             case 'danger': color = '#fbb'; break;
@@ -192,6 +208,7 @@ router = function  () {  // version with regex, replace
 //w2p_attrs = {'data-w2p_method':"GET", 'data-w2p_disable_with':"default"};
 
 var $scope;     // for interaction between controllers
+var ajaxstate = {inprogress: false, callback: []};
 var T = {_CROSS_:'Cross',
      _VERTICAL_:'Vertical',
      _PLINT_:'Plint',
@@ -202,7 +219,7 @@ var T = {_CROSS_:'Cross',
      _FOLLOW_:'Follow'
      };
 
-var stages = ['cross','vertical','plint','pair'];
+const stages = ['cross','vertical','plint','pair'];
 var tbheaders = [T._CROSS_, T._VERTICAL_, T._PLINT_, T._PAIR_];
 
 document.onkeydown = function(e) {
@@ -224,6 +241,7 @@ edit = function() { // args is: 0 - controller name (some 'editpair' or 'editfou
 		if (typeof arg == "string" && arg.indexOf('=') > 0) vars.push(arg);
 		else url += '/'+arguments[i];
             }
+	    if (arguments[0] == 'pair' && localStorage.editchain == 'true') url += '/chain';
 	    if (vars.length) url += '?' + vars.join('&');
 	    //console.log(url);
 	}
@@ -250,11 +268,11 @@ var btnBack = tmpl("btnBackTmpl", {});
 //crosshome.empty();
 window.onload = function() {
 
-    /***  Set routes. args: (hashpath, targetDIV, templateId, ajaxpath, JScontroller)  ***/
+/***  Set routes. args: (hashpath, targetDIV, templateId, ajaxpath, JScontroller)  ***/
     route('', 'crosshome', 'crossTmpl', 'indexdata', crossCtrl);
     route('vertical', 'crosshome', 'verticalTmpl', 'verticaldata', verticalCtrl);
-    route('editpair', 'crosshome', 'chainEditTmpl', 'pairdata', chainCtrl);
     route('editvertical', 'crosshome', 'verticalEditTmpl', 'verticaldata', verticalEditCtrl);
+    route('editpair', 'crosshome', 'chainEditTmpl', 'pairdata', chainCtrl);
     route('editfound', 'crosshome', 'foundEditTmpl', 'verticaldata', foundCtrl);
 
     window.addEventListener('hashchange', router);    // Listen on hash change
@@ -275,11 +293,54 @@ window.onload = function() {
 //string text line 2
 //`;
 
+
+  //var cars = {
+    //'chevrolet aveo':{name: 'aveo', vendor:'chevrolet'},
+    //'renault logan':{name: 'logan', vendor:'renault'},
+    //'hyundai accent':{name: 'accent', vendor:'hyundai'},
+    //'zaz forza':{name:'forza', vendor:'zaz'}
+  //}
+  //console.log(cars);
+  //console.table(cars);
+
+  //var myVariable = 'test';
+  //var myVariable1 = 20;
+  //var myVariable2 = 1.5;
+  //var myObject = {qwerty:1,asdfgh:2};
+  //console.log(
+    //'My string variable is: "%s";\nMy int variable is:"%i"\nMy Float Variable is: "%f"\nMy Object is: "%o"',
+    //myVariable,
+    //myVariable1,
+    //myVariable2,
+    //myObject
+ //);
+
+ //console.time('c')
+//var cars = [
+    //{name: 'aveo', vendor:'chevrolet'},
+    //{name: 'logan', vendor:'renault'},
+    //{name: 'accent', vendor:'hyundai'},
+    //{name:'forza', vendor:'zaz'}
+//]
+//console.log(cars);
+//console.table(cars);
+//console.info('info');
+//console.warn('warning');
+//console.error('error');
+//console.timeEnd('c')
+
+
+//console.time("assignments");
+//for (var i=0; i<1000000; i++)
+  //var a = 1;
+//console.timeEnd("assignments");
+
+
 //======================================
 /*** Cross Controller ***/
 function crossCtrl(params, route) {
     $scope = sLoad(route.ajaxData);
-    render(route, {_class:"default", size:4, crosses:$scope.crosses});
+    render(route, {crosses:$scope.crosses});
 }
 
 crossEdit = function(id) {
@@ -293,6 +354,11 @@ function verticalCtrl(params, route) {
 
     wrapToggle = function(checked) {
         $('table.vertical td').css({'white-space': (checked) ? 'pre-line' : 'nowrap'});
+	localStorage.wraptext = checked;
+    }
+
+    editChain = function(checked) {
+	localStorage.editchain = checked;
     }
 
     $scope = sLoad(route.ajaxData, params.args, params.vars);
@@ -300,7 +366,16 @@ function verticalCtrl(params, route) {
     if (params.args[0]) { href = `"vertical",${params.args[0]}`; header = $scope.header; }	// see Mozilla Developer Network
     else { href = `"found","search=${$scope.query}"`; header = `Edit results found for "${$scope.query}"`; }	// Multi-line template strings
     document.title = header;
-    render(route, {_class:"default", plints:$scope.plints, users:$scope.users, href:href, header:header, query:$scope.query});
+    render(route, {plints:$scope.plints, users:$scope.users, href:href, header:header, query:$scope.query});
+
+    if (localStorage.wraptext == "true") {
+	$("#wraptext").prop("checked", true);
+	wrapToggle(true);
+    }
+    if (localStorage.editchain == "true") {
+	$("#editchain").prop("checked", true);
+    }
+
 
     //~~~~~~$$$$$$$$$$$$$$$$$~~~~~~~~~~~~~
     //foundEdit();
@@ -312,9 +387,8 @@ function verticalCtrl(params, route) {
 /*** Vertical Edit Controller ***/
 function verticalEditCtrl(params, route) {
 
-log(params)
-log(route)
-log($scope)
+    if (!$scope || $scope.vertical != params.args[0]) $scope = sLoad(route.ajaxData, params.args, params.vars);
+    render(route, {header:$scope.header, title:$scope.title});
 
     //$scope = sLoad(route.ajaxData, params.args, params.vars);
     //var href, header;

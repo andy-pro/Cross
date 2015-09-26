@@ -1,9 +1,7 @@
-div.panel-menu input{
-    margin: 0 5px;
-}
-div.panel-menu{
+div.checkbox.inmenu{
     color: #337ab7;
-    padding: 0 85px 0 0;
+    padding: 0 50px 0 0;
+    margin: 0;
 }
 
 .myright {
@@ -15,7 +13,7 @@ div.panel-menu{
     background: #ffc;
     margin: 4px 0px;
     padding: 5px 14px;
-    min-width: 250px;
+    min-width: 310px;
     max-height: 540px;
     overflow: auto;
     position: absolute;
@@ -54,8 +52,9 @@ div.panel-menu{
 }
 input#master-search {
     background-color: #444;
+    border-color: #666;
     color: #fff;
-    width: 250px;
+    width: 270px;
 }
 
 div#editdialog {
@@ -447,9 +446,7 @@ td.w2p_fc,
 .web2py_grid table {
     width: 100%;
 }
-input[type=checkbox], input[type=radio] {
-    margin: 12px 4px 0 0;
-}
+/*input[type=checkbox], input[type=radio] { margin: 12px 4px 0 0; }*/
 .btn {
     margin-right: 4px;
 }
