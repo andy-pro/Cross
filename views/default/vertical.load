@@ -1,0 +1,9 @@
+{{for vertical in verticals:}}
+<div class="cross">
+  {{=vertical.title}}
+</div>
+{{pass}}
+{{=form}}
+{{=A('linked page',_href=URL('default', 'plint'), cid=request.cid)}}
+<div id="cid" class="well">
+</div>

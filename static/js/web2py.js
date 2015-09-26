@@ -185,6 +185,12 @@
           var active = $(this).data('w2p_datetime');
           var format = (typeof tformat != 'undefined') ? tformat : datetime_format;
           if(active === undefined) {
+            Calendar.setup({
+              inputField: this,
+              ifFormat: format,
+              showsTime: true,
+              timeFormat: "24"
+            });
             $(this).attr('autocomplete', 'off');
             $(this).data('w2p_datetime', 1);
             $(this).trigger('click');
@@ -196,6 +202,11 @@
           var active = $(this).data('w2p_date');
           var format = (typeof tformat != 'undefined') ? tformat : date_format;
           if(active === undefined) {
+            Calendar.setup({
+              inputField: this,
+              ifFormat: format,
+              showsTime: false
+            });
             $(this).data('w2p_date', 1);
             $(this).attr('autocomplete', 'off');
             $(this).trigger('click');
@@ -479,7 +490,7 @@
        * and prevent clicking on it */
       disableElement: function(el) {
         el.addClass('disabled');
-        var method = el.is('button') ? 'html' : 'val';
+        var method = el.is('input') ? 'val' : 'html';
         //method = el.attr('name') ? 'html' : 'val';
         var disable_with_message = (typeof w2p_ajax_disable_with_message != 'undefined') ? w2p_ajax_disable_with_message : "Working...";
         /*store enabled state if not already disabled */
@@ -504,7 +515,7 @@
 
       /* restore element to its original state which was disabled by 'disableElement' above*/
       enableElement: function(el) {
-        var method = el.is('button') ? 'html' : 'val';
+        var method = el.is('input') ? 'val' : 'html';
         if(el.data('w2p_enable_with') !== undefined) {
           /* set to old enabled state */
           el[method](el.data('w2p_enable_with'));
@@ -575,12 +586,14 @@
         if(pre_call != undefined) {
           eval(pre_call);
         }
-        if(confirm_message != undefined) {
-          if(confirm_message == 'default') confirm_message = w2p_ajax_confirm_message || 'Are you sure you want to delete this object?';
-          if(!web2py.confirm(confirm_message)) {
-            web2py.stopEverything(e);
-            return;
-          }
+        if(confirm_message) {
+            if(confirm_message == 'default') 
+                confirm_message = w2p_ajax_confirm_message || 
+                    'Are you sure you want to delete this object?';
+            if(!web2py.confirm(confirm_message)) {
+                web2py.stopEverything(e);
+                return;
+            }
         }
         if(target == undefined) {
           if(method == 'GET') {

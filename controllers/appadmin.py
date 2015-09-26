@@ -178,8 +178,8 @@ def csv():
 
 
 def import_csv(table, file):
-    #table.truncate()
-    table.import_from_csv_file(file, restore=True)
+    table.import_from_csv_file(file)
+
 
 def select():
     import re
@@ -212,7 +212,7 @@ def select():
 
     if is_imap:
         step = 3
-
+ 
     stop = start + step
 
     table = None
@@ -278,7 +278,7 @@ def select():
         formcsv = FORM(str(T('or import from csv file')) + " ",
                        INPUT(_type='file', _name='csvfile'),
                        INPUT(_type='hidden', _value=csv_table, _name='table'),
-                       INPUT(_type='submit', _value=T('truncate & import')))
+                       INPUT(_type='submit', _value=T('import')))
     else:
         formcsv = None
     if formcsv and formcsv.process().accepted:
