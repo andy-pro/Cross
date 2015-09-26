@@ -72,20 +72,21 @@
         </div>
         <div class="collapse navbar-collapse navbar-ex1-collapse">
           <ul class="nav navbar-nav navbar-right">
+            {{=response.toolsmenu or ''}}
             {{='auth' in globals() and auth.navbar('Welcome',mode='dropdown') or ''}}
           </ul>
           {{if response.menu:}}
           {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}
           {{pass}}
-          <form class="navbar-form navbar-right search" action="javascript:masterSearchAccept()">
+          <form class="navbar-form navbar-right livesearch">
             <div class="col-lg-6">
               <div class="input-group">
-                <input id="master-search" class="form-control" type="text" placeholder="Search" value="" oninput="getPairTitles(this.value)" name="search" autocomplete="off">
+                <input id="master-search" class="form-control" placeholder="Search" value="" autocomplete="off"/>
                 <span class="input-group-btn">
                   <button type="none" class="btn btn-inverse"><span class="glyphicon glyphicon-search"></span></button>
                 </span>
               </div>
-              <div id="ajaxlivesearch">test</div>
+              <div id="ajaxlivesearch"></div>
             </div>
           </form>
         </div>
@@ -97,16 +98,8 @@
     <!-- Main ========================================= -->
     <!-- Begin page content -->
     <br>
-    <div class="container-fluid">
-      {{if left_sidebar_enabled:}}
-        <div class="col-md-3 left-sidebar">
-            {{block left_sidebar}}
-            <h3>Left Sidebar</h3>
-            <p></p>
-            {{end}}
-        </div>
-      {{pass}}
 
+    <div class="container-fluid">
       <div class="{{=middle_column}}">
         <div id="appcontainer">
           {{block center}}
@@ -114,18 +107,7 @@
           {{end}}
         </div>
       </div>
-
-      {{if right_sidebar_enabled:}}
-        <div class="col-md-3">
-            {{block right_sidebar}}
-            <h3>Right Sidebar</h3>
-            <p></p>
-            {{end}}
-        </div>
-      {{pass}}
-
     </div>
-
 
     {{block footer}} <!-- this is default footer -->
     <footer class="footer">
@@ -143,9 +125,8 @@
     <script src="{{=URL('static','js/bootstrap.min.js')}}"></script>
     <script src="{{=URL('static','js/web2py-bootstrap3.js')}}"></script>
     <script src="{{=URL('static','js/main.js')}}"></script>
-    <script src="{{=URL('static','js/chainctrl.js')}}"></script>
-    <script src="{{=URL('static','js/foundctrl.js')}}"></script>
-    <script src="{{=URL('static','js/livesearchctrl.js')}}"></script>
+    <script src="{{=URL('static','js/editpairctrl.js')}}"></script>
+    <script src="{{=URL('static','js/editfoundctrl.js')}}"></script>
     {{block page_js}}{{end page_js}}
 
   </body>

@@ -2,12 +2,13 @@
 /*** Class: Link, responce <selector> sequence to table ***/
 
 // constructor, usage: var link = new Link(...);
-function Link(index, target, link, depth, cache) {
+function Link(index, target, link, depth, cache, url) {
     //const stages = ['cross','vertical','plint','pair'];
     this.index = index;
     this.link = link;
     this.depth = depth;
     this.cache = cache;
+    this.url = url;
     this.controls = {};
     this.titles = {};
     //this.names = {};
@@ -21,7 +22,7 @@ function Link(index, target, link, depth, cache) {
         }
     tr.appendTo(target);
     this.stage = stages[0];
-    if (!this.cache.crosses) this.cache.crosses = sLoad('indexdata').crosses;
+    if (!this.cache.crosses) this.cache.crosses = sLoad('index').crosses;
     this.controls.crossEl.append($('<option>').text('Not crossed').attr('value', 0));
     this.addOptFromObj(this.cache.crosses);
     this.setVertical();
@@ -55,11 +56,12 @@ Link.prototype.setPlint = function() {
             var self = this;    // spike, pointer to object for ajax callback
             //----------callback function---------------
                 var callback = function(){
-                    self.plints = self.vertical.plints.data; // shortcut
+                    self.plints = self.vertical[self.url].data; // shortcut, [url] - content of cache defined by urls, specific of "aLoad"
                     //console.log(plints)
                     if (self.plints.length) {
                         El = self.controls.plintEl;
-                        $.each(self.plints, function() {El.append($('<option>').text(this[1]+' : '+this[0]).attr('value', this[0]));});
+                        if (_DEBUG_) $.each(self.plints, function() {El.append($('<option>').text(this[1]+' : '+this[0]).attr('value', this[0]));});
+                            else $.each(self.plints, function() {El.append($('<option>').text(this[1]).attr('value', this[0]));});
                         El.prop('disabled', false);
                         var pair;
                         if (self.link.plintId) {
@@ -81,7 +83,7 @@ Link.prototype.setPlint = function() {
                     }
                 }
             //----------end callback function---------------
-            aLoad(this.vertical, callback, 'plints', [this.link.verticalId]);
+            aLoad(this.vertical, callback, this.url, [this.link.verticalId]);
         }
     }
 }
@@ -144,7 +146,8 @@ Link.prototype.setselect = function() {
 
 Link.prototype.addOptFromObj = function(data) {
     var El = this.controls[this.stage+'El'];
-    $.each(data, function(key, item) {El.append($('<option>').text(item.title+' : '+key).attr('value', key));});
+    if (_DEBUG_) $.each(data, function(key, item) {El.append($('<option>').text(item.title+' : '+key).attr('value', key));});
+        else $.each(data, function(key, item) {El.append($('<option>').text(item.title).attr('value', key));});
     El.prop('disabled', false);
     this.setselect();
 }
@@ -172,39 +175,31 @@ emptyLink = function () {
 }
 
 //======================================
-/*** Chain Controller ***/
-function chainCtrl(params, route) {
-// start Chain Controller, new, class approach
+/*** Edit Pair Controller ***/
+function EditPairCtrl(params, route) {
+// start Edit Pair Controller, Chain, new, class approach
 
 //~~~~~~~~~~~~for debug~~~~~~~~~~~~~~
-    var refreshWatch = function() {
+    refreshWatch = function() {
     //console.log(++watchcnt);
         $("table#watchtable tr").remove(".refreshing");
         $.each(chaindata, function(i, link) {
             var tr = $('<tr>', {class:"refreshing"});
             $('<td>', {class:"warning"}).text(i).appendTo(tr);
             $.each(stages, function() { $('<td>').text(link.link[this+'Id']).appendTo(tr); });
-            tr.appendTo(watchtableId);   // id of element, without declare variable!!!
+            //watchtableId = $("#watchtable");
+            //tr.appendTo(watchtableId);
+            tr.appendTo(watchtable);   // id of element, without declare variable!!!
         });
     }
-//~~~~~~~~~~~~for debug~~~~~~~~~~~~~~
+//~~~~~~~~~~~~end for debug~~~~~~~~~~~~~~
 
     addLink = function () {
-        var link = new Link(chaindata.length, chaintableId, emptyLink(), depth, cache);
+        var link = new Link(chaindata.length, chaintableId, emptyLink(), depth, cache, 'plints');
         chaindata.push(link);
         //~~~~~~$$$$$$$$$$$$$$$$$~~~~~~~~~~~~~
-                refreshWatch();
+        if (_DEBUG_) refreshWatch();
         //~~~~~~$$$$$$$$$$$$$$$$$~~~~~~~~~~~~~
-    }
-
-    pairEditAccept = function () {
-        var data = $('form.edit').serializeArray();
-        data.push({name:'cross_0', value:0});
-        data.push({name:'plint_0', value:params.args[0]});
-        data.push({name:'pair_0',  value:params.args[1]});
-        // saveData - add formkey, ajax(POST) data toserver, flash status result;
-        // arg0 - data to be saved to server; arg1 - object, containing formname & formkey information
-        saveData(data, plintdata);
     }
 
     const depth = 4;
@@ -213,11 +208,14 @@ function chainCtrl(params, route) {
     //var args = [params.args[0], params.args[1]];
     //if (localStorage.editchain) args.push('chain');
     //console.log(params)
-    var plintdata = sLoad(route.ajaxData, params.args);
+    $scope = sLoad(route.ajaxurl, params.args);
+
+    if (!$scope) raise404();
 
     chaindata = [ {link:{crossId: 0, verticalId: 0, plintId: params.args[0], pairId: params.args[1]}} ] // native link
-    if (plintdata.chain) for (i in plintdata.chain) chaindata.push({link:plintdata.chain[i]});
-    OnSelectChange = refreshWatch;
+    if ($scope.chain) for (i in $scope.chain) chaindata.push({link:$scope.chain[i]});
+    if (_DEBUG_) OnSelectChange = refreshWatch;
+        else OnSelectChange = null;
 
     //log(chaindata)
     //chaindata.push({link:{crossId:2, verticalId:39, plintId:558, pairId:1}});  //Cross РШ 1Р, Vertical 0В, Plint БM4, Pair 0
@@ -229,20 +227,31 @@ function chainCtrl(params, route) {
     //chaindata.push({link:{crossId:0, verticalId:0, plintId:0, pairId:0}});     // empty link
     //chaindata.push({link:{crossId:22, verticalId:0, plintId:0, pairId:0}});    // empty cross
 
-    //if (plintdata) {
-        document.title = plintdata.address;
-        render(route, {data:plintdata});
-        var chaintableId = $("#chaintable");
-        watchtableId = $("#watchtable");
-        for (i=1; i<chaindata.length; i++)
-            chaindata[i] = new Link(i, chaintableId, chaindata[i].link, depth, cache);
-        $('#crosshome input:text:visible:first').focus();
+    document.title = $scope.address;
+    render(route, {data:$scope});
+    var chaintableId = $("#chaintable");
+    for (i=1; i<chaindata.length; i++)
+        chaindata[i] = new Link(i, chaintableId, chaindata[i].link, depth, cache, 'plints');
+    $(_inputfirst).focus();
 
-        //~~~DEBUG~~~$$$$$$$$$$$$$$$$$~~~~~~
-        //debugger;
+    //~~~DEBUG~~~$$$$$$$$$$$$$$$$$~~~~~~
+    //debugger;
+    if (_DEBUG_) {
+        route.targetEl.insertAdjacentHTML('beforeend', tmpl('watchtableTmpl', {}));
         refreshWatch();
-        //~~~DEBUG~~~$$$$$$$$$$$$$$$$$~~~~~~
-    //}
+    }
+    //~~~DEBUG~~~$$$$$$$$$$$$$$$$$~~~~~~
 
+    $('form.edit').submit(function(event) {
+        var pair = $('form.edit').serializeArray();
+        pair.push({name:'cross_0', value:0});
+        pair.push({name:'plint_0', value:params.args[0]});
+        pair.push({name:'pair_0',  value:params.args[1]});
+        pair.push({name:'chain',  value:true});
+        // saveData - add formkey, ajax(POST) data toserver, flash status result;
+        // arg0 - data to be saved to server; arg1 - object, containing formname & formkey information
+        pair.push({name:'update_mode', value:'pair'});
+        saveData(pair, $scope, event);
+    });
 }
-/* end chain controller */
+/* end edit pair controller */

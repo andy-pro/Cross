@@ -96,6 +96,7 @@
 'FAQ': 'FAQ',
 'First name': 'Имя',
 'Forms and Validators': 'Forms and Validators',
+'Found results for "%s"': 'Found results for "%s"',
 'Free Applications': 'Free Applications',
 'Group ID': 'Group ID',
 'Groups': 'Groups',

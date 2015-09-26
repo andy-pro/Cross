@@ -91,6 +91,7 @@ db.define_table('plint_table',
 
 pairtitles = [pairfields[z][0] for z in xrange(0, 10)]    # this fields contains pair titles
 pairtitles.append(plintfields[2])
+pfset1 = [db.plint_table.id, db.plint_table.title, db.plint_table.start1, db.plint_table.comdata]
 
 ## after defining tables, uncomment below to enable auditing
 # auth.enable_record_versioning(db)

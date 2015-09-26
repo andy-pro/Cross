@@ -1,9 +1,30 @@
+div.pair-ol {
+    background: #eee;
+    position: absolute;
+    line-height: 16px;
+    width: 42px;
+    height: 99%;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    margin: 1px;
+    padding-top: 6px;
+}
+textarea.pair-titles {
+    line-height: 16px;
+    width: 100%;
+    resize: none;
+    padding-left: 50px;
+}
+pre.mypre {
+    margin: 0;
+    padding: 0;
+    border: none;
+    font-size: 14px;
+    white-space: pre-wrap;
+}
 div.table-container{
     max-height: 500px;
     overflow: auto;
-}
-a.primary{
-    color: #fff;
 }
 .checkbox label{
     color: #337ab7;

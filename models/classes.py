@@ -162,49 +162,40 @@ class Vertical:
         del db.vertical_table[self.index]
 
     def update(self, vars):
-        '''vars = (form.vars.title,
-                    form.vars.child,
-                    form.vars.count,
-                    bool(form.vars.start1),
-                    form.vars.from_plint,
-                    request.now.date(),
-                    auth.user,
-                    bool(form.vars.replace_comdata))
-                    '''
-
         db.vertical_table[self.index] = {'title': vars.title}
-        s = vars.child
-        cnt = vars.count
-        if cnt and s:
-            if '%' in s:
-                y = get_iter_label(s)
-                k = y[1]
-            else:
-                cnt = 1
-                k = -1
+        cnt = int(vars.count)
+        if cnt:
+            who = dict(modon=request.now.date(), modby=auth.user)
             try:
                 fp = int(vars.from_plint)
                 fv = int(vars.from_vert)
-                plints = db((db.plint_table.parent == fv) & (db.plint_table.id >= fp)).select(limitby = (0, cnt))
-                pc = len(plints)
+                outplints = db((db.plint_table.parent == fv) & (db.plint_table.id >= fp)).select(limitby = (0, cnt))
+                pc = len(outplints)
                 pi = 0
             except:
                 pc = 0
-            for i in range(cnt):
-                if k >= 0:
-                    s = y[0] + str(k) + y[2]
-                    k += 1      # increment counter in title
-                x = db((db.plint_table.title==s) & (db.plint_table.parent==self.index)).select().first()
-                if not x:
-                    x = db.plint_table.insert(root=self.cross.index, parent=self.index, title=s)
-                plint = Plint(x.id)
-                if pc and pi < pc:
-                    vars.from_plint = plints[pi].id
+
+            idx = 0
+            while(vars['title_'+str(idx)] and idx < 100):
+                si = str(idx)
+                idx += 1
+                pt = vars['title_'+si]  # plint title, add new or modify if it exist
+
+                xp = db((db.plint_table.title==pt) & (db.plint_table.parent==self.index)).select().first()
+                if not xp:
+                    xp = db.plint_table.insert(root=self.cross.index, parent=self.index, title=pt)
+                #plint = Plint(xp.id)
+                data = dict(comdata=vars['comdata_'+si])
+                if vars['start1_'+si]:
+                    data['start1'] = vars['start1_'+si]
+                data.update(who)
+                db.plint_table[xp.id] = data
+                if pc and pi < pc and vars['rcomdata_'+si]:
+                    data['comdata'] = vars['rcomdata_'+si]
+                    del data['start1']
+                    db.plint_table[outplints[pi].id] = data
                     pi += 1
-                else:
-                    vars.from_plint = 0
-                vars.title = s
-                plint.update_comefrom(vars)
+
 #==================================================================
 
 class Plint:
@@ -227,6 +218,9 @@ class Plint:
 
     def delete(self):
         del db.plint_table[self.index]
+
+    def update(self, vars):
+        db.plint_table[self.index] = {'title': vars.title}
 
 #==================================================================
 

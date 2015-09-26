@@ -1,4 +1,21 @@
-﻿<script type="text/template" id="crossTmpl">
+﻿<script type="text/template" id="liveSearchTmpl">
+<% for (var ci in search ) { %>
+  <a><%=search[ci]%></a>
+<% } %>
+</script>
+
+<script type="text/template" id="btnOkCancelTmpl">
+<div class="pull-right">
+<input type="submit" class="btn btn-primary"/>
+<button class="btn btn-primary" onclick="history.back();return false;">Cancel</button>
+</div>
+</script>
+
+<script type="text/template" id="btnBackTmpl">
+<button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="Back (Esc)">&times;</button>
+</script>
+
+<script type="text/template" id="CrossTmpl">
 <% for (var ci in crosses ) {
 var verticals = crosses[ci]["verticals"]; %>
 <div class="col-md-4">
@@ -16,16 +33,16 @@ var verticals = crosses[ci]["verticals"]; %>
 <% } %>
 </script>
 
-<script type="text/template" id="verticalTmpl">
+<script type="text/template" id="VerticalTmpl">
   <div class="panel panel-default">
     <div class="panel-heading">
       <a href='javascript:edit(<%=href%>)'><%=header%></a>
       <%=btnBack%>
       <div class="checkbox inmenu right">
-        <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)">Wrap text</label>
+        <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)"/>Wrap text</label>
       </div>
       <div class="checkbox inmenu right">
-        <label><input id="editchain" type="checkbox" onclick="editChain(this.checked)">Edit chain</label>
+        <label><input id="editchain" type="checkbox" onclick="editChain(this.checked)"/>Edit chain</label>
       </div>
     </div>
     <table class="vertical table table-bordered table-striped"><tbody>
@@ -41,9 +58,9 @@ var verticals = crosses[ci]["verticals"]; %>
               <a href="#/vertical/<%=plints[ci].parent[0]%>"title="Vertical <%=plints[ci].parent[1]%>"><%=plints[ci].parent[1]%></a>
             </td>
           <% } %>
-          <td class="colv1" style="border-right: 2px solid #ddd;">
+          <td class="colv1" style="border-right:2px solid #ddd;">
           <% var _title = "Plint: "+plints[ci].title+"\n"+plints[ci].modon+"\n"+users[plints[ci].modby]+"\nCommon data: "+plints[ci].comdata; %>
-            <a href="#/plintEdit/<%=plints[ci].id%>" title="<%= _title %>"><%= plints[ci].title %></a>
+            <a href='javascript:edit("plint",<%=plints[ci].id%>)' title="<%=_title%>"><%=plints[ci].title%></a>
           </td>
           <% for ( var cj in pairs ) {
             var t = pairs[cj][0];
@@ -52,30 +69,153 @@ var verticals = crosses[ci]["verticals"]; %>
                      if (t.indexOf(query) >= 0) found = 'class="found"'; }
               else _title = ""; %>
             <td <%=found%>>
-              <a title="<%= _title %>" href='javascript:edit("pair",<%=plints[ci].id%>,<%=parseInt(cj)+1%>)'>
-              <sup><%=parseInt(cj)+start1%></sup><%= t %></a>
+              <a href='javascript:edit("pair",<%=plints[ci].id%>,<%=parseInt(cj)+1%>)' title="<%=_title%>">
+              <sup><%=parseInt(cj)+start1%></sup><%=t%></a>
             </td>
           <% };
           t = plints[ci].comdata;
           found = "commondata";
           if (t && query && t.indexOf(query) >= 0) found += " cdfound"; %>
-          <td class="<%=found%>" style="border-left: 2px solid #ddd;"><%= t %></td>
+          <td class="<%=found%>" style="border-left:2px solid #ddd;"><%=t%></td>
         </tr>
       <% }; %>
     </tbody></table>
   </div>
 </script>
 
-<script type="text/template" id="chainEditTmpl">
+<script type="text/template" id="editVerticalTmpl">
 <div class="col-md-6">
   <div class="panel panel-primary">
-    <div class="panel-heading"><%=data.header%><%=btnBack%></div>
+    <div class="panel-heading"><a style="color:inherit;" href="#/vertical/<%=vertical.vertical%>" target="_blank"><%=vertical.header%></a><%=btnBack%></div>
     <div class="panel-body">
-      <p><i><%=data.modinfo%></i></p>
-      <form class="form-horizontal edit" action="javascript:pairEditAccept()">
+      <form class="form-horizontal edit">
+        <div class="form-group">
+          <label class="col-md-3 control-label"><%=T._TITLE_%></label>
+          <div class="col-md-8"><input type="text" name="title" class="form-control" value="<%=vertical.title%>"/></div>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox col-md-offset-3 col-md-8"><label>
+            <input name="delete" class="delete" type="checkbox"/>Delete vertical
+          </label></div>
+        </div>
+
+        <div class="form-group">
+          <label class="col-md-3 control-label">Plint title</label>
+          <div class="col-md-3"><input name="plinttitle" type="text" class="form-control" value="M%1"/></div>
+          <label class="col-md-2 control-label">Count</label>
+          <div class="col-md-3 numeric"><input type="number" min="0" max="100" name="count" class="form-control" value="0"/></div>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox col-md-offset-3 col-md-8">
+            <label><input name="start1" type="checkbox" checked/>Numeration start 1</label>
+            <label class="right"><input name="start1all" type="checkbox"/>Apply for all</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="col-md-3 control-label">Common data</label>
+          <div class="col-md-8">
+            <div class="input-group">
+                <input type="text" name="comdata" class="form-control" value="%0 %1 %2 %3"/>
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" title="Help" onclick="commondataHelp()">?</button>
+                </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox col-md-offset-3 col-md-8"><label>
+            <input name="comdatareplace" type="checkbox" checked/>Replace remote common data
+          </label></div>
+        </div>
+
+        <table id="chaintable">
+          <tr>
+          <td><%=tbheaders[0]%></td>
+          <td><%=tbheaders[1]%></td>
+          <td><%=tbheaders[2]%></td>
+          </tr>
+        </table>
+
+        <%=btnOkCancel%>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<div class="col-md-6">
+  <div class="panel panel-default">
+    <div class="panel-heading">Changes: vertical <span id="changehead"><%=vertical.title%></span></div>
+    <div class="table-container">
+    <table class="table table-bordered table-condensed" id="watchtable">
+      <tr class="info"><th width="15%"><%=tbheaders[2]%></th><th width="8%">+/~</th><th width="38%">Common Data</th><th>Remote Common Data</th></tr>
+    </table>
+    </div>
+  </div>
+</div>
+
+</script>
+
+<script type="text/template" id="editPlintTmpl">
+<div class="col-md-6">
+  <div class="panel panel-primary">
+    <div class="panel-heading"><%=plint.header%><%=btnBack%></div>
+    <div class="panel-body">
+      <p><i><%=plint.modinfo%></i></p>
+      <form class="form-horizontal edit">
+        <div class="form-group">
+          <label class="col-md-3 control-label"><%=T._TITLE_%></label>
+          <div class="col-md-8"><input type="text" name="title" class="form-control" value="<%=plint.title%>"/></div>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox col-md-offset-3 col-md-8"><label>
+            <input name="delete" class="delete" type="checkbox"/>Delete plint
+          </label></div>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox col-md-offset-3 col-md-8">
+            <label><input name="start1" type="checkbox" <%=plint.start1%>/>Numeration start 1</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="col-md-3 control-label">Common data</label>
+          <div class="col-md-8"><input type="text" name="comdata" class="form-control" value="<%=plint.comdata%>"/></div>
+        </div>
+
+        <div class="form-group">
+          <label class="col-md-3 control-label">Pair titles</label>
+          <div class="col-md-8">
+            <div class="pair-ol"><ol start="0"><% for (var i=0; i<10; i++) print("<li></li>"); %></ol></div>
+            <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairtitles"><%=plint.pairs%></textarea>
+          </div>
+        </div>
+
+        <%=btnOkCancel%>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+</script>
+
+<script type="text/template" id="editPairTmpl">
+<div class="col-md-6">
+  <div class="panel panel-primary">
+    <div class="panel-heading"><%=pair.header%><%=btnBack%></div>
+    <div class="panel-body">
+      <p><i><%=pair.modinfo%></i></p>
+      <form class="form-horizontal edit">
         <div class="form-group">
           <label class="col-md-2 control-label"><%=T._TITLE_%></label>
-          <div class="col-md-8"><input name="title" class="form-control" value="<%=data.title%>"></div>
+          <div class="col-md-8"><input name="title" class="form-control" value="<%=pair.title%>"/></div>
         </div>
         <button type="button" class="btn btn-sm btn-success pull-right" title="Add link to chain" onclick="addLink()">+</button>
         <table id="chaintable">
@@ -86,16 +226,15 @@ var verticals = crosses[ci]["verticals"]; %>
     </div>
   </div>
 </div>
+</script>
 
+<script type="text/template" id="watchtableTmpl">
 <div class="col-md-5">
   <div class="panel panel-default">
-    <div class="panel-heading">Watch
-      <button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="Back">&times;</button>
-    </div>
+    <div class="panel-heading">Watch</div>
     <div class="panel-body">
-      <br>
+      <input class="btn btn-warning" type="button" value="Refresh" onclick="refreshWatch()"/>
     </div>
-    <input class="btn btn-warning" type="button" value="Refresh" onclick="refreshWatch()">
     <table class="table table-bordered" id="watchtable">
       <tr class="info"><td>Link</td><td>Cross</td><td>Vertical</td><td>Plint</td><td>Pair</td></tr>
     </table>
@@ -103,40 +242,25 @@ var verticals = crosses[ci]["verticals"]; %>
 </div>
 </script>
 
-<script type="text/template" id="liveSearchTmpl">
-<% for (var ci in search ) { %>
-  <a><%=search[ci]%></a>
-<% } %>
-</script>
-
-<script type="text/template" id="btnOkCancelTmpl">
-<div><button class="btn pull-right btn-primary" onclick="history.back();return false;">Cancel</button>
-<input type="submit" class="btn pull-right btn-primary"></div>
-</script>
-
-<script type="text/template" id="btnBackTmpl">
-<button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="Back (Esc)">&times;</button>
-</script>
-
-<script type="text/template" id="foundEditTmpl">
+<script type="text/template" id="editFoundTmpl">
 <div class="col-md-7">
   <div class="panel panel-primary">
     <div class="panel-heading"><%=header%><%=btnBack%></div>
 
     <div class="panel-body">
-      <form class="form-horizontal edit" action="javascript:foundEditAccept()">
+      <form class="form-horizontal edit">
         <button type="button" class="btn btn-sm btn-default pull-right" title="RegExp help" onclick="regexpHelp()">?</button>
         <div class="form-group">
           <label class="col-md-2 control-label"><%=T._FIND_%></label>
-          <div class="col-md-8"><input name="find" class="form-control" value="<%=query%>" oninput="refreshFoundTable()"></div>
+          <div class="col-md-8"><input id="find" class="form-control" value="<%=query%>"/></div>
         </div>
         <div class="form-group">
           <label class="col-md-2 control-label"><%=T._REPLACE_%></label>
-          <div class="col-md-8"><input name="replace" class="form-control" value="<%=query%>" oninput="refreshFoundTable()"></div>
+          <div class="col-md-8"><input id="replace" class="form-control" value="<%=query%>"/></div>
         </div>
         <div class="form-group">
             <div class="checkbox col-md-offset-2 col-md-8"><label>
-                  <input name="replacecheck" type="checkbox" checked="checked" onclick="refreshFoundTable()"><%=T._FOLLOW_%>
+                  <input id="follow" type="checkbox" checked="checked"/><%=T._FOLLOW_%>
             </label></div>
         </div>
 
@@ -155,82 +279,4 @@ var verticals = crosses[ci]["verticals"]; %>
     <div class="panel-footer"><div class="myright">Found <%=count%> results.</div></div>
   </div>
 </div>
-</script>
-
-<script type="text/template" id="verticalEditTmpl">
-<div class="col-md-6">
-  <div class="panel panel-primary">
-    <div class="panel-heading"><a class="primary" href="#/vertical/<%=vertical.vertical%>" target="_blank"><%=vertical.header%></a><%=btnBack%></div>
-    <div class="panel-body">
-      <form class="form-horizontal edit" action="javascript:verticalEditAccept()">
-        <div class="form-group">
-          <label class="col-md-3 control-label"><%=T._TITLE_%></label>
-          <div class="col-md-8"><input name="verticaltitle" class="form-control" value="<%=vertical.title%>" oninput="verticalChange(this)"></div>
-        </div>
-
-        <div class="form-group">
-          <div class="checkbox col-md-offset-3 col-md-8"><label>
-            <input name="delete" class="delete" type="checkbox">Delete vertical
-          </label></div>
-        </div>
-
-        <div class="form-group">
-          <label class="col-md-3 control-label">Plint title</label>
-          <div class="col-md-3"><input name="plinttitle" class="form-control" value="М%1" oninput="verticalChange(this)"></div>
-          <label class="col-md-2 control-label">Count</label>
-          <div class="col-md-3 numeric"><input type="number" min="0" max="100" name="count" class="form-control" value="0" oninput="verticalChange(this)"></div>
-        </div>
-
-        <div class="form-group">
-          <div class="checkbox col-md-offset-3 col-md-8">
-          <label><input name="start1" type="checkbox" checked="checked" onclick="verticalChange(this)">Numeration start 1</label>
-          <label class="right"><input name="start1all" type="checkbox" onclick="verticalChange(this)">Apply for all</label>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="col-md-3 control-label">Common data</label>
-          <div class="col-md-8">
-            <div class="input-group">
-                <input type="text" name="comdata" class="form-control" oninput="verticalChange(this)" value="%0">
-                <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" title="Help" onclick="commondataHelp()">?</button>
-                </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <div class="checkbox col-md-offset-3 col-md-8"><label>
-            <input name="comdatareplace" type="checkbox" checked="checked" onclick="verticalChange(this)">Replace remote common data
-          </label></div>
-        </div>
-
-
-        <table id="chaintable">
-          <tr>
-          <td><%=tbheaders[0]%></td>
-          <td><%=tbheaders[1]%></td>
-          <td><%=tbheaders[2]%></td>
-          </tr>
-        </table>
-
-        <%=btnOkCancel%>
-      </form>
-    </div>
-
-  </div>
-</div>
-
-<div class="col-md-5">
-  <div class="panel panel-default">
-    <div class="panel-heading">Changes: vertical <span id="changehead"><%=vertical.title%></span></div>
-    <div class="table-container">
-    <table class="table table-bordered table-condensed" id="watchtable">
-      <tr class="info"><th width="15%"><%=tbheaders[2]%></th><th width="8%">+/~</th><th>Common Data</th></tr>
-    </table>
-    </div>
-  </div>
-</div>
-
 </script>

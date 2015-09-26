@@ -1,45 +1,34 @@
 //======================================
-/*** Found Controller ***/
-function foundCtrl(params, route) {
+/*** Edit Found Controller ***/
+function EditFoundCtrl(params, route) {
 
 /*** controller functions ***/
 
     regexpHelp = function() {
-        $.get(staticpath + "regexphelp.html")
-        .success(function(data) { web2pyflash(data, 'default', 0); });
+        $.get(staticpath + "regexphelp.html").success(function(data) { web2pyflash(data, 'default', 0); });
     }
 
-    refreshFoundTable = function() {
+    var refreshFoundTable = function() {
         var ftext = findId.val();
         var rtext = replaceId.val();
         $.each(fdata, function() {
-            var out;
-            if (rcheckId[0].checked) out = rtext;
-                else out = ftext;
-            this.td.html(this.title.replace(ftext, '<span style="background-color: #ff6">'+out+'</span>'));
+            var out = (followId[0].checked) ? rtext : ftext;
+            //this.td.html('<pre class="mypre">'+this.title.replace(ftext, '<span style="background-color: #ff6">'+out+'</span>')+'</pre>');
+            this.td.html(_mypre.format(this.title.replace(ftext, '<span style="background-color: #ff6">'+out+'</span>')));
+            //this.td.find('span').text('text');
             this['_title'] = this.title.replace(ftext, rtext);
         });
     }
 
-    foundEditAccept = function() {
-        if ($scope.formkey) {
-        //log ($scope.formkey)
-            var data = []; // = $.param(fdata);
-            $.each(fdata, function(idx, pair) {
-                data.push({name:'cross_'+idx, value:0});    // impotant!, inform 'def ajax_getupdate():' record exist
-                data.push({name:'plint_'+idx, value:pair.plintId});
-                data.push({name:'pair_' +idx, value:pair.pairId});
-                data.push({name:'title_'+idx, value:pair._title});
-            });
-            saveData(data, $scope); // arg0 - data to be saved to server; arg1 - object, containing formname & formkey information
-        }
-    }
-
 /*** end found controller functions ***/
 
-    // start found Controller
+    // start Edit Found Controller
 
-    if (!$scope || $scope.query != params.vars.search) $scope = sLoad(route.ajaxData, params.args, params.vars);
+    //console.time("search_in_db");
+    //if (!$scope || $scope.query != params.vars.search) $scope = sLoad(route.ajaxurl, params.args, params.vars);
+    $scope = sLoad(route.ajaxurl, params.args, params.vars);
+    //console.timeEnd("search_in_db");
+
     //route.targetEl.innerHTML = tmpl("foundEditTmpl", context);
     var fdata = [];
     $.each($scope.plints, function(key, plint) {  // convert : array of plints to array of pairs
@@ -56,11 +45,14 @@ function foundCtrl(params, route) {
                             start1: start1});
         });
     });
+
     render(route, {query:$scope.query, header:$scope.header, count:fdata.length});
 
-    var findId = $("input[name=find]"),
-        replaceId = $("input[name=replace]"),
-        rcheckId = $("input[name=replacecheck]");
+    var findId = $("#find").on('input', refreshFoundTable),
+        replaceId = $("#replace").on('input', refreshFoundTable),
+        followId = $("#follow").on('click', refreshFoundTable);
+
+    findId.focus();
 
     $.each(fdata, function(idx, pair) {
         var tr = $('<tr>'); //, {class:"refreshing"});
@@ -74,5 +66,17 @@ function foundCtrl(params, route) {
 
     refreshFoundTable();
 
+    $('form.edit').submit(function(event) {
+        var pair = []; // = $.param(fdata);
+        $.each(fdata, function(idx, pair) {
+            pair.push({name:'cross_'+idx, value:0});    // impotant!, inform 'def ajax_update():' record exist
+            pair.push({name:'plint_'+idx, value:pair.plintId});
+            pair.push({name:'pair_' +idx, value:pair.pairId});
+            pair.push({name:'title_'+idx, value:pair._title});
+        });
+        pair.push({name:'update_mode', value:'pair'});
+        saveData(pair, $scope, event); // arg0 - data to be saved to server; arg1 - object, containing formname & formkey information
+    });
+
 }
-/* end found controller */
+/* end edit found controller */

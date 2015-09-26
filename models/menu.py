@@ -25,9 +25,18 @@ response.google_analytics_id = None
 response.menu = [
     (T('Home'), False, URL('index#'), [])
 ]
-response.menu.append((T('Import DB'), False, URL('default', 'restore')))
+#response.menu.append((T('Import DB'), False, URL('default', 'restore')))
 
+if auth.has_membership('administrators'):
+    response.toolsmenu = LI(A(T('Tools'), _href='#'),
+        UL(LI(A(I(_class="glyphicon glyphicon-upload"), _BACKUP_, _href=URL('default', 'backup'))),
+        LI(A(I(_class="glyphicon glyphicon-download"), _RESTORE_, _href=URL('default', 'restore', args=['csv']))), LI(_class="divider"),
+        LI(A(I(_class="glyphicon glyphicon-import"), T(' Import DB'), _href=URL('default', 'restore'))),
+        LI(A(I(_class="glyphicon glyphicon-warning-sign"), T(' Direct edit DB'), _href=URL('appadmin', 'index'))), LI(_class="divider"),
+        LI(A(I(_class="glyphicon glyphicon-remove"), T(' Clear database'), _href=URL('default', 'cleardb'))),
+        _class="dropdown-menu"), _class="dropdown")
 
+'''
 def updatemainarray():
     return [ [r.id, r.title, [ [w.id, w.title] for w in db(db.vertical.parent == r.id).select() ] ] for r in db(db.cross).select()]
 
@@ -36,3 +45,4 @@ def updatemainarray():
 def redirect_updatemenu(url):
     updatemainarray()
     return redirect(url)
+'''
