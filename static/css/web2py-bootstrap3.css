@@ -1,6 +1,16 @@
+div.table-container{
+    max-height: 500px;
+    overflow: auto;
+}
+a.primary{
+    color: #fff;
+}
+.checkbox label{
+    color: #337ab7;
+}
 div.checkbox.inmenu{
     color: #337ab7;
-    padding: 0 50px 0 0;
+    padding-right: 50px;
     margin: 0;
 }
 
@@ -125,8 +135,9 @@ background: #ffc;
 }
 
 /*td.loop {background: #faa;}*/
-/*td.found {background: #cfc;}*/
-/*td.cdfound {background: #cfc;}*/
+td.found {background: #cfc;}
+td.new {background: #ffb;}
+td.cdfound {background: #cfc;}
 /*td.found.loop {background: linear-gradient(to top, #cfc, #faa);}*/
 td.commondata {
     font-size: 9pt;

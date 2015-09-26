@@ -299,7 +299,7 @@ def import_from_txt1(f):
     for vertical_index, verticalitem in enumerate(verticals, start = 1):
         for i in xrange(1, int(verticalitem[1]) + 1):
             s1 = readstring(f)
-            lb = True   # rus to lat
+            lb = False   # rus to lat replace
             if lb:
                 #s1 = s1.replace('БМ', 'BM')
                 #s1 = s1.replace('БКТ', 'BKT')

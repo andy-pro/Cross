@@ -10,12 +10,30 @@ function log(msg) {
 /*** String format Helper  ***/
 String.prototype.format = function() {
     var newStr = this, i = 0;
-    while (/%s/.test(newStr))
-        newStr = newStr.replace("%s", arguments[i++]);
+    while (/%s/.test(newStr)) newStr = newStr.replace("%s", arguments[i++]);
     return newStr;
 }
 // or use javascript embedded expression format:
 // `string1${arg1}string2${arg2}string3`
+//======================================
+//---------- jQuery extension function ---------------
+$.fn.settofirst = function() { $(':nth-child(1)', this).attr('selected', 'selected'); }
+
+$.fn.settovalue = function(value) { $('[value='+value+']' , this).attr('selected', 'selected'); }
+
+$.fn.enumoptions = function (start) {
+    var DEBUG = ' : value';
+    var e = $('option', this) // get options set of select
+    start = parseInt(start);
+    if (e.length) {  // if options exist, simply change text
+        $.each(e, function (i) {this.text = i + start + DEBUG+String(i+1)});
+    } else {
+        this.prop('disabled', false);   // if it was early cleared and disabled, append new options
+        for (i= 1; i <= 10; i++) {
+            this.append($('<option>').text(i+start-1 + DEBUG+String(i)).attr('value', i));
+        }
+    }
+}
 //======================================
 function addFormKey(dest, src) {
     $.each(['formname', 'formkey'], function(){dest.push({name:this, value:src[this]})});
@@ -25,7 +43,7 @@ function addFormKey(dest, src) {
 // arg0 - data to be saved to server; arg1 - object, containing formname & formkey information
 function saveData(data, formdata) {
     addFormKey(data, formdata); // destination, source
-    data = sLoad('EditPair', [], {}, data, 'POST');
+    data = sLoad('update', [], {}, data, 'POST');
     if (data.status) web2pyflash('Database update success!');
         else web2pyflash('Session expired!', 'danger');
     history.back();
@@ -56,7 +74,6 @@ function sLoad(ajaxData, args, vars, senddata, type) {
             if (jqXHR.statusText == "UNAUTHORIZED") {
                 //history.pushState({id: 'SOME ID'}, '', 'myurl.html');
                 //window.document.referrer = 'mymymyref';
-                //var path='EditPair/555/333'
                 //var path='user/login'
     //history.pushState({note: 'note', path:path}, '', path);
     //history.replaceState({note: 'note', path:path}, 'Log in');
@@ -80,31 +97,31 @@ function aLoad(cache, callback, ajaxData, args) {
         $.ajax({
             url: rootpathajax + ajaxData + ".json" + url,
             //async: false,
-            success: function( data ) {
+	    beforeSend: function(){
+		ajaxstate.during = true;
+		ajaxstate.count++;//console.warn(ajaxstate.count);
+	    },
+	    //error: function(){ console.error('error'); },
+	    //complete: function(xhr, status){ },
+            success: function(data) {
+		ajaxstate.count--;
+		//console.log(this.url);
                 cache[ajaxData].data = data.data;
-                $.each(cache[ajaxData].targets, function() { this() });
+                //$.each(cache[ajaxData].targets, function() { this() });
+                while (cache[ajaxData].targets.length) cache[ajaxData].targets.pop()();	// local callback stack
                 delete cache[ajaxData].targets;
-            } });
-        }
+		if (ajaxstate.count == 0) {
+		    ajaxstate.during = false;
+		    while (ajaxstate.callback.length) {
+			ajaxstate.callback.pop()();	// global callback stack
+		    }
+		}
+            }
+	});
+    }
     if (cache[ajaxData].data) callback();
-        else {cache[ajaxData].targets.push(callback);
-	//console.log(callback);
-	}
+    else cache[ajaxData].targets.push(callback);
 }
-//======================================
-$( document ).ajaxStart(function( event, jqxhr, settings ) {
-    ajaxstate.inprogress = true;
-});
-
-jQuery(document).ajaxComplete(function( event, xhr, settings ) {
-    ajaxstate.inprogress = false;
-    $.each(ajaxstate.callback, function() {
-	this();
-	console.info('deferred start refreshing');
-    });
-    ajaxstate.callback = [];
-});
-
 //======================================
 /*** web2py flash message Helper  ***/
 (function(){
@@ -208,7 +225,10 @@ router = function  () {  // version with regex, replace
 //w2p_attrs = {'data-w2p_method':"GET", 'data-w2p_disable_with':"default"};
 
 var $scope;     // for interaction between controllers
-var ajaxstate = {inprogress: false, callback: []};
+var chaindata;	// storage for <select> chains
+var tablewatchId;   // table for variable watch and debug
+var ajaxstate = {during:false, callback:[], count:0, cache:[]};
+
 var T = {_CROSS_:'Cross',
      _VERTICAL_:'Vertical',
      _PLINT_:'Plint',
@@ -387,8 +407,98 @@ function verticalCtrl(params, route) {
 /*** Vertical Edit Controller ***/
 function verticalEditCtrl(params, route) {
 
+    commondataHelp = function() {
+        $.get(staticpath + "varhelp.html")
+        .success(function(data) { web2pyflash(data, 'default', 0); });
+    }
+
+    verticalChange = function(El) {
+	//var inputs = {verticaltitle : $("input[name=verticaltitle]").val(),
+		      //plinttitle : $("input[name=plinttitle]").val(),
+		      //count : $("input[name=count]").val(),
+		      //start1 : $("input[name=start1]")[0].checked,
+		      //comdata : $("input[name=comdata]").val(),
+		      //comdatareplace : $("input[name=comdatareplace]")[0].checked
+		      //}
+	//log(El);
+	var inputs = {}, plints = [];
+
+	$("form.edit input, form.edit select").each(function(){
+	    var El = $(this);	// if type="checkbox" get "checked", for other types get "value"
+	    inputs[El.attr('name')] = (El.attr('type') == 'checkbox') ? Number(El[0].checked) : El.val();
+	});
+
+	//console.table(inputs);
+	$('#changehead').html(inputs.verticaltitle);
+
+	//var re = new RegExp("%(\d+)", "");
+	var titles = chaindata[0].titles;   // shortcut
+	var cd_rem = inputs.comdatareplace; // && inputs.cross_0 > 0);
+	var re, res = /%(\d+)/.exec(inputs.plinttitle);
+	if (res) re = Number(res[1]);
+
+	var comdata = inputs.comdata;
+	comdata = comdata.replace('%1', (titles.cross) ? titles.cross : '');
+	comdata = comdata.replace('%2', (titles.vertical) ? titles.vertical : '');
+
+        $("table#watchtable tr").remove(".refreshing");
+	var cnt = inputs.count;
+	if (isNaN(cnt) || cnt=='' || cnt>100 || cnt<0) $('div.numeric').addClass('has-error');
+	else {
+	    $('div.numeric').removeClass('has-error');
+
+
+	    var si = titles.plintindex;
+
+	    for (var i=0; i<cnt; i++) {
+		var plint = {};
+		var tr = $('<tr>', {class:"refreshing"});
+		var ti = res ? inputs.plinttitle.replace(res[0], re+i) : inputs.plinttitle;
+		var _class, st, idx = matchTitle($scope.plints, ti);
+		var cd = comdata, start1 = inputs.start1;
+		if (idx >= 0) {
+		    _class="warning";
+		    st = "~";
+		    cd = cd.replace('%0', $scope.plints[idx].comdata);
+		    start1 = (inputs.start1all) ? inputs.start1 : $scope.plints[idx].start1;
+		    if (inputs.start1all) plint.start1 = inputs.start1;
+		} else {
+		    _class="new";
+		    st = "+";
+		    cd = cd.replace('%0', '');
+		    plint.start1 = inputs.start1;
+		}
+		$('<td>', {class:_class}).html(`<sup>${start1}</sup>${ti}`).appendTo(tr);
+		$('<td>').text(st).appendTo(tr);
+		cd = cd.replace('%3', (titles.vertical && chaindata[0].plints[si+i]) ? chaindata[0].plints[si+i][1] : '');
+		$('<td>').text(cd).appendTo(tr);
+		tr.appendTo(watchtable);   // id of element, without declare variable!!!
+		plint.title = ti;
+		plint.comdata = cd;
+		plints.push(plint);
+		if (!res) break;    // if not %1, add only 1 plint
+	    }
+	}
+    }
+
+    matchTitle = function(arr, query) {
+	for (var o in arr) if (arr[o].title && arr[o].title == query) return o;
+	return -1;
+    }
+
+    verticalEditAccept = function(value) {
+	log('accept')
+    }
+
     if (!$scope || $scope.vertical != params.args[0]) $scope = sLoad(route.ajaxData, params.args, params.vars);
-    render(route, {header:$scope.header, title:$scope.title});
+    render(route, {vertical:$scope});
+
+//function Link(index, target, link, depth, cache) {
+    var cache = {};     // use own data cache for ajax request
+    var chaintableId = $("#chaintable");
+
+    chaindata = [ new Link(0, chaintableId, emptyLink(), 3, cache, 'vertical') ];
+    OnSelectChange = verticalChange;
 
     //$scope = sLoad(route.ajaxData, params.args, params.vars);
     //var href, header;

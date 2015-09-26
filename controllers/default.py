@@ -3,85 +3,9 @@
 from gluon.utils import web2py_uuid
 
 def index():
-    #updatemenu()
-    #response.headers['web2py-component-content'] = 'replace'
-    #print request.vars
-    #print 'args=', request.args
-    #print 'vars=', request.vars
-    #print request
-    #print session
-    #print web2py_uuid()
     return dict()
-
-def crosses2():
-    return DIV(_id="crosshome")
-
-def demo():
-    return dict()
-
-def demo2():
-    cid = 'ajax_container'
-    #btns = [INPUT('Click to load content %i' % i,**{'_type':'button','_class':'load_content btn-primary','data-url':URL('otherthing%i' % i),'data-target':cid}) for i in xrange(5)]
-    btns = [INPUT(**{'_value':'Click to load content %i' % i, '_type':'button','_class':'load_content btn btn-primary','_data-url':URL('otherthing%i' % i),'_data-target':cid}) for i in xrange(1,5)]
-    div = DIV('<!-- CONTENT COMES HERE -->', _id=cid)
-    script = '''
-    $(function () {
-       $('.load_content').on('click', function (e) {
-            elem = $(this); // elem = $(e.target)
-            url = elem.attr("data-url");
-            target = elem.attr("data-target");
-            web2py_ajax_page("GET", url, "", target);
-            return false; // e.preventDefault()
-          });
-    })
-    '''
-    #response.js =  "jQuery('#wert').get(0).reload()"
-    #return dict(div=DIV(btns, div))
-    return dict(btns=DIV(btns), content=div, script=SCRIPT(script))
-    #return dict(btns=DIV(btns), content=div)
-
-
-def otherthing1():
-    return '<h4>Hello 1</h4>'
-def otherthing2():
-    return '<h4>Hello 2</h4>'
-def otherthing3():
-    return '<h4>Hello 3</h4>'
-def otherthing4():
-    return '<h4>Hello 4</h4>'
-
-'''
-    tm = TimeMeter()     # for Debug
-    #updatemenu()
-    crosses = db(db.cross_table).select()
-    #response.view='default/cross.html'
-    #appendManageMenu()
-    #table = DIV([DIV(item.title, _class='col-md-3 well') for item in items])
-    table = []
-    for cross in crosses:
-        verticals = db(db.vertical_table.parent == cross.id).select()
-        lst = ', '.join('<a href="%s">%s</a>' % (URL('vertical', args=vertical.id), vertical.title) for vertical in verticals)
-        #table.append(DIV(DIV(DIV(A(B(cross.title), _href=URL('editcross', args=cross.id)), _class='panel-heading'), DIV(XML(lst), _class='panel-body'), _class="panel panel-info"), _class='col-lg-4'))
-        table.append(DIV(DIV(DIV(A(B(cross.title), _href=URL('vertical', args=cross.id), cid=request.cid), _class='panel-heading'), DIV(XML(lst), _class='panel-body'), _class="panel panel-info"), _class='col-lg-4'))
-    response.timemeter = tm.show('Rendering table')
-    return {'table': DIV(table)}
-
-    idx = request.args[0]
-    cross=db.cross_table[idx]
-    return dict(cross=cross, idx=idx)
-    '''
-def crosses():
-    crosses = db(db.cross_table).select()
-    table = []
-    for cross in crosses:
-        verticals = db(db.vertical_table.parent == cross.id).select()
-        #lst = ', '.join('<a href="%s">%s</a>' % (URL('vertical', args=vertical.id), vertical.title) for vertical in verticals)
-        lst = (A(vertical.title, _href=URL('vertical', args=vertical.id), cid=request.cid)+', ' for vertical in verticals)
-        table.append(DIV(DIV(DIV(A(B(cross.title), _href=URL('cross', args=cross.id), cid=request.cid), _class='panel-heading'), DIV(*lst, _class='panel-body'), _class="panel panel-info"), _class='col-lg-4'))
-    return DIV(table)
 
 def ajax_getindexdata():
-    #return dict((r.id, dict(title=r.title, verticals=dict((w.id, w.title) for w in db(db.vertical_table.parent == r.id).select() )))  for r in db(db.cross_table).select())
     crosses = dict((r.id, dict(title=r.title, verticals=dict((w.id, dict(title=w.title)) for w in db(db.vertical_table.parent == r.id).select() )))  for r in db(db.cross_table).select())
     return dict(crosses=crosses, user=get_user_id())
 
@@ -101,7 +25,7 @@ def ajax_getverticaldata():
         title = vertical.title
         header = vertical.header
         rows = db(db.plint_table.parent == vertical_id).select(orderby=db.plint_table.id)
-    plints = {}
+    plints = []   #plints = {}
     for plint in rows:
         td = []
         for i in xrange(0, 10):
@@ -111,16 +35,17 @@ def ajax_getverticaldata():
             get_user_name(who)
             td.append((pairtitle,when,who))
         get_user_name(plint.modby)
-        plints[plint.id] = dict(title=plint.title,
-                                start=int(plint.start1),
-                                comdata=plint.comdata,
-                                modon=plint.modon,
-                                modby=plint.modby,
-                                pairs=td)
+        tr={'id':plint.id,
+            'title':plint.title,
+            'start1':int(plint.start1),
+            'comdata':plint.comdata,
+            'modon':plint.modon,
+            'modby':plint.modby,
+            'pairs':td}
         if query:
-            plints[plint.id]['root'] = [plint.root, plint.root.title]
-            plints[plint.id]['parent'] = [plint.parent, plint.parent.title]
-
+            tr['root'] = [plint.root, plint.root.title]
+            tr['parent'] = [plint.parent, plint.parent.title]
+        plints.append(tr)
     result = dict(header=header, query=query, plints=plints, users=users, vertical=vertical_id, title=title)
     if query and rows:
         formname = 'editfound'
@@ -129,18 +54,9 @@ def ajax_getverticaldata():
     result['user'] = get_user_id()
     return result
 
-def getplintlist(rows):
+def getplintlist(rows): # rows to list convert
     return [(i.id,i.title,int(i.start1)) for i in rows]
 
-#def ajax_getPlintList():
-    #rows = db(db.plint_table.parent == request.args(0, cast = int)).select()
-    #return dict(items=getplintlist(rows))
-
-#def ajax_getplints():
-    ##rows = db(db.plint_table.parent == request.args(0, cast = int)).select(orderby=db.plint_table.id)
-    #rows = db(db.plint_table.parent == request.args(0, cast = int)).select(db.plint_table.id, db.plint_table.title, db.plint_table.start1, orderby=db.plint_table.id)
-    ##return dict((r.id, dict(title=r.title, start=int(r.start1))) for r in rows) # for dict of dicts
-    #return dict(data=[[r.id, r.title, int(r.start1)] for r in rows]) # for dict of tuples of tuples
 def ajax_getplints():
     rows = db(db.plint_table.parent == request.args(0, cast = int)).select(db.plint_table.id, db.plint_table.title, db.plint_table.start1, orderby=db.plint_table.id)
     return dict(data=getplintlist(rows)) # for dict of tuples of tuples
@@ -152,9 +68,30 @@ def ajax_getpairdata():
     formkey = formUUID(formname)
     #print session
     result = dict(header=pair.header, address=pair.address, modinfo=pair.modified_info, title=pair.title, formkey=formkey, formname=formname)
-    if (request.args(2) and request.args(2, cast=str) == 'chain'):
-        result['chain'] = getplintlist(search_plints(pair.title))
+    if (request.args(2) and test_query(pair.title) and request.args(2, cast=str) == 'chain'):
+        result['chain'] = getchain(pair.title, True, '%s_%s' % (pair.index, pair.pair))
     return result
+
+def getchain(q, exclude=False, pairId=''):
+    queries = [db.plint_table[field] == q for field in pairtitles]
+    query = reduce(lambda a, b: (a | b), queries)
+    rows = db(query).select()
+    pairs = []
+    for plint in rows:
+        for i in xrange(0, 10):
+            if plint(pairtitles[i]) ==q:
+                if exclude:
+                    if pairId == '%s_%s' % (plint.id, i+1):
+                        exclude = False
+                        continue
+                pairs.append({'crossId':plint.root,
+                              'verticalId':plint.parent,
+                              'plintId':plint.id,
+                              'pairId':i+1,
+                              'title':plint['pid'+str(i+1)]})
+    return pairs
+
+
 
 def formUUID(formname):
     formkey = web2py_uuid()
@@ -204,22 +141,23 @@ def ajax_getLiveSearch():     # live AJAX search
     items.sort()
     return dict(search=[item for item in items])
 
+def test_query(q):
+    try: uq = unicode(q, 'utf-8')
+    except: uq = q
+    return len(uq) > 2
+
 def search_plints(q):
-    if q == None:
-        q = ''
-    try:
-        uq = unicode(q, 'utf-8')
-    except:
-        uq = q
-    if len(uq) > 2:
-        queries = [db.plint_table[field].contains(q, case_sensitive=False) for field in pairtitles]
+    if q == None: q = ''
+    if test_query(q):
+        #queries = [db.plint_table[field].contains(q, case_sensitive=False) for field in pairtitles]
+        queries = [db.plint_table[field].contains(q, case_sensitive=True) for field in pairtitles]
         query = reduce(lambda a, b: (a | b), queries)
         return db(query).select()
     else:
         return []
 
 @auth.requires_membership('managers')
-def ajax_getEditPair():
+def ajax_getupdate():
     #for var in request.vars:
         #print var+':'+request.vars[var]
 
@@ -230,15 +168,15 @@ def ajax_getEditPair():
     if formkey and formkeys and formkey in formkeys:  # check if user tampering with form and void CSRF
         session[keyname].remove(formkey)
     else:
-        response.flash = 'Session expired!'
+        #response.flash = 'Session expired!'
         return dict(status=False)
     if not auth.user:
-        response.flash = 'UNAUTHORIZED!'
+        #response.flash = 'UNAUTHORIZED!'
         return dict(status=False)
 
     sep = False
     if formname == 'editpair':
-        title = request.vars.title
+        title = request.vars.title  # one title for all pairs
     elif formname == 'editfound':
         sep = True
     idx = 0
@@ -249,14 +187,14 @@ def ajax_getEditPair():
         if (request.vars[rec]):
             rec = request.vars[rec]
             pid = request.vars['pair_'+si]
-            if sep:
+            if sep: # each pair has own title
                 title = request.vars['title_'+si]
             #print 'plint:%s pair:%s title:%s' % (rec, pid, title)
             db.plint_table[rec] = {'pid'+pid : title,
                                    'pmodon'+pid : request.now.date(),
                                    'pmodby'+pid : auth.user}
 
-    response.flash = 'Database update success!'
+    #response.flash = 'Database update success!'
     return dict(status=True)
 
 
