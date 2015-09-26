@@ -59,10 +59,11 @@ AJAXANIME = DIV(_class='ajaxanimation')
 #get_select = lambda i, lst: TD(SELECT(lst, _id=selfields[i][0], _name=selfields[i][1], _size=_SIZE_, _class="form-control col-xs-4"))
 get_select = lambda i, lst: DIV(SELECT(lst, _id=selfields[i][0], _name=selfields[i][1], _size=_SIZE_, _class="form-control"), _class="mycol")
 get_plint_info = lambda plint: plint and " ".join((plint.root.title, plint.parent.title, plint.title)) or ''
-def get_chain():
+def get_chain(chain):
     labels = _CROSS_, _VERTICAL_, _PLINT_, _PAIR_
+    tr0 = TR(TD(INPUT(_value=simplejson.dumps(chain), _name='chaindata', _type='hidden')))
     tr1 = TR([TD(label) for label in labels])
-    return TABLE(tr1, _id="chaintable", _class="table-dialog")
+    return TABLE(tr0, tr1, _id="chaintable", _class="table-dialog")
 
 def get_select_chain():
     labels = _CROSS_, _VERTICAL_, _PLINT_, _PAIR_

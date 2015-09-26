@@ -45,7 +45,8 @@
     (left_sidebar_enabled and 1 or 0)+(right_sidebar_enabled and 1 or 0)]
     }}
     <script>
-    var menuarray = {{=menuarray}};
+    mainarray = {{=mainarray}};
+    cachearray = [];
     jQuery(document).ready(function(){
 
         //jQuery('div.form-body input:text:visible:first').focus();
@@ -86,7 +87,7 @@
     <!-- Main ========================================= -->
     <!-- Begin page content -->
     <br>
-    <div class="container-fluid"  ng-app="crossApp" ng-controller="ChainCtrl">
+    <div class="container-fluid">
       {{if left_sidebar_enabled:}}
         <div class="col-md-3 left-sidebar">
             {{block left_sidebar}}

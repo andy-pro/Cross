@@ -124,12 +124,16 @@ def vertical():
 #@auth.requires_membership('managers')
 def editpair():
     pair = Pair(request.args(0, cast = int), request.args(1, cast = int))
-    urlback = URL('vertical', args=[pair.plint.vertical.index])
+    crossId = pair.plint.cross.index
+    verticalId = pair.plint.vertical.index
+    plintId = pair.index
+    pairId = pair.pair
+    urlback = URL('vertical', args=[verticalId])
     #response.verticalmainmenu = appendVerticalMenu(pair.plint.cross)
     #response.menu.append((pair.plint.vertical.title, False, urlback))
     #response.menu.append((pair.plint.title, False, URL('editplint', args=[pair.index])))
     response.title = pair.address
-    response.plintcrossindex = pair.plint.cross.index
+    response.plintcrossindex = crossId
     ##response.pairoutside = True
     #response.view='default/edititem.html'
     #response.files.append(URL('static','js/plintmain.js'))
@@ -140,7 +144,20 @@ def editpair():
                  DIV(TABLE(TR(TD(_VERTICAL_), TD(_PLINT_), TD(_PAIR_)),
                            TR(get_select(0), get_select(1), get_select(2))), _class='form-row'),
                  AJAXANIME, FOK())'''
-    form = BSFORM(FTEXT(v=pair.title), get_add_panel(), get_chain(), get_select_chain(), FOKCANCEL(urlback))
+    #form = BSFORM(FTEXT(v=pair.title), get_add_panel(), get_chain(), get_select_chain(), FOKCANCEL(urlback))
+    chain = []
+    chain.append(dict(crossId=crossId, verticalId=verticalId, plintId=plintId, pairId=pairId))
+    #chain.append(dict(crossId=8, verticalId=60, plintId=785, pairId=9))
+    #chain.append(dict(crossId=8, verticalId=61, plintId=810, pairId=8))
+    #chain.append(dict(crossId=8, verticalId=62, plintId=829, pairId=7))
+    #chain.append(dict(crossId=8, verticalId=63, plintId=839, pairId=6))
+    #chain.append(dict(crossId=8, verticalId=64, plintId=852, pairId=5))
+    #chain.append(dict(crossId=8, verticalId=63, plintId=840, pairId=4))
+    #chain.append(dict(crossId=8, verticalId=63, plintId=840, pairId=4))
+    #chain.append(dict(crossId=8, verticalId=63, plintId=840, pairId=4))
+    chain.append(dict(crossId=8, verticalId=63, plintId=840, pairId=4))
+    chain.append(dict(crossId=8, verticalId=63, plintId=840, pairId=4))
+    form = BSFORM(FTEXT(v=pair.title), get_add_panel(), get_chain(chain), FOKCANCEL(urlback))
     if form.process().accepted:
         pass
         #pair.update(form.vars)

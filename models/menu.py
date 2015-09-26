@@ -32,16 +32,16 @@ response.menu.append((T('Import DB'), False, URL('default', 'restore')))
 def updatemenu():
     m = [ [r.id, r.title, [ [w.id, w.title] for w in db(db.vertical_table.parent == r.id).select() ] ] for r in db(db.cross_table).select()]
     db.menu_table.truncate()
-    db.menu_table.insert(menu = gluon.contrib.simplejson.dumps(m))
+    db.menu_table.insert(menu = simplejson.dumps(m))
 
 def redirect_updatemenu(url):
     updatemenu()
     return redirect(url)
 
 if db(db.menu_table).count():
-    menuarray = XML(db.menu_table[1].menu)
+    mainarray = XML(db.menu_table[1].menu)
 else:
-    menuarray = '[]'
+    mainarray = '[]'
 
 
 DEVELOPMENT_MENU = True
