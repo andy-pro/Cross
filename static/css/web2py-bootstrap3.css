@@ -8,7 +8,7 @@ div#editdialog {
     left:       0;
     height:     100%;
     width:      100%;
-    padding: 70px 30px;
+    padding: 100px 50px;
     /*margin: 0px auto;*/
 }
 
@@ -21,12 +21,12 @@ a.mybtn-link {
 input.addbtn {
     margin: 5px;
 }
-table.table-dialog {
+table.chaintable {
     table-layout: fixed;
     width: 100%;
     margin: 15px 0px;
 }
-table.table-dialog td {
+table.chaintable td {
     padding: 3px 3px;
 }
 table.cross {

@@ -1,0 +1,192 @@
+<script type="text/template" id="crosslistTmpl">
+<% _.each(mainarray, function(cross, im) { %>
+<div class="col-md-<%= size %>">
+  <div class="panel panel-<%= _class %>">
+    <div class="panel-heading">
+      <a class="mybtn-link" onclick="crossEdit(<%= cross[0] %>)"><%= cross[1] %></a>
+    </div>
+    <div class="panel-body">
+      <% _.each(cross[2], function(vertical, ip) { %>
+        <a class="mybtn-link" onclick="verticalCtrl(<%= vertical[0] %>)"><%= vertical[1] %></a>
+      <% }); %>
+    </div>
+  </div>
+</div>
+<% }); %>
+</script>
+
+<script type="text/template" id="crosslistTmpl2">
+<% _.each(mainarray, function(cross, im) { %>
+<div class="col-md-<%= size %>">
+  <div class="panel panel-<%= _class %>">
+    <div class="panel-heading">
+      <a class="mybtn-link" onclick="crossEdit(<%= cross[0] %>)"><%= cross[1] %></a>
+    </div>
+    <div class="panel-body">
+    
+      <% for ( var i in cross[2] ) { %>
+        <a class="mybtn-link" onclick="verticalCtrl(<%= cross[2][i][0] %>)"><%= cross[2][i][1] %></a>
+      <% } %>
+
+    </div>
+  </div>
+</div>
+<% }); %>
+</script>
+
+<script type="text/template" id="crosslistTmpl3">
+<div class="col-md-<%= size %>">
+  <div class="panel panel-<%= _class %>">
+    <div class="panel-heading">
+      <a class="mybtn-link" onclick="crossEdit(<%= cross[0] %>)"><%= cross[1] %></a>
+    </div>
+    <div class="panel-body">
+    
+      <% for ( var i in cross[2] ) { %>
+        <a class="mybtn-link" onclick="verticalCtrl(<%= cross[2][i][0] %>)"><%= cross[2][i][1] %></a>
+      <% } %>
+
+    </div>
+  </div>
+</div>
+</script>
+
+<script type="text/template" id="crosslistTmpl4">
+<% for (var im in cross ) { 
+var verticals = cross[im][2]; %>
+<div class="col-md-<%= size %>">
+  <div class="panel panel-<%= _class %>">
+    <div class="panel-heading">
+      <a class="mybtn-link" onclick="crossEdit(<%= cross[im][0] %>)"><%= cross[im][1] %></a>
+    </div>
+    <div class="panel-body">
+    
+      <% for ( var i in verticals ) { %>
+        <a class="mybtn-link" onclick="verticalCtrl(<%= verticals[i][0] %>)"><%= verticals[i][1] %></a>
+      <% } %>
+
+    </div>
+  </div>
+</div>
+<% } %>
+</script>
+
+<script type="text/template" id="plintlistTmpl">
+<div class="col-md-<%= size %>">
+  <div class="panel panel-<%= _class %>">
+    <div class="panel-heading">
+      <a class="mybtn-link" onclick="verticalEdit(<%= id %>)"><%= windowtitle %></a>
+      <button class="btn btn-xs pull-right btn-<%= _class %>" onclick="<%= link %>()">
+        <span class="glyphicon glyphicon-remove"></span>
+      </button>
+    </div>
+    <table class="cross"><tbody>
+      <% _.each(mainarray, function(plint, im) { %>
+        <tr>
+          <td class="colv1">
+          <% var _title = "Plint: "+plint[1]+"\n"+plint[4]+"\n"+users[plint[5]]+"\nCommon data: "+plint[3]; %>
+            <a class="mybtn-link" title="<%= _title %>"><%= plint[1] %></a>
+          </td>
+          <% _.each(pairarray[im], function(pair, ip) { %>
+            <td>
+              <% var t = pair[0];
+              if (t) _title = t+"\n"+pair[1]+"\n"+users[pair[2]];
+              else _title = ""; %>
+            <a class="mybtn-link" title="<%= _title %>" onclick="chainCtrl(<%=im%>,<%=ip%>)">
+              <sup><%= ip + plint[2] %>&nbsp;&nbsp;</sup><%= t %>
+            </a>
+            </td>
+          <% }); %>
+          <td class="commondata" style="border-left: 2px solid #ccc;"><%= plint[3] %></td>
+        </tr>
+      <% }); %>
+    </tbody></table>
+  </div>
+</div>
+</script>
+
+<script type="text/template" id="chainTmpl">
+<div class="col-md-<%= size %>">
+  <div class="panel panel-<%= _class %>">
+    <div class="panel-heading">
+      <%= windowtitle %>
+      <button class="btn btn-xs pull-right btn-<%= _class %>" onclick="<%= link %>()">
+        <span class="glyphicon glyphicon-remove"></span>
+      </button>
+    </div>
+    <div class="panel-body">
+      <form class="form-horizontal" role="form">
+        <div class="form-group">
+          <label class="col-md-2 control-label"><%= T._TITLE_%></%=></label>
+          <div class="col-md-8">
+            <input class="form-control">          
+          </div>
+        </div>
+        <button class="btn-sm btn-success pull-right" title="Add link to chain" onclick="addLink()">+</button>
+        <table class="chaintable">
+          <tr><% _.each(headers, function(header) { print("<td>"+header+"</td>") }); %> </tr>
+        </table>
+      </form>
+    </div>
+  </div>
+</div>
+</script>
+
+	
+
+    <script type="text/html" id="item_tmpl0">
+      <% for ( var i = 0; i < userbank.length; i++ ) { %>
+        <li><a href="<%=userbank[i].url%>"><%=userbank[i].name%></a></li>
+      <% } %>
+    </script>
+
+	
+
+<script type="text/html" id="item_tmpl1">
+  <div class="<%=(i % 2 == 1 ? "well" : "")%>">
+    <div class="grid_1 alpha right">
+      <label><%=label%></label>
+    </div>
+    <div class="grid_6 omega contents">
+      <p><b><a href="/<%=from_user%>"><%=from_user%></a>:</b> <%=text%></p>
+    </div>
+  </div>
+</script>
+
+<script type="text/html" id="item_tmpl2">
+  <div class="<%=(_class % 2 == 1 ? "well" : "")%>">
+    <div class="grid_1 alpha right">
+      <label><%=label%></label>
+    </div>
+    <div class="grid_6 omega contents">
+      <p><b><a href="/<%=from_user%>"><%=from_user%></a>:</b> <%=text%></p>
+    </div>
+    <ul>
+    <% for ( var i = 0; i < counter; i++ ) { %>
+      <% var color; 
+         if (i % 2 == 1) color = "red";
+            else color = "green"; %>
+      <li style="color:<%=color%>">Counter: <a href="counter/<%=i%>">Item <%=i%></a></li>
+    <% } %>
+    </ul>
+  </div>
+</script>
+
+<script type="text/html" id="home">  
+  <h1>Router FTW!</h1>
+</script>  
+<script type="text/html" id="template1">  
+  <h1>Page 1: <%= greeting %></h1>
+  <p><%= moreText %></p>
+</script>  
+<script type="text/html" id="template2">  
+  <h2>Page 2: <%= heading %></h2>
+  <h3>Arguments</h3>
+  <i><ul>
+  <%for(i in args){%><li><%=args[i]%></li><%}%>
+  </ul></i>
+  <h3>Variables</h3>
+  <i><ul>
+  <%for(i in vars){print('<li>'+i+'="'+vars[i]+'"</li>')}%>
+  </ul></i>
+</script>  

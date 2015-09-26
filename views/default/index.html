@@ -1,4 +1,28 @@
 {{extend 'layout.html'}}
+<div class="well">
+<input  class="form-control" id="request" type="text" value="arg2?var1=total_war&var2=1234&var3=que?answ">
+<input  class="form-control" id="regex" type="text" value="([^?=&]+)(=([^&]*))?">
+<input  type="button" value="Go!" onclick="regexchange()">
+<div>Output: <label id="output">empty</label></div></div>
+  <ul>
+    <li><a href="#">Home</a></li>
+    <li><a href="#/page1">Page 1</a></li>
+    <li><a href="#/page2">Page 2</a></li>
+    <li><a href="#/page2/arg1">Page 2 with 1 arg</a></li>
+    <li><a href="#/page2/arg1/arg2">Page 2 with 2 arg</a></li>
+    <li><a href="#/page2/arg1?var1=onevar">Page 2 with 1 arg and 1 var</a></li>
+    <li><a href="#/page2/arg1/arg2?var1=total_war&var2=1234">Page 2 with 2 arg and 2 vars</a></li>
+    <li><a href="#/page2?var1=twovar_wo_args&var2=1234">Page 2 with 2 vars</a></li>
+    <li><a href="#/page2?var1=total1var?var2=1234">Page 2 with 1 var</a></li>
+  </ul>
+  <div id="view"></div>
+
+<div id="results"></div>
+<div id="results1"></div>
+<div id="results2"></div>
+<div id="results3"></div>
+<div id="results4"></div>
 <div id="crosshome"></div>
+<!--<script>verticalCtrl(63);</script>-->
 <script>crossCtrl(true);</script>
-<!--<script>chainCtrl();</script>-->
+<!--<script>chainCtrl();</script-->

@@ -3,7 +3,7 @@
 def index():
     #updatemenu()
     #response.headers['web2py-component-content'] = 'replace'
-
+    print request.vars
     return dict()
 
 def crosses2():

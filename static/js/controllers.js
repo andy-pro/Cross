@@ -1,7 +1,164 @@
+function regexchange(){
+    var reg1 = new RegExp($('#regex').val(), 'g');
+    var output = $('#output');
+    var input = $('#request');
+    txt1=input.val();
+
+    //output.text(txt1.match(reg1));
+
+    //var uri = 'http://your.domain/product.aspx?category=4&product_id=2140&query=lcd+tv';
+    var queryString = {};
+    txt1.replace(reg1, function($0, $1, $2, $3) {
+    console.log("$0="+$0);
+    console.log("$1="+$1);
+    console.log("$2="+$2);
+    console.log("$3="+$3);
+    console.log("==================");
+    queryString[$1] = $3;
+    });
+    console.log(queryString);
+    console.log(txt1);
+    }
+
+
+
+/*** Router ***/
+//======================================
+(function(){
+var routes = {};    // A hash to store our routes:
+// The route registering function:
+route = function (path, targetId, templateId, controller) {
+  routes[path] = {targetId: targetId, templateId: templateId, controller: controller};
+}
+function router () {  // version with regex, replace
+    var params = {};
+    params.vars = {};
+    params.args = location.hash.split("/");    // [""] - for home, ["#", "part1", "part2", ...]
+    if (params.args.length > 1) {
+        params.args.pop().replace(new RegExp("([^?=&]+)(=([^&]*))?", "g"),
+            function($0, $1, $2, $3) {
+                params.vars[$1] = $3;
+                if ($3 == undefined) params.args.push($1);
+                });
+        } else params.args.push("");
+    var route = routes[params.args[1]];   // Get route by url
+    if (route && route.controller) {
+        el = document.getElementById(route.targetId); // Lazy load view element
+        el.innerHTML = tmpl(route.templateId, new route.controller(params));
+    }
+}
+//======================================
+window.addEventListener('hashchange', router);    // Listen on hash change
+window.addEventListener('load', router);    // Listen on page load
+})();
+
+//======================================
+function router1 (event) {  // version with 'for, indexOf, split'
+    el = el || document.getElementById('view'); // Lazy load view element
+    var params = {};
+    var up = location.hash.split("/");    // Current route url parts (getting rid of '#' in hash as well):
+    console.log(up)
+    var urlparts = (up.length > 1) ? up.slice(1) : [''];  // [""] - for home, ["#", "part1", "part2", ...]
+    var lp = urlparts[urlparts.length-1];   // last part of url, it maybe with variables, e.g. arg1?var1=value1
+    params.vars = {};
+    var posq = lp.indexOf("?");
+    if (posq > -1) {   // request contains variables
+        urlparts[urlparts.length-1] = lp.slice(0,posq);    // last argument without variables
+        var vars = lp.slice(posq+1).split("&");     // array of string something as ['var1=value1', 'var2=value2', ...]
+        for (var i in vars) {
+            posq = vars[i].indexOf("=");
+            params.vars[vars[i].slice(0,posq)] = vars[i].slice(posq+1);
+        }
+    }
+    params.args = (urlparts.length>1) ? urlparts.slice(1) : [];
+    var route = routes[urlparts[0]];   // Get route by url
+    if (route && el && route.controller) {
+        // Render route template with John Resig's template engine:
+        el.innerHTML = tmpl(route.templateId, new route.controller(params));
+    }
+}
+//======================================
+function router2 () {  // version with regex, replace
+    el = el || document.getElementById('view'); // Lazy load view element
+    var params = {};
+    params.vars = {};
+    params.args = location.hash.split("/");    // [""] - for home, ["#", "part1", "part2", ...]
+    if (params.args.length > 1) {
+        params.args.pop().replace(new RegExp("([^?=&]+)(=([^&]*))?", "g"),
+            function($0, $1, $2, $3) {
+                params.vars[$1] = $3;
+                if ($3 == undefined) params.args.push($1);
+                });
+        } else params.args.push("");
+    var route = routes[params.args[1]];   // Get route by url
+    if (route && el && route.controller) {
+        el.innerHTML = tmpl(route.templateId, new route.controller(params));
+    }
+}
+//======================================
+
+
+route('', 'view', 'home', function () {});
+route('page1', 'view', 'template1', page1Ctrl);
+route('page2', 'view', 'template2', page2Ctrl);
+
+function page1Ctrl(params) {
+    this.greeting = 'Hello, Andy!';
+    this.moreText = 'Bacon ipsum...';
+    //console.log(params);
+}
+
+function page2Ctrl(params) {
+    //var q='vars='; for (var i in params.vars) q += i+':'+params.vars[i];
+    //var a = 'args='; for (var i in params.args) a += params.args[i] + ', ';
+
+    //this.heading = 'I\'m page two! and var1='+q;
+    return {heading : 'I\'m page two!', args:params.args, vars:params.vars}
+    //console.log(params);
+}
+
+
+// Simple JavaScript Templating
+// John Resig - http://ejohn.org/ - MIT Licensed
+(function(){
+  var cache = {};
+
+  console.log (this);
+  this.tmpl = function tmpl(str, data){
+    // Figure out if we're getting a template, or if we need to
+    // load the template - and be sure to cache the result.
+    var fn = !/\W/.test(str) ?
+      cache[str] = cache[str] ||
+        tmpl(document.getElementById(str).innerHTML) :
+
+      // Generate a reusable function that will serve as a template
+      // generator (and which will be cached).
+      new Function("obj",
+        "var p=[],print=function(){p.push.apply(p,arguments);};" +
+
+        // Introduce the data as local variables using with(){}
+        "with(obj){p.push('" +
+
+        // Convert the template into pure JavaScript
+        str
+          .replace(/[\r\t\n]/g, " ")
+          .split("<%").join("\t")
+          .replace(/((^|%>)[^\t]*)'/g, "$1\r")
+          .replace(/\t=(.*?)%>/g, "',$1,'")
+          .split("\t").join("');")
+          .split("%>").join("p.push('")
+          .split("\r").join("\\'")
+      + "');}return p.join('');");
+
+    // Provide some basic currying to the user
+    return data ? fn( data ) : fn;
+  };
+})();
+
+
 homefunc = 'crossCtrl';
 
 exitfnname = undefined;
-
 
 rootpath = '/Cross/default/';
 rootpathajax = rootpath + 'ajax_get';
@@ -55,84 +212,140 @@ function getPairList(vert_id) {
     } });
   }
 
-
-/* start cross home page controller from here */
-
-//testw2p = $("#testw2p");
-//var title = $('<a>', {href:rootpath+'cross/1', text:'test', cid:'request.cid'});
-//title.appendTo(testw2p);
 document.onkeydown = function(e) {
-  if (e.keyCode == 27) { // escape
+  if (e.keyCode == 27) { // escape key code
     //eval(homefunc);
     var fn = window[exitfnname];    // convert string to a pointer
-    //console.log(fn);
-    if(typeof fn === 'function') {
-        fn();
-        //console.log('ok, exiting');
-    }}}
+    if(typeof fn === 'function') fn(); }}
 
+function render(tmpl_name, tmpl_data) {
+    if ( !render.tmpl_cache ) {
+        render.tmpl_cache = {};
+    }
+    if ( ! render.tmpl_cache[tmpl_name] ) {
+        render.tmpl_cache[tmpl_name] = _.template($('#'+tmpl_name).html());   // in templates.html file
+    }
+    return render.tmpl_cache[tmpl_name](tmpl_data);
+}
 
 /*** Cross Controller ***/
 crossCtrl = function(init=false) {
-    exitfnname = undefined;
-    crosshome = $("#crosshome");
-    crosshome.empty();
+
+exitfnname = undefined;
+crosshome = $("#crosshome");
+crosshome.empty();
+
+
+dataObject1 = {i:1, label:"Content", from_user:"Andy Pro", text:"Bold text", counter:10};
+dataObject2 = {_class:1, label:"Maximum", from_user:"Max Pro", text:"Bold text 2", counter:10};
+dataObject3 = {_class:1, label:"Andymum", from_user:"Andy Oksy Pro", text:"Some Amazing text", counter:4};
+
+    var results = document.getElementById("results");
+    results.innerHTML = tmpl("item_tmpl1", dataObject1);
+
+    var now1 = new Date();
+    t1=now1.getTime();
+    var html1 = tmpl("item_tmpl2", dataObject2);
+    results.insertAdjacentHTML('beforeend', html1);
+    var now2 = new Date();
+    t2=now2.getTime();
+    console.log(t2-t1);
+
+    var now1 = new Date();
+    t1=now1.getTime();
+    var html1 = tmpl("item_tmpl2", dataObject2);
+    crosshome.append(html1);
+    var now2 = new Date();
+    t2=now2.getTime();
+    console.log(t2-t1);
+
+    var now1 = new Date();
+    t1=now1.getTime();
+    var pre_tmpl2 = tmpl("item_tmpl2");
+    crosshome.append(pre_tmpl2(dataObject2));
+    var now2 = new Date();
+    t2=now2.getTime();
+    console.log(t2-t1);
+
+    var now1 = new Date();
+    t1=now1.getTime();
+    crosshome.append(pre_tmpl2(dataObject2));
+    var now2 = new Date();
+    t2=now2.getTime();
+    console.log(t2-t1);
+
+
+
+    //pre-compile the results for later use
+    pre_tmpl = tmpl("item_tmpl2");
+    //console.log(pre_tmpl);
+    crosshome.append(pre_tmpl(dataObject2));
+    crosshome.append(pre_tmpl(dataObject3));
+
+    crosshome.append('Example');
+    crosshome.append(tmpl("<label><%= name %></label>", {name:"John"}));
+
+userbank = [
+{name:"Andy", url:"url1"},
+{name:"Oksy", url:"url2"},
+{name:"Maxy", url:"url3"}
+];
+
+    var show_user = tmpl("item_tmpl0"), html = "";
+    for ( var i = 0; i < userbank.length; i++ ) {
+      html += show_user( userbank[i] );
+    }
+    crosshome.append("<div class='well'>"+html+"</div>");
+
+
+
 
     if (init) jQuery.ajax({
         url: rootpathajax+"MainArray.json",
         async: false,
         success: function( data ) { mainarray = data.items; } });
 
-    //var template = Handlebars.compile(template1);    // Compile that into an handlebars template
-    //var placeHolder = $("#crosshome");      // Retrieve the placeHolder where the Posts will be displayed
-    //var context = {"title": "First Post", "body": "You can't stop me now!"};  // Create a context to render the template
-    //var html = template(context);      // Generate the HTML for the template
-    //placeHolder.append(html);      // Render the posts into the page
+    var context = {_class:"default", size:4, mainarray:mainarray};
 
-  //{{#each pairs}}
-    //<li>pairs</li>
-//<ul>{{#each this}}<li>{{this.[0]}}</li>{{/each}}</ul>
-  //{{/each}}
+    t1=(new Date()).getTime();
+    var dom = render('crosslistTmpl', context);
+    crosshome.append(dom);
+    t2=(new Date()).getTime();
+    var t3 = t2-t1;
+    console.log('cross1: '+t3);
 
-//var mypanelTmpl = '{{#each mainarray}}<div class="col-md-{{size}}"><div class="panel panel-{{class}}"><div class="panel-heading">{{title}}</div><div class="panel-body">{{body}}</div></div></div>{{/each}}';
-    var template = Handlebars.compile(crosslistTmpl);
-    crosshome.append(template({class:"default", size:4, mainarray:mainarray}));      // Render the posts into the page
+    context = {_class:"info", size:4, mainarray:mainarray};
 
-    //$.each(mainarray, function(){
-        //var crossid = this[0];
-        //var head = $('<a>', {class:"mybtn-link", text:this[1], onclick:"crossEdit("+crossid+")"});
-        //var content = [];
-        //$.each(this[2], function(){
-            //content.push($('<a>', {class:"mybtn-link", text:this[1], onclick:'verticalCtrl('+this[0]+')'})); });
-        //crosshome.getPanel(head, content, {class:'default', close:false});
-    //});
+    t1=(new Date()).getTime();
+    var pre_tmpl2 = tmpl("crosslistTmpl2");
+    crosshome.append(pre_tmpl2(context));
+    t2=(new Date()).getTime();
+    var t3 = t2-t1;
+    console.log('cross2: '+t3);
 
+    var results4 = document.getElementById("results4");
+    t1=(new Date()).getTime();
+    var pre_tmpl3 = tmpl("crosslistTmpl3");
+    for (var im in mainarray) {
+    context = {_class:"warning", size:4, cross:mainarray[im]};
+    //crosshome.append(pre_tmpl3(context));
+    results4.insertAdjacentHTML('beforeend', pre_tmpl3(context));
+    }
+    t2=(new Date()).getTime();
+    var t3 = t2-t1;
+    console.log('cross3: '+t3);
 
+    t1=(new Date()).getTime();
+    var pre_tmpl4 = tmpl("crosslistTmpl4");
+    context = {_class:"success", size:4, cross:mainarray};
+    crosshome.append(pre_tmpl4(context));
+    t2=(new Date()).getTime();
+    var t3 = t2-t1;
+    console.log('cross4: '+t3);
 
-        //var attrs = {href:rootpath+'editpair/558/1', text:'editpair', 'data-w2p_target':"editdialog"};
-        //$.extend(attrs, w2p_attrs);
-        //$('<a>', attrs).appendTo(crosshome);
-        //$('<a>', {class:"btn btn-link", text:"Vertical", onclick:"verticalCtrl(51)"}).appendTo(crosshome);
+      console.log ('end');
 
-    //$.each(mainarray, function(){
-        //var crossid = this[0];
-        //var head = $('<a>', {class:"mybtn-link", text:this[1], onclick:"crossEdit("+crossid+")"});
-        //var content = [];
-        //$.each(this[2], function(){
-            //content.push($('<a>', {class:"mybtn-link", text:this[1], onclick:'verticalCtrl('+this[0]+')'})); });
-        //crosshome.getPanel(head, content, {class:'default', close:false});
-    //});
-
-
-//<button type="button" class="btn btn-link">Ссылка</button>
-
-        //console.log(this[1]);
-        //console.log(this[2]);
-
-//lst = (A(vertical.title, _href=URL('vertical', args=vertical.id), cid=request.cid)+', ' for vertical in verticals)
- //       table.append(DIV(DIV(DIV(A(B(cross.title), _href=URL('cross', args=cross.id), cid=request.cid), _class='panel-heading'), DIV(*lst, _class='panel-body'), _class="panel panel-info"), _class='col-lg-4'))
 }
-
 
 crossEdit = function(id) {
 console.log(id);
@@ -141,34 +354,16 @@ console.log(id);
 
 /*** Vertical Controller ***/
 verticalCtrl = function(id) {
-    //crosshome = $("#crosshome");
+    crosshome = $("#crosshome");
     exitfnname = homefunc;
     getPairList(id);
     crosshome.empty();  //crosshome = $("#crosshome");
-    var head = $('<a>', {class:"mybtn-link", text:windowtitle, onclick:"verticalEdit("+id+")"});
-    var tb = $('<table>', {class:'cross'});
-    //items: id, title, start1, comdata, modon, modby
-    $.each(cachearray[id].items, function(i, plint){
-        var tr = $('<tr>');
-        var td = $('<td>', {class:"colv1"});
-        _title = 'Plint: '+plint[1]+'\n'+plint[4]+'\n'+users[plint[5]]+'\nCommon data: '+plint[3];
-        $('<a>', {class:"mybtn-link", text:plint[1], title:_title}).appendTo(td);
-        td.appendTo(tr);
-        var start = plint[2];
-        $.each(pairarray[i], function(i, pair){
-            t = pair[0];
-            _title = (t) ? t+'\n'+pair[1]+'\n'+users[pair[2]] : ''  // pairtitle,when,who
-            td = $('<td>').append($('<a>', {class:"mybtn-link", text:t, title:_title}).prepend($('<sup>', {text:i+start+'  '})));
-            td.appendTo(tr);
-        });
-        tdcl = 'commondata';
-        td = $('<td>', {class:tdcl, text:plint[3]}).css("border-left", "2px solid #ccc");
-        td.appendTo(tr);
-        tr.appendTo(tb);
-    });
-    crosshome.getPanel(head, tb, {class:'default', size:'full', width100:true});
-}
 
+    var context = {_class:"default", size:'full', mainarray:cachearray[id].items, pairarray:pairarray, users:users, id:id, windowtitle:windowtitle, link:homefunc};
+   // var cmp = _.template($('#plintlistTmpl').html());   // in templates.html file
+    var dom = render('plintlistTmpl', context);
+    crosshome.append(dom);
+}
 /* vertical controller */
 
 verticalDisable = function(link, controls) {
@@ -272,32 +467,16 @@ drawSelectors = function(tr, controls, index) {
 chainCtrl = function() {
 
     crosshome = $("#crosshome");
-    var attrs = {href:rootpath+'editpair/558/1', text:'editpair', 'data-w2p_target':"editdialog"};
-    $.extend(attrs, w2p_attrs);
-    $('<a>', attrs).appendTo(crosshome);
-    $('<a>', {class:"btn btn-link", text:"Vertical", onclick:"verticalCtrl(51)"}).appendTo(crosshome);
-    var content = [];
-    var form = $('<form>', {class:"form-horizontal", role:"form"});
-    var input = $('<input>', {class:"form-control"});
-    var group = $('<div>', {class:"form-group"}).append($('<label>', {class:"col-md-2 control-label", text:T._TITLE_}));
-    group.append($('<div>', {class:"col-md-8"}).append(input));
-    group.appendTo(form);
-    $('<button>', {class:'btn-sm btn-success pull-right',text:'+', title:'Add link to chain', onclick:"addLink()"}).appendTo(form);
-    //        hddiv.append($('<button>', attcl).append($('<span>', {class:"glyphicon glyphicon-remove"})));
+    editdialog = $("#editdialog");
+    //var context = {_class:"default", size:'full', mainarray:cachearray[id].items, pairarray:pairarray, users:users, id:id, windowtitle:windowtitle, link:homefunc};
+    //var attrs = {href:rootpath+'editpair/558/1', text:'editpair', 'data-w2p_target':"editdialog"};
     var headers = [T._CROSS_, T._VERTICAL_, T._PLINT_, T._PAIR_];
-    var tr = $('<tr>');
-    $.each(headers, function(){
-        var td = $('<td>', {text:this});
-        td.appendTo(tr);
-    });
-    console.log(tr);
-    $('<table>', {id:"chaintable",class:'table-dialog'}).append(tr).appendTo(form);
-    head = 'title';
-    crosshome.getPanel(head, form, {class:'primary', size:'6', close:false});
+    var context = {_class:"primary", size:6, link:homefunc, headers:headers};
+    var dom = render('chainTmpl', context);
+    editdialog.append(dom);
 
-
-    //$("#editdialog").show();
-    //$(".container-fluid").fadeTo('slow', 0.4);
+    $("#editdialog").show();
+    $(".container-fluid").fadeTo('slow', 0.6);
     //console.log('show')
     chaintable = $("#chaintable");
     //chaintablewatch = $("#chaintablewatch");
