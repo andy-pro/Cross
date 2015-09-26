@@ -1,10 +1,33 @@
 # -*- coding: utf-8 -*-
 
 def index():
+    updatemenu()
     return dict()
 
 def demo():
     return dict()
+
+def demo2():
+    cid = 'ajax_container'
+    #btns = [INPUT('Click to load content %i' % i,**{'_type':'button','_class':'load_content btn-primary','data-url':URL('otherthing%i' % i),'data-target':cid}) for i in xrange(5)]
+    btns = [INPUT(**{'_value':'Click to load content %i' % i, '_type':'button','_class':'load_content btn btn-primary','_data-url':URL('otherthing%i' % i),'_data-target':cid}) for i in xrange(1,5)]
+    div = DIV('<!-- CONTENT COMES HERE -->', _id=cid)
+    script = '''
+    $(function () {
+       $('.load_content').on('click', function (e) {
+            elem = $(this); // elem = $(e.target)
+            url = elem.attr("data-url");
+            target = elem.attr("data-target");
+            web2py_ajax_page("GET", url, "", target);
+            return false; // e.preventDefault()
+          });
+    })
+    '''
+    #response.js =  "jQuery('#wert').get(0).reload()"
+    #return dict(div=DIV(btns, div))
+    return dict(btns=DIV(btns), content=div, script=SCRIPT(script))
+    #return dict(btns=DIV(btns), content=div)
+
 
 def otherthing1():
     return '<h4>Hello 1</h4>'
@@ -117,7 +140,7 @@ def editpair():
                  DIV(TABLE(TR(TD(_VERTICAL_), TD(_PLINT_), TD(_PAIR_)),
                            TR(get_select(0), get_select(1), get_select(2))), _class='form-row'),
                  AJAXANIME, FOK())'''
-    form = BSFORM(FTEXT(v=pair.title), get_add_panel(), get_select_chain(), FOKCANCEL(urlback))
+    form = BSFORM(FTEXT(v=pair.title), get_add_panel(), get_chain(), get_select_chain(), FOKCANCEL(urlback))
     if form.process().accepted:
         pass
         #pair.update(form.vars)
@@ -142,6 +165,7 @@ def ask():
             response.js = "jQuery('#%s').hide()" % request.cid
         else:
             form.errors.your_email = "Unable to send the email"
+        return "ask rec"
     response.view='default/dialog.html'
     return dict(form=form, title="Ask question")
 

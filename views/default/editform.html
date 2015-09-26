@@ -11,45 +11,36 @@
 
 </div>
 
-  <div class="col-md-4">
+  <div class="col-md-5">
 Value = {?selectedItem?}
-jquery Value = {?jqvalue?}
+<input ng-model="selectedItem"></input>
+<input ng-model="chain[0].crossId"></input>
+<p>cross<input ng-model="chain[0].crossPos"></input>
+<p>vert<input ng-model="chain[0].verticalPos"></input>
+<p>plint<input ng-model="chain[0].plintPos"></input>
+<p>pair<input ng-model="chain[0].pairPos"></input>
 
-  <select ng-model="selectedItem" size="8" class="form-control">
+  <select ng-model="selectedItem" class="form-control">
   <option ng-repeat="item in qwe2" value={?$index?}>{?item[0]?}</option>
   </select>
 
   <div class="panel panel-default">
     <div class="panel-heading">$scope.chain</div>
     <div class="panel-body">
-    cross change: {?crosschangecount?}
-    <br>
-    vertical change: {?vertichangecount?}
-    <br>
-    <br>
+    <textarea rows="6" cols="64">
+    {?chain?}
+    </textarea>
+    <br>Cross change: {?crosschangecount?}
+    <br>Verti change: {?vertichangecount?}
     </div>
       <table class="table table-bordered">
-      <tr class="info"><td></td><td>Cross</td><td>Vertical</td><td>Plint</td><td>Pair</td></tr>
+      <tr class="info"><td></td>Link<td>Cross</td><td>Vertical</td><td>Plint</td><td>Pair</td></tr>
       <tr ng-repeat="link in chain">
-        <td class="warning">Index</td>
-        <td>{?link.crossId?}</td>
-        <td>{?link.verticalId?}</td>
-        <td>{?link.plintId?}</td>
-        <td>{?link.pairId?}</td>
-      </tr>
-      <tr ng-repeat="link in chain">
-        <td class="warning">Title</td>
-        <td>{?crosses[link.crossPos][1]?}</td>
-        <td>{?link.crossPos?}</td>
-        <td>{?link.plintId?}</td>
-        <td>{?link.pairId?}</td>
-      </tr>
-      <tr ng-repeat="link in chain">
-        <td class="warning">Capacity</td>
-        <td>{?verticals[link.crossId].length?} verts</td>
-        <td>{?plints[link.verticalId].length?} plints</td>
-        <td>{?link.plintId?}</td>
-        <td>{?link.pairId?}</td>
+        <td class="warning">{?$index?}</td>
+        <td>{?crosses[link.crossPos][1]?} ({?link.crossId?}L)</td>
+        <td>{?verticals[link.crossId][link.verticalPos][1]?} ({?link.verticalId?}L)</td>
+        <td>{?plints[link.verticalId][link.plintPos][1]?} ({?link.plintId?}L)</td>
+        <td>start {?plints[link.verticalId][link.plintPos][2]?}</td>
       </tr>
       </table>
   </div>

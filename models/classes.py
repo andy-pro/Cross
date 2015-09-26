@@ -59,33 +59,35 @@ AJAXANIME = DIV(_class='ajaxanimation')
 #get_select = lambda i, lst: TD(SELECT(lst, _id=selfields[i][0], _name=selfields[i][1], _size=_SIZE_, _class="form-control col-xs-4"))
 get_select = lambda i, lst: DIV(SELECT(lst, _id=selfields[i][0], _name=selfields[i][1], _size=_SIZE_, _class="form-control"), _class="mycol")
 get_plint_info = lambda plint: plint and " ".join((plint.root.title, plint.parent.title, plint.title)) or ''
+def get_chain():
+    labels = _CROSS_, _VERTICAL_, _PLINT_, _PAIR_
+    tr1 = TR([TD(label) for label in labels])
+    return TABLE(tr1, _id="chaintable", _class="table-dialog")
+
 def get_select_chain():
     labels = _CROSS_, _VERTICAL_, _PLINT_, _PAIR_
     #fields = [cross.title for cross in db(db.cross_table).select()], [], [], []
     stages = (
-        ([], 'crossId', 'crosses', 'cross'),
-        ([], 'verticalId', 'verticals[link.crossId]', 'vertical'),
-        ([], 'plintId', 'plints[link.verticalId]', 'plint'),
-        ([], 'pairId', 'pairs', 'pair'))
+        ('crossPos', 'crosses', 'cross'),
+        ('verticalPos', 'verticals[link.crossId]', 'vertical'),
+        ('plintPos', 'plints[link.verticalId]', 'plint'),
+        ('pairPos', 'pairs[link.pairId]', 'pair'))
     tr1 = TR([TD(label) for label in labels])
     #tr2 = TR([TD(SELECT(item, _class="form-control")) for item in fields])
     #tr2 = TR([TD(SELECT(item, _class="form-control", _ng-model="link.crossId")) for item in fields])
     #tr2 = TR([TD(XML('<select class="form-control" ng-model="link.%s"></select>' % stage)) for stage in stages], _class="myclass", ng={"repeat": "link in chain"})
     #tr2 = TR([TD(XML('<select class="form-control" ng-model="link.%s"></select>' % stage)) for stage in stages], **{"ng-repeat": "link in chain"})
     #SELECT(item, _class="form-control", _ng-model="link.crossId")) for item in fields])
-    tr2 = TR(([TD(SELECT(stage[0], **{"_class":"form-control",
-                                      "_ng-model":"link.%s" % stage[1],
-                                      "_ng-options":"item[0] as item[1] for item in %s" % stage[2],
-                                      #"_ng-click":"%schange(link.%s, $index)" % (stage[3], stage[1]),
-                                      #"_se-click":"%schange(link.%s, $index)" % (stage[3], stage[1]),
-                                      #"_se-click":"link.%s $index" % stage[1],
-                                      "_%s-change" % stage[3]:"$index",
-                                      #"_se-change":"begin",
-                                      "_size":"20"
-                                      })) for stage in stages]), **{"_ng-repeat":"link in chain"})
+    tr2 = TR(([TD(SELECT(OPTION("{?item[1]?}", **{"_ng-repeat":"item in %s" % stage[1], "_value":"{?$index?}"}),
+                  **{"_class":"form-control",
+                     "_ng-model":"link.%s" % stage[0],
+                     "_ng-change":"%schange(link.%s, $index)" % (stage[2], stage[0]),
+                     #"_size":"25",
+                     })) for stage in stages]), **{"_ng-repeat":"link in chain"})
     return TABLE(tr1, tr2, _class="table-dialog")
 
-get_add_panel = lambda: INPUT(_type='button', _class='btn-sm btn-success pull-right', value='+', _title=T('Add link to chain'), **{"_ng-click":"addLink()"})
+#get_add_panel = lambda: INPUT(_type='button', _class='btn-sm btn-success pull-right', value='+', _title=T('Add link to chain'), **{"_ng-click":"addLink()"})
+get_add_panel = lambda: INPUT(_type='button', _class='btn-sm btn-success pull-right', value='+', _title=T('Add link to chain'), _onclick="addLink()")
     #return DIV(XML('<button type="button" class="btn-success pull-right">+</button>'), _class='form-row')
     #return ''
 

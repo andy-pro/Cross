@@ -1,8 +1,138 @@
+rootpath = '/Cross/default/ajax_get';
+stages = [['crossId','crossEl'],
+          ['verticalId','verticalEl'],
+          ['plintId','plintEl'],
+          ['pairId','pairEl']];
+chain = [];
+crosses = [];
+crosses_loading = false;
+loading_callbacks = [];
+
+OnLoadTask = function(url, callback) {
+    if (typeof url == "string" || url instanceof String) {
+        this.ajax_opt = {
+            url: url
+        };
+    } else {
+        this.ajax_opt = url;
+    }
+    this.callback = callback;
+    this.data = undefined;
+    this.is_loading = false;
+    this.loading_targets = [];
+
+    var self = this;
+    this.ajax_opt.success = function(data) {
+        self.data = data;
+        self.is_loading = false;
+        $.each(self.loading_targets, function() {self.callback(data, this)});
+    };
+
+    this.apply_to = function(element) {
+        if (this.is_loading) {
+            this.loading_targets.push(element);
+        } else {
+            if (typeof this.data == "undefined") {
+                this.is_loading = true;
+                this.loading_targets.push(element);
+                $.ajax(this.ajax_opt);
+            } else {
+                this.callback(this.data, element);
+            }
+        }
+    };
+    this.caller = function() {
+        var self = this;
+        var lambda = function(element) {
+            self.apply_to(element);
+        }
+        return lambda;
+    }
+};
+
+getCrossListTask = new OnLoadTask(
+    rootpath+'CrossList.json',
+    function(data, el) {
+        $.each(data.items, function() {el.append(jQuery('<option>').text(this[1]).attr('value', this[0]));});
+    }
+);
+
+getCrossListYaroslav = getCrossListTask.caller();
+//function (el) {
+    //var addoptions = function() { $.each(crosses, function() {el.append(jQuery('<option>').text(this[1]).attr('value', this[0]));}); }
+    //if (crosses_loading) {
+        //loading_callbacks.push(addoptions);
+    //} else {
+        //if (!crosses.length) {
+            //crosses_loading = true;
+            //loading_callbacks.push(addoptions);
+            //$.ajax({
+                    //url: rootpath+'CrossList.json',
+                    //success: function( data ) {
+                      //crosses=data.items;
+                      //crosses_loading = false;
+                      //$.each(loading_callbacks, function() {this()});
+                      //loading_callbacks = [];
+                    //}
+                  //});
+        //} else addoptions();
+    //}
+//}
+
+jQuery.fn.addoptions = function (data, add_none) {
+  if (add_none) this.append(jQuery('<option>').text('Not crossed').attr('value', 0));
+  if (data.length) {
+      var e = this;
+      jQuery.each(data, function() {e.append(jQuery('<option>').text(this[1]).attr('value', this[0]));});
+      this.prop('disabled', false);
+  } else {
+      this.prop('disabled', true);
+  }
+}
+
+chaintable = $("#chaintable");
+
+addLink = function () {
+    var index = chain.length;
+    var link = {};
+    //console.log(crosses);
+    //console.log(index);
+    var tr = $('<tr>');
+
+    $.each(stages, function() {
+        var td = $('<td>');
+        var sel = $('<select>', {class:"form-control", "x-link":index, "x-type":this[0], onchange:"changeSelect(this)"}).appendTo(td);
+        td.appendTo(tr);
+        link[this[0]] = 0;
+        link[this[1]] = sel;
+    });
+
+    //getCrossList(link.crossEl);
+    link.crossEl.addoptions(menuarray, true);
+    //$.each(crosses, function() {e.append(jQuery('<option>').text(this[1]).attr('value', this[0]));});
+
+    chain.push(link);
+    //console.log(chain);
+    tr.appendTo(chaintable);
+}
+
+changeSelect = function(el) {
+    //console.log(el[0].selectedItem);
+    console.log(el);
+}
+
+
+
+
+
+
+
+
+
 var crossApp = angular.module('crossApp', [],
   function ($interpolateProvider){ $interpolateProvider.startSymbol('{?'); $interpolateProvider.endSymbol('?}'); }
   );
 
-rootpath = '/Cross/default/ajax_get';
 
 crossApp.controller('ChainCtrl', function($scope, $http) {
     //$scope.crosses = [ {id: '1', title: 'Chicago'}, {id: '2', title: 'New York'}, {id: '3', title: 'Washington'}, ];
@@ -12,174 +142,99 @@ crossApp.controller('ChainCtrl', function($scope, $http) {
     $scope.qwe = ['a','b','c','d','e'];
     $scope.begin = 0;
     //$scope.qwe = [1,2,3,4];
+    $scope.selectedItem = 2;
     $scope.crosschangecount = 0;
     $scope.vertichangecount = 0;
 
-    $http.get(rootpath+'CrossList.json').success(function(data) { $scope.crosses=data.items; });
+    //$http.get(rootpath+'CrossList.json').success(function(data) { $scope.crosses=data.items; });
+    $scope.crosses = [];
     $scope.verticals = [];
     $scope.plints = [];
-    $scope.pairs = [];
-
-    pairseq = [[[1,0],[2,1],[3,2],[4,3],[5,4],[6,5],[7,6],[8,7],[9,8],[10,9]],
-                    [[1,1],[2,2],[3,3],[4,4],[5,5],[6,6],[7,7],[8,8],[9,9],[10,10]],[]];
+    $scope.pairs = [ [], [[1,0],[2,1],[3,2],[4,3],[5,4],[6,5],[7,6],[8,7],[9,8],[10,9]],
+                         [[1,1],[2,2],[3,3],[4,4],[5,5],[6,6],[7,7],[8,8],[9,9],[10,10]] ];
 
     //var defaultlink = {crossId:0, verticalId:0, plintId:0, pairId:0, start:2};
     //$scope.chain = [defaultlink];
     $scope.chain = [];
     $scope.addLink = function() {
-        $scope.chain.push({crossId:0, verticalId:0, plintId:0, pairId:0, start:2, crossPos:0, verticalPos:0, plintPos:0});
+        $scope.chain.push({crossPos:"0", verticalPos:"0", plintPos:"0", pairPos:"0", start:"0", crossId:0, verticalId:0, plintId:0, pairId:0});
       };
     $scope.addLink();
 
-    $scope.crosschange1 = function(Id, link, e) {
-    $scope.crosschangecount += 1;
-        //console.log('crossId is '+Id+' '+link);
-        console.log(e);
+    $scope.crosschange = function(i, link) {
+
+        $scope.crosschangecount += 1;
+
+        L = $scope.chain[link];
+        var Id = $scope.crosses[i][0];  // i = crossPos, index of selected OPTION in SELECT
+        L.crossId = Id;    // Id is id of record in DB (primary key)
         if (Id > 0) {
-            //jQuery("#vert1").settofirst();
             if (!$scope.verticals[Id]) {
                 $http.get(rootpath+'VerticalList.json/'+Id).success(function(data) {
                     $scope.verticals[Id]=data.items;
-                    setvertical(Id, link);  // wait, while ajax request is success
+                    setverticaltop(Id, link);  // wait, while ajax request is success
                 });
               } else {
-                        setvertical(Id, link);  // immediatelly
+                        setverticaltop(Id, link);  // immediatelly
                      }
-          }
+          } else { L.verticalId = 0;
+                   L.plintId = 0;
+                   L.pairId = 0; }
       };
 
-      function setvertical(Id, link) {
-          if ($scope.verticals[Id].length) {
-            var n = $scope.verticals[Id][0][0];
-            $scope.verticalchange(n, link);
-            $scope.chain[link].verticalId = n;
-            } else $scope.chain[link].verticalId = 0;
+    function setverticaltop(Id, link) {
+        var st = 0;
+        if ($scope.verticals[Id].length) {
+            st = $scope.verticals[Id][0][0];
+            $scope.verticalchange(0, link);
+            } else { L.plintId = 0;
+                     L.pairId = 0; }
+        L.verticalId = st;
+        L.verticalPos = "0";
       }
 
-    $scope.verticalchange1 = function(Id, link, e) {
-    $scope.vertichangecount += 1;
-        if (Id > 0) {
-            if (!$scope.plints[Id]) {
-                $http.get(rootpath+'PlintList.json/'+Id).success(function(data) {
-                    $scope.plints[Id]=data.items;
-                    $scope.chain[link].plintId=settofirst($scope.plints[Id]);
-                });
-              } else {
-                        $scope.chain[link].plintId=settofirst($scope.plints[Id]);
-                     }
-          }
-      };
+    $scope.verticalchange = function(i, link) {
 
-    $scope.plintchange1 = function(Id, link, e) {
-        if (Id > 0) {
-            //var i = e.chain[link].plint
-            //$scope.pairs=pairseq[$scope.plints[$scope.chain[link].verticalId][Id][2]];
-            $scope.pairs=pairseq[$scope.plints[$scope.chain[link].verticalId][0][2]];
-            $scope.chain[link].pairId=1;
-          } else
-          $scope.pairs=pairseq[2];
-      };
+        $scope.vertichangecount += 1;
+
+        L = $scope.chain[link];
+        var ci = L.crossId;  // cross id in DB (primary key)
+        if ($scope.verticals[ci]) {
+            var Id = $scope.verticals[ci][i][0];  // i = verticalPos, index of selected OPTION in SELECT
+            L.verticalId = Id;    // id of record in DB (primary key)
+            if (Id > 0) {
+                if (!$scope.plints[Id]) {
+                    $http.get(rootpath+'PlintList.json/'+Id).success(function(data) {
+                        $scope.plints[Id]=data.items;
+                        setplinttop(Id, link);
+                    });
+                } else setplinttop(Id, link);
+            }
+        }
+    };
+
+    function setplinttop(Id, link) {
+        var st = 0;
+        if ($scope.plints[Id].length) {
+            st = $scope.plints[Id][0][0];
+            $scope.plintchange(0, link);
+            } else L.pairId = 0;
+          L.plintId = st;
+          L.plintPos = "0";
+    };
+
+    $scope.plintchange = function(i, link) {
+        L = $scope.chain[link];
+        var vi = L.verticalId;
+        if ($scope.plints[vi]) {
+            var Id = $scope.plints[vi][i][0];
+            L.plintId = Id;
+            var st = (Id > 0) ? $scope.plints[vi][i][2] + 1 : 0; // 0 or 1
+            $scope.chain[link].pairId = st;
 
 
-      testchange = function (e,b) {
-      //console.log(e);
-      //console.log(b);
-
-      }
-      $scope.ngtestchange = function (e) {
-      //console.log(e.target);
-      //console.log(e.currentTarget.selectedIndex);
-//var el = $event.target;
-  //  console.log(el);
-      }
+        }
+    };
 
 });
 
-
-
-crossApp.directive('crossChange', function ($http, $timeout){
-
-      setverticaltotop = function (lp, pk, $scope) {
-      //console.log(lp+' '+pk);
-      var n = 0;
-          if ($scope.verticals[pk].length) {
-            n = $scope.verticals[pk][0][0];
-            //scope.verticalchange(n, lp);
-            }
-
-            $scope.chain[lp].verticalId = n;
-            $timeout(function(){
-                 $scope.chain[lp].verticalId = n;
-                // console.log($scope.chain[lp].verticalId);
-             }, 1);
-
-            //$scope.$digest();
-
-      }
-
-      return {
-          restrict : 'A',
-          link: function (scope, element, attrs) {
-             element.on('change', function (event){
-                var lp = scope[attrs["crossChange"]];   // link position in chain
-                var pk = scope.chain[lp].crossId;       // database id (primary key)
-                si = element[0].selectedIndex;
-                scope.chain[lp].crossPos = si;
-                //console.log(si+' '+li);
-
-                if (pk > 0) {
-                    if (!scope.verticals[pk]) {
-                        $http.get(rootpath +'VerticalList.json/'+pk).success(function(data) {
-                            scope.verticals[pk]=data.items;
-                            setverticaltotop(lp, pk, scope);
-                           // setvertical(Id, link);  // wait, while ajax request is success
-                        });
-                      } else {
-                               setverticaltotop(lp, pk, scope);
-                               // setvertical(Id, link);  // immediatelly
-                             }
-             }});
-          }
-       }
-    });
-
-crossApp.directive('verticalChange', function ($http, $timeout){
-
-      setplinttotop = function (lp, pk, $scope) {
-      var n = 0;
-          if ($scope.plints[pk].length) {
-            n = $scope.plints[pk][0][0];
-            }
-            $timeout(function(){
-                 $scope.chain[lp].plintId = n;
-             }, 1);
-      }
-
-      return {
-          restrict : 'A',
-          link: function (scope, element, attrs) {
-             element.on('change', function (event){
-                var lp = scope[attrs["verticalChange"]];
-                var pk = scope.chain[lp].verticalId;
-                si = element[0].selectedIndex;
-                scope.chain[lp].verticalPos = si;
-                if (pk > 0) {
-                    if (!scope.plints[pk]) {
-                        $http.get(rootpath+'PlintList.json/'+pk).success(function(data) {
-                            scope.plints[pk]=data.items;
-                            setplinttotop(lp, pk, scope);
-                        });
-                      } else {
-                               setplinttotop(lp, pk, scope);
-                             }
-             }});
-          }
-       }
-    });
-
-
-    settofirst = function(v) {
-        var i = 0
-        if (v.length) i = v[0][0];
-        return i;
-    }
