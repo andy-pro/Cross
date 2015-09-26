@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-#from gluon.storage import Storage
+from gluon.storage import Storage
 import gluon.contrib.simplejson
-#cross_storage = Storage()
+cross_storage = Storage()
 
 db.define_table('cross_table',
                 Field('title')
@@ -22,7 +22,7 @@ for i in xrange(1, 11):
     selfields.append(Field(fnames[0], default=''))
     selfields.append(Field(fnames[1], 'integer', default=0))
     selfields.append(Field(fnames[2], 'integer', default=0))
-    selfields.append(Field(fnames[3], default=request.now.date()))
+    selfields.append(Field(fnames[3], 'date', default=request.now.date()))
     selfields.append(Field(fnames[4], db.auth_user, default=auth.user))
     selfields.append(Field(fnames[5], 'boolean', default=False))
 
@@ -35,7 +35,7 @@ db.define_table('plint_table',
                 Field(plintfields[1], 'boolean', default=True),
                 Field(plintfields[2], default=''),
                 Field(plintfields[3], 'integer', default=0),
-                Field(plintfields[4], default=request.now.date()),
+                Field(plintfields[4], 'date', default=request.now.date()),
                 Field(plintfields[5], db.auth_user, default=auth.user),
                 *selfields
                )

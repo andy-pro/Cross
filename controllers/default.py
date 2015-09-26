@@ -26,6 +26,19 @@ def vertical():
     #response.timemeter = tm.show('Rendering table')
     return {'table': table}
 
+def max():
+    rows = db(db.plint_table).select()
+    max = ''
+    for row in rows:
+        for i in xrange(0, 10):
+            pairtitle = row(pairtitles[i])
+            if len(pairtitle) > len(max):
+                max = pairtitle
+                plint = row.title
+                cross = row.root.title
+                vertical = row.parent.title
+    return dict(max=max, length=len(max), plint=plint, root=cross, parent=vertical)
+
 @auth.requires_membership('managers')
 def newcross():
     response.title = _NEW_CROSS_
@@ -131,6 +144,7 @@ def editplint():
 
 @auth.requires_membership('managers')
 def editpair():
+    print request
     pair = Pair(request.args(0, cast = int), request.args(1, cast = int))
     urlback = URL('vertical', args=[pair.plint.vertical.index])
     response.verticalmainmenu = appendVerticalMenu(pair.plint.cross)
