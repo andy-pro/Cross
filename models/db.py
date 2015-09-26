@@ -4,7 +4,8 @@
 ## be redirected to HTTPS, uncomment the line below:
 # request.requires_https()
 
-db = DAL('sqlite://storage.sqlite',pool_size=1,check_reserved=['all'])#, lazy_tables=True)
+db = DAL('sqlite://storage.sqlite',pool_size=1,check_reserved=['all'], lazy_tables=True)
+#db = DAL('postgres://username:password@localhost/test')
 
 ## by default give a view/generic.extension to all actions from localhost
 ## none otherwise. a pattern can be 'controller/function.extension'

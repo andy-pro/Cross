@@ -237,9 +237,9 @@ def restoreview(f):
 '''
 @auth.requires_membership('administrators')
 def cleardb():
-    db.plint_table.truncate()
-    db.vertical_table.truncate()
     db.cross_table.truncate()
+    db.vertical_table.truncate()
+    db.plint_table.truncate()
     session.flash = 'Database cleared'
     redirect_updatemenu(URL('index'))
 
