@@ -16,12 +16,14 @@ function VerticalCtrl(params, route) {	// requests: #/vertical/id, #/vertical?se
 
     $scope = sLoad(route.ajaxurl, params.args, params.vars);
     mastersearch.val($scope.query || '');
-    var header = $scope.header;
-    news = $scope.news;
+    var header = $scope.header,
+	news = $scope.news;
     document.title = news ? L._NEWS_ : header;
     if (!news) {
-	var href = params.args[0] ? `"vertical",${params.args[0]}` : `"found","search=${$scope.query}"`;
-	header = `<a href='javascript:edit(${href})'>${header}</a>`;
+	var href, _title;
+	if (params.args[0]) { href = `"vertical",${params.args[0]}`; _title = `${L._EDIT_VERT_} ${$scope.vertical}`; }
+	    else { href = `"found","search=${$scope.query}"`; _title = ''; }
+	header = `<a href='javascript:edit(${href})' title='${_title}'>${header}</a>`;
       }
     render(route, {plints:$scope.plints, user:$scope.user, users:$scope.users, header:header, query:$scope.query, news:news});
 
@@ -40,7 +42,6 @@ function VerticalCtrl(params, route) {	// requests: #/vertical/id, #/vertical?se
 function ChainCtrl(params, route) {
     params.args.push('chain')
     $scope = sLoad(route.ajaxurl, params.args);
-    log($scope)
     document.title = $scope.address;
     render(route, {chain:$scope});
 }
@@ -188,7 +189,7 @@ function EditVerticalCtrl(params, route) {
 
     $scope = sLoad(route.ajaxurl, params.args);
     document.title = $scope.header;
-    $scope.vertical = params.args[0];
+    $scope.verticalId = params.args[0];
     render(route, {vertical:$scope});
 
     const _th_com_ = ['<th width="14%">'+tbheaders[2]+'</th>', '<th width="6%">+/~</th>'];
@@ -348,10 +349,10 @@ function EditFoundCtrl(params, route) {
         var start1 = parseInt(plint.start1);
         $.each(this.pairs, function(idx, pair) {
             if (pair[0].indexOf($scope.query) >= 0)
-                fdata.push({crossId: plint.root[0],
-			    cross: plint.root[1],
-                            verticalId: plint.parent[0],
-                            vertical: plint.parent[1],
+                fdata.push({cross: plint.cross,
+			    crossId: plint.crossId,
+			    vertical: plint.vertical,
+                            verticalId: plint.verticalId,
                             id: key,
                             plintId: plint.id,
                             plint: plint.title,
@@ -476,19 +477,9 @@ function EditFoundCtrl(params, route) {
             //location.hash = '#/vertical?search=' + encodeURI(value);
             //location.hash = '#/vertical?' + $("form.search").serialize(); // escape?
             location.hash = '#/vertical?search=' + value;
-        } else web2pyflash(value + ' : is too short query!', 'danger');
+        } else web2pyflash(value + ' : ' + L._TOOSHORT_, 'danger');
         return false;
     });
 
 })();
 /* end ajax live search controller */
-
-function pairRow(pair) {
-    var tds = [`<a href='javascript:edit("cross",${pair.crossId})'>${pair.cross}</a>`,
-	       `<a href='#/vertical/${pair.verticalId}'>${pair.vertical}</a>`,
-	       `<sup>${pair.start1}</sup><a href='javascript:edit("plint",${pair.plintId})'>${pair.plint}</a>`,
-	       pair.pairId+pair.start1-1];
-    var row = '';
-    for(var cj in tds) { row += '<td>'+tds[cj]+'</td>'; }
-    return row;
-}

@@ -68,7 +68,6 @@ div.table-container{
     text-decoration: none;
     background-color: #337ab7;
 }
-
 .btn-inverse {
     background-color: #333;
     background-image: linear-gradient(to bottom, #666, #222);
@@ -87,7 +86,6 @@ input#master-search {
     color: #fff;
     width: 270px;
 }
-
 div#editdialog {
     display: none;
     position:   absolute;
@@ -98,30 +96,21 @@ div#editdialog {
     width:      100%;
     padding: 100px 50px;
 }
-
 a.mybtn-link {
     cursor: pointer;
     display: inline-block;
     padding: 2px 10px 2px 2px;
 }
-
-input.addbtn {
-    margin: 5px;
-}
+.color-root { color: inherit!important; }
 table#chaintable {
     table-layout: fixed;
     width: 100%;
     margin: 15px 0px;
     color: #fff;
 }
-table#chaintable td {
-    padding: 3px 3px;
-}
-
+table#chaintable td { padding: 3px 3px; }
 /** vertical table css rules **/
-table.vertical {
-    table-layout: fixed;
-   }
+table.vertical { table-layout: fixed; }
 table.vertical td {
     overflow: hidden;
     overflow-x: hidden;
@@ -141,19 +130,12 @@ table sup {
     font-size: 7pt;
     color:#111;
 }
-
 .colv0 { width: 56px; }
 .colv1 { width: 44px; }
-/*.coln { width: 80px; }*/
-
-/*tr.oddrow {background: #e8e8e8;}*/
-/*table.cross tr:nth-child(odd) {background: #eeeeee;}*/
-
 table.vertical tr:hover {
 /*color:#FFF;*/
 background: #ffc;
 }
-
 /*td.loop {background: #faa;}*/
 td.found {background: #cfc;}
 td.new {background: #ffb;}

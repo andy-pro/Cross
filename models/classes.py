@@ -19,6 +19,10 @@ L._COUNT_ = T('Count')
 L._CROSS_ = T('Cross')
 L._DB_UPD_ = T('Database update success!')
 L._DEL_ = T('Delete')
+L._EDIT_CROSS_ = T('Edit cross')
+L._EDIT_PAIR_ = T('Edit pair')
+L._EDIT_PLINT_ = T('Edit plint')
+L._EDIT_VERT_ = T('Edit vertical')
 L._EDITOR_ = T('Editor')
 L._ERROR_ = T('Error')
 L._IMPORT_ = T('Import DB')
@@ -49,10 +53,12 @@ L._REM_CD_ = T('Replace remote common data')
 L._SEARCH_ = T('Search')
 L._START_1_ = T('Numeration start 1')
 L._TITLE_ = T('Title')
+L._TOOSHORT_ = T('too short query!')
 L._TOOLS_ = T('Tools')
 L._UKSATSE_ = T('Uksatse')
 L._VERTICAL_ = T('Vertical')
 L._VERT_T_ = T('Vertical title')
+L._VIEW_VERT_ = T('View vertical')
 L._WRAP_ = T('Wrap text')
 #==================================================================
 
@@ -234,6 +240,7 @@ class Pair:
         _rec = self.plint.record
         self.index = _rec.id
         self.pair = _pair
+        self.vertical = self.plint.vertical
         f = pairfields[_pair-1]
         self.fp = f
         self.title = _rec(f[0])

@@ -2,8 +2,8 @@
 const rootpath = '/Cross/default/';
 const staticpath = '/Cross/static/';
 const rootpathajax = rootpath + 'ajax_';
-const _DEBUG_ = true;
-//const _DEBUG_ = false;
+//const _DEBUG_ = true;
+const _DEBUG_ = false;
 const _dbgstr1 = ' : value';
 const _mypre = '<pre class="mypre">%s</pre>';
 const $clrp = 'panel-primary', $clrs = 'panel-success', $clri = 'panel-info', $clrw = 'panel-warning', $clrd = 'panel-danger';
@@ -214,8 +214,8 @@ function render(route, context) {
     const targetDIV = 'crosshome';	// content div, default
 
     route = function (args) {	// The route registering function:
-	path = args[0].toLowerCase();
-	name = args[1] || args[0];
+	var path = args[0].toLowerCase(),
+	    name = args[1] || args[0];
 	routes[path] = {ajaxurl: path || 'index', templateId: name+'Tmpl', controller: window[name+'Ctrl'], targetId: args[2] || targetDIV};
     }
 
@@ -270,14 +270,14 @@ document.onkeydown = function(e) {
     }
 }
 
-/*** Translate JS call('func', arg1, arg2,... var1=value, var2=value,...) to window.location ***/
-edit = function() { // args is: 0 - controller name (some 'editpair' or 'editfound'), args1, args2...
+/*** Translate JS call edit('func', arg1, arg2,... var1=value, var2=value,...) to window.location ***/
+edit = function() { // args is: 0 - controller name (some 'pair' or 'found'), args1, args2...
     var url, arg, vars=[];
     // redirect to web2py auth dialog if UNAUTHORIZED
     if (!$scope.user) url = `user/login?_next=${rootpath}index${escape(window.location.hash)}`;	// MDN templating
     else {
         var url = '#/edit'+arguments[0], len = arguments.length;
-        //for(var idx in arguments) url += arguments[idx] + '/'; // assign url some /#editpair/arg1/arg2, version with args only
+        // assign url some /#editpair/arg1/arg2
         if (len>1) {
             for(var i=1; i<len; i++) {
 		arg = arguments[i];
@@ -292,6 +292,31 @@ edit = function() { // args is: 0 - controller name (some 'editpair' or 'editfou
 	}
     }
     window.location.href = url;
+}
+
+A_Cross = function(o) { return `<a href='javascript:edit("cross",${o.crossId})' title='${L._EDIT_CROSS_} ${o.cross}'>${o.cross}</a>` }
+
+A_Vertical = function(o, _class) {
+    _class = _class ? `class="${_class}"` : '';
+    return `<a ${_class} href='#/vertical/${o.verticalId}' title='${L._VIEW_VERT_} ${o.vertical}'>${o.header || o.vertical}</a>`;
+}
+
+function pairRow(pair, depth, colv) {
+    depth = typeof depth !== 'undefined' ? depth : 4;
+    //colv = typeof colv !== 'undefined' ? colv : false;
+    var start1 = pair.pairId+pair.start1-1
+    var tds = [A_Cross(pair), A_Vertical(pair),
+	       `<sup>${pair.start1}</sup><a href='javascript:edit("plint",${pair.plintId})' title='${L._EDIT_PLINT_} ${pair.plint}'>${pair.plint}</a>`,
+	       //pair.pairId+pair.start1-1
+	       `<a href='javascript:edit("pair",${pair.plintId},${pair.pairId})' title='${L._EDIT_PAIR_} ${start1}'>${L._PAIR_} ${start1}</a>`
+	       ];
+    var row = '';
+    var cell;
+    for(var i=0; i<depth; i++) {
+	cell = colv ? `<td class="colv${i}">` : '<td>';
+	row += cell+tds[i]+'</td>';
+    }
+    return row;
 }
 
 /*** Calculate executing time ***/

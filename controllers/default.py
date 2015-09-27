@@ -59,11 +59,9 @@ def ajax_vertical():
         if news:
              td.append((plint(pairtitles[idx]),idx))
         tr['pairs'] = td
-        if query or news:
-            tr['root'] = (plint.root, plint.root.title)
-            tr['parent'] = (plint.parent, plint.parent.title)
+        if query or news: add_root(tr, plint)
         plints.append(tr)
-    return dict(user=get_user_id(), header=header, query=query, news=news, plints=plints, users=users, title=title, cross=cross)
+    return dict(user=get_user_id(), header=header, query=query, news=news, plints=plints, users=users, vertical=title, cross=cross)
 
 def ajax_plints():
     return dict(data=[(i.id,i.title,int(i.start1)) for i in db(db.plint_table.parent == request.args(0, cast = int)).select(*pfset1, orderby=db.plint_table.id)])
@@ -86,13 +84,13 @@ def ajax_editvertical():
     return add_formkey(ajax_vertical())
 
 def comdict(data):
-    return dict(header=data.header, address=data.address, modinfo=data.modified_info, title=data.title)
+    return dict(header=data.header, address=data.address, modinfo=data.modified_info, title=data.title, vertical=data.vertical.title, verticalId=data.vertical.index)
 
 @auth.requires_membership('managers')
 def ajax_editplint():
     data = Plint(request.args(0, cast = int))
     result = comdict(data)
-    result.update(dict(pairtitles=('\n'.join(data.get_pair_titles())).rstrip(), start1=data.start1, comdata=data.comdata, vertical=data.vertical.index))
+    result.update(dict(pairtitles=('\n'.join(data.get_pair_titles())).rstrip(), start1=data.start1, comdata=data.comdata))
     return add_formkey(result)
 
 @auth.requires_membership('managers')
@@ -103,9 +101,7 @@ def ajax_editpair():
 def ajax_chain():
     data = Pair(request.args(0, cast = int), request.args(1, cast = int))
     result = comdict(data)
-    if (request.args(2) and test_query(data.title) and request.args(2, cast=str) == 'chain'):
-        result['chain'] = getchain(data.title, request.exclude, '%s_%s' % (data.index, data.pair))
-    result['vertical'] = data.plint.vertical.index
+    result['chain'] = getchain(data.title, request.exclude, '%s_%s' % (data.index, data.pair)) if (request.args(2) and test_query(data.title) and request.args(2, cast=str) == 'chain') else []
     return add_formkey(result)
 
 @auth.requires_membership('managers')
@@ -127,20 +123,21 @@ def getchain(q, exclude=False, pairId=''):
                     if pairId == '%s_%s' % (plint.id, i+1):
                         exclude = False
                         continue
-                pairs.append({'crossId':plint.root,
-                              'verticalId':plint.parent,
-                              'plintId':plint.id,
-                              'pairId':i+1,
-                              'cross':plint.root.title,
-                              'vertical':plint.parent.title,
-                              'plint':plint.title,
-                              'start1':int(plint.start1)})
+                tr = {'plintId':plint.id, 'pairId':i+1, 'plint':plint.title, 'start1':int(plint.start1)}
+                add_root(tr, plint)
+                pairs.append(tr)
     return pairs
 
 def test_query(q):
     try: uq = unicode(q, 'utf-8')
     except: uq = q
     return len(uq) > 2
+
+def add_root(tr, plint):
+    tr['cross'] = plint.root.title
+    tr['crossId'] = plint.root
+    tr['vertical'] = plint.parent.title
+    tr['verticalId'] = plint.parent
 
 def search_plints(q, like=True):
     if q and test_query(q):
@@ -150,10 +147,10 @@ def search_plints(q, like=True):
             queries = [db.plint_table[field] == q for field in pairtitles]
         query = reduce(lambda a, b: (a | b), queries)
         result = db(query).select()
-        response.searchstatus = 'OK' if result else 'not found!'
+        response.searchstatus = 'OK' if result else T('not found!')
         return result
     else:
-        response.searchstatus = 'too short query!'
+        response.searchstatus = L._TOOSHORT_
         return []
 
 def ajax_livesearch():     # live AJAX search
