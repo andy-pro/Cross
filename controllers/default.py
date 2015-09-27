@@ -97,10 +97,14 @@ def ajax_editplint():
 
 @auth.requires_membership('managers')
 def ajax_editpair():
+    request.exclude = True
+    return ajax_chain()
+
+def ajax_chain():
     data = Pair(request.args(0, cast = int), request.args(1, cast = int))
     result = comdict(data)
     if (request.args(2) and test_query(data.title) and request.args(2, cast=str) == 'chain'):
-        result['chain'] = getchain(data.title, True, '%s_%s' % (data.index, data.pair))
+        result['chain'] = getchain(data.title, request.exclude, '%s_%s' % (data.index, data.pair))
     result['vertical'] = data.plint.vertical.index
     return add_formkey(result)
 
@@ -114,11 +118,11 @@ def add_formkey(data):
     return data
 
 def getchain(q, exclude=False, pairId=''):
-    rows = search_plints(q)
+    rows = search_plints(q, False)
     pairs = []
     for plint in rows:
         for i in xrange(0, 10):
-            if plint(pairtitles[i]) ==q:
+            if plint(pairtitles[i]) == q:
                 if exclude:
                     if pairId == '%s_%s' % (plint.id, i+1):
                         exclude = False
@@ -127,7 +131,10 @@ def getchain(q, exclude=False, pairId=''):
                               'verticalId':plint.parent,
                               'plintId':plint.id,
                               'pairId':i+1,
-                              'title':plint['pid'+str(i+1)]})
+                              'cross':plint.root.title,
+                              'vertical':plint.parent.title,
+                              'plint':plint.title,
+                              'start1':int(plint.start1)})
     return pairs
 
 def test_query(q):

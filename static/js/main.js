@@ -253,7 +253,7 @@ $(function() {	// execute on document load
 
 /***  Set routes. args: ( [ path(toLowerCase), [name=path, by default] ] )  ***/
 /***  templateId = name+Tmpl, controller = name+Ctrl  ***/
-    var rs = [ ['', 'Cross'], ['Vertical'], ['EditCross'], ['EditVertical'], ['EditPlint'], ['EditPair'], ['EditFound'] ];
+    var rs = [ ['', 'Cross'], ['Vertical'], ['Chain'], ['EditCross'], ['EditVertical'], ['EditPlint'], ['EditPair'], ['EditFound'] ];
     $.each(rs, function () { route(this); });
     window.addEventListener('hashchange', router);    // Listen on hash change
     router();	//************* START APPLICATION *********

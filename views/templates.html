@@ -65,7 +65,7 @@ var verticals = crosses[ci]["verticals"]; %>
             for( var cj in pairs ) {
                 var idx = parseInt(cj);
                 var pair = pairs[idx];
-                var t = pair[0], found = '';
+                var t = pair[0], found = '', href;
                 _title = "";
                 if (news) {
                     var pidx = pair[1]+1;
@@ -76,9 +76,12 @@ var verticals = crosses[ci]["verticals"]; %>
                         if (t) { _title = t+"\n"+pair[1]+"\n"+users[pair[2]];
                                 if (t.indexOf(query) >= 0) found = 'class="found"';
                         }
-                    } %>
+                    }
+                if (news || !user) href = '#/chain/'+plint.id+'/'+pidx; 
+                    else href = 'javascript:edit("pair",'+plint.id+','+pidx+')';
+            %>
                  <td <%=found%>>
-                   <a href='javascript:edit("pair",<%=plint.id%>,<%=pidx%>)' title="<%=_title%>"><sup><%=idx+start1%></sup><%=t%></a>
+                   <a href='<%=href%>' title="<%=_title%>"><sup><%=idx+start1%></sup><%=t%></a>
                  </td>
           <% }
 
@@ -91,6 +94,28 @@ var verticals = crosses[ci]["verticals"]; %>
       <% }; %>
     </tbody></table>
   </div>
+</script>
+
+<script type="text/template" id="ChainTmpl">
+<div class="col-md-6">
+  <div class="panel panel-default">
+    <div class="panel-heading"><a style="color:inherit;" href="#/vertical/<%=chain.vertical%>"><%=chain.header%></a><%=btnBack%></div>
+    <div class="panel-body">
+      <p><label><%=chain.title%></label></p>
+      <p><i><%=chain.modinfo%></i></p>
+    </div>
+    <table class="table table-bordered table-condensed" style="display:normal">
+        <tr class="info"><% for( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %> </tr>
+        <% for( var ci in chain.chain ) { 
+            var link = chain.chain[ci];
+            print("<tr>");
+            print(pairRow(link));
+            print("</tr>");            
+            } %>        
+    </table>
+    <div class="panel-footer"><div class="myright"><%=L._FOUND_%><%=chain.chain.length%></div></div>
+  </div>
+</div>
 </script>
 
 <script type="text/template" id="EditCrossTmpl">

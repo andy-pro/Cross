@@ -23,7 +23,7 @@ function VerticalCtrl(params, route) {	// requests: #/vertical/id, #/vertical?se
 	var href = params.args[0] ? `"vertical",${params.args[0]}` : `"found","search=${$scope.query}"`;
 	header = `<a href='javascript:edit(${href})'>${header}</a>`;
       }
-    render(route, {plints:$scope.plints, users:$scope.users, header:header, query:$scope.query, news:news});
+    render(route, {plints:$scope.plints, user:$scope.user, users:$scope.users, header:header, query:$scope.query, news:news});
 
     if (localStorage.wraptext == "true") {
 	$("#wraptext").prop("checked", true);
@@ -32,6 +32,17 @@ function VerticalCtrl(params, route) {	// requests: #/vertical/id, #/vertical?se
     if (localStorage.editchain == "true") {
 	$("#editchain").prop("checked", true);
     }
+}
+/* end vertical controller */
+
+//======================================
+/*** Chain Controller ***/
+function ChainCtrl(params, route) {
+    params.args.push('chain')
+    $scope = sLoad(route.ajaxurl, params.args);
+    log($scope)
+    document.title = $scope.address;
+    render(route, {chain:$scope});
 }
 /* end vertical controller */
 
@@ -337,8 +348,10 @@ function EditFoundCtrl(params, route) {
         var start1 = parseInt(plint.start1);
         $.each(this.pairs, function(idx, pair) {
             if (pair[0].indexOf($scope.query) >= 0)
-                fdata.push({root: plint.root,
-                            parent: plint.parent,
+                fdata.push({crossId: plint.root[0],
+			    cross: plint.root[1],
+                            verticalId: plint.parent[0],
+                            vertical: plint.parent[1],
                             id: key,
                             plintId: plint.id,
                             plint: plint.title,
@@ -348,20 +361,17 @@ function EditFoundCtrl(params, route) {
         });
     });
 
+    document.title = $scope.header;
     render(route, {query:$scope.query, header:$scope.header, count:fdata.length});
     var form = new Form(refreshFoundTable);
     var inputs = form.inputs;
 
-    var pair, tds, row, cell;
+    var pair, tds, row, tr;
     for(var ci in fdata) {
 	pair = fdata[ci];
-	tds = [`<a href='javascript:edit("cross",${pair.root[0]})'>${pair.root[1]}</a>`,
-	       `<a href='#/vertical/${pair.parent[0]}'>${pair.parent[1]}</a>`,
-	       `<sup>${pair.start1}</sup><a href='javascript:edit("plint",${pair.plintId})'>${pair.plint}</a>`,
-	       pair.pairId+pair.start1-1, ''];
 	row = foundtable.insertRow();
-	for(var cj in tds) { cell = row.insertCell(); cell.innerHTML = tds[cj]; }
-	pair.cell = cell;
+	row.insertAdjacentHTML('beforeend', pairRow(pair));
+	pair.cell = row.insertCell();
     }
 
     form.init();
@@ -379,29 +389,6 @@ function EditFoundCtrl(params, route) {
 
 }
 /* end edit found controller */
-
-//======================================
-/*** Edit Empty Controller ***/
-function EditEmptyCtrl(params, route) {
-
-    itemsChange = function() {
-	if (form.inputs.delete) return;
-
-    }
-
-    $scope = sLoad(route.ajaxurl, params.args, params.vars);
-    document.title = $scope.header;
-    render(route, {items:$scope});
-    var form = new Form(itemsChange);
-    form.init();
-
-    form.form.submit(function(event) {
-	var items = $(this).serializeArray();
-	items.push({name:'item', value:params.args[0]});
-	//saveData(items, $scope, event);
-    });
-}
-/* end edit empty controller */
 
 //======================================
 /*** Ajax Live Search Controller ***/
@@ -495,3 +482,13 @@ function EditEmptyCtrl(params, route) {
 
 })();
 /* end ajax live search controller */
+
+function pairRow(pair) {
+    var tds = [`<a href='javascript:edit("cross",${pair.crossId})'>${pair.cross}</a>`,
+	       `<a href='#/vertical/${pair.verticalId}'>${pair.vertical}</a>`,
+	       `<sup>${pair.start1}</sup><a href='javascript:edit("plint",${pair.plintId})'>${pair.plint}</a>`,
+	       pair.pairId+pair.start1-1];
+    var row = '';
+    for(var cj in tds) { row += '<td>'+tds[cj]+'</td>'; }
+    return row;
+}
