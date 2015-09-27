@@ -11,11 +11,11 @@ const stages = ['cross','vertical','plint','pair'];
 
 //======================================
 /*** log Helper  ***/
-function log(msg) {
-    console.log(msg);}
+function log(msg) { console.log(msg); }
 //======================================
 /*** String escape Helper  ***/
 String.prototype.escapeHTML = function() { return this.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+String.prototype.unescapeHTML = function() { return this.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>'); }
 /*** String format Helper  ***/
 String.prototype.format = function() {
     var newStr = this, i = 0;
@@ -45,11 +45,12 @@ $.fn.enumoptions = function (start) {
     }
 }
 //======================================
-function raise404() { window.location.href = 'http404'; }
+function login_request(next) { return `user/login?_next=${rootpath}index${escape(next || '')}` }
+// status: 401 - UNAUTHORIZED; 403 - FORBIDDEN; 404 - NOT FOUND
+function raise_html(s) { window.location.href = (s==401) ? login_request() : 'error/'+s; }
 //======================================
 function addFormKey(dest, src) {
-    dest.push({name:'user', value:src.user});
-    //$.each(['formname', 'formkey'], function(){dest.push({name:this, value:src[this]})});
+    dest.push({name:'user', value:userId});
     $.each(['formname', 'formkey'], function(){dest.push({name:String(this), value:src[this]})});
 }
 //======================================
@@ -58,10 +59,10 @@ function addFormKey(dest, src) {
 function saveData(data, formdata, event) {
     event.preventDefault();
     event.stopPropagation();
-    if (formdata.formkey && formdata.user) {
+    if (formdata.formkey && userId) {
 	addFormKey(data, formdata); // destination, source
 	//console.log(data)
-	data = sLoad('update', [], {}, data, 'POST');
+	data = sLoad('update', {data:data, type:'POST'});
     } else {
 	data.details = 'Security error!';
 	data.status = false;
@@ -75,37 +76,28 @@ function saveData(data, formdata, event) {
 }
 //======================================
 /*** Ajax sync Load  ***/
-function sLoad(ajaxurl, args, vars, senddata, type) {
-    args = typeof args !== 'undefined' ? args : [];
-    vars = typeof vars !== 'undefined' ? vars : [];
-    type = typeof type !== 'undefined' ? type : 'GET';
-    var out;
-    var url = '';
-    for(var i in args) url += '/' + args[i];
-    if (!$.isEmptyObject(vars)) url += '?' + $.param(vars);
-    //console.log(ajaxurl+'.json'+url)
+function sLoad(ajaxurl, opts) {
+    //args = typeof args !== 'undefined' ? args : [];
+    //vars = typeof vars !== 'undefined' ? vars : [];
+    //type = typeof type !== 'undefined' ? type : 'GET';
+
+    opts = opts || {};
+    opts.params = opts.params || {args:[], vars:{}};
+    //opts.type = opts.type || 'GET';
+    //opts.escape = opts.escape || false;
+    //console.info(opts);
+    var out, url = '';
+    for(var i in opts.params.args) url += '/' + opts.params.args[i];
+    if (!$.isEmptyObject(opts.params.vars)) url += '?' + $.param(opts.params.vars);
 
     $.ajax({
         url: rootpathajax + ajaxurl + ".json" + url,
-        type: type,
+        type: opts.type || 'GET',
         async: false,
-        data: senddata,
-        //headers: { 'myReferer': '/Cross/default/pindex' },
-        success: function(data) {out = data;},
-        error: function(jqXHR) {
-            //console.log(window.document.referrer)
-            //location.href='user/login';
-            if (jqXHR.statusText == "UNAUTHORIZED") {
-                //history.pushState({id: 'SOME ID'}, '', 'myurl.html');
-                //window.document.referrer = 'mymymyref';
-                //var path='user/login'
-    //history.pushState({note: 'note', path:path}, '', path);
-    //history.replaceState({note: 'note', path:path}, 'Log in');
-                //window.location.replace('user/login?_next=/Cross/default/index'+escape(window.location.hash));
-                //window.location.replace('user/login');
-                window.location.href = 'user/login';
-            }
-        }
+        data: opts.data,
+	dataFilter: opts.unescape ? undefined : function(data) { return data.escapeHTML(); },
+        success: function(data, textStatus, jqXHR) { out=data; userId=parseInt(jqXHR.getResponseHeader('User-Id')); }, // userId = NaN or > 1
+        error: function(jqXHR) { raise_html(jqXHR.status); }
     });
     return out;
 }
@@ -202,8 +194,8 @@ function aLoad(cache, callback, ajaxurl, args) {
     return data ? fn( data ) : fn;
   };
 })();
-function render(route, context) {
-    //console.log(route)
+function render(route, title, context) {
+    document.title = title.unescapeHTML();
     if (route.targetEl) route.targetEl.innerHTML = tmpl(route.templateId, context);
 }
 
@@ -220,32 +212,41 @@ function render(route, context) {
     }
 
     router = function  () {  // version with regex, replace
-	var params = {};
+	var params = {}, route;
 	params.vars = {};
-	params.args = location.hash.split("/");    // [""] - for home, ["#", "part1", "part2", ...]
-
-	if (params.args.length > 1) {
-	    params.args.pop().replace(new RegExp("([^?=&]+)(=([^&]*))?", "g"),
-		function($0, $1, $2, $3) {
-		    if ($3 == undefined) params.args.push($1);
-		    else params.vars[$1] = $3;
-		    });
-	    } else params.args.push("");
-	var route = routes[params.args[1]];   // Get route by url
-	if (route && route.controller) {
-	    route.targetEl = document.getElementById(route.targetId); // Lazy load view element
-	    if (route.targetEl) {
-		params.args = params.args.slice(2);
-		route.controller(params, route);
+	params.args = location.hash.split('?');
+	if (params.args.length > 1) { $.each(params.args[1].split('&'), function(){ route=this.split('='); params.vars[route[0]]=route[1]}); } // variables exist
+	params.args = params.args[0].split('/');    // [''] - for home, ['#', 'part1', 'part2', ...]
+	if (params.args.length < 2) params.args.push('');
+	//console.info(params);
+	route = params.args[1];
+	// redirect to web2py auth dialog if UNAUTHORIZED
+	if (route.indexOf('edit')>=0 && !userId) location.href = login_request(currentURL);
+	else {
+		// spike, for "Edit chain" in Vertical view, add new arg "/chain" if checked checkbox
+		if (route == 'editpair' && localStorage.editchain == 'true') {
+		    params.args.push('chain');
+		    //location.replace(location.href+'/chain');
+		}
+		// end spike
+		route = routes[route];   // Get route by url
+		if (route && route.controller) {
+		    route.targetEl = document.getElementById(route.targetId); // Lazy load view element
+		    if (route.targetEl) {
+			params.args = params.args.slice(2);
+			route.controller(params, route);
+		    }
+		}
 	    }
-	}
+	currentURL = location.hash; // this is allow return to current page after login
+	//log(currentURL)
     }
 })();
 //======================================
 
 $(function() {	// execute on document load
 
-    L = sLoad('lexicon');   // Global lexicon
+    L = sLoad('lexicon', {unescape:true});   // Global lexicon
     tbheaders = [L._CROSS_, L._VERTICAL_, L._PLINT_, L._PAIR_];
     /*** Global inline templates ***/
     btnOkCancel = tmpl("btnOkCancelTmpl", {});
@@ -259,7 +260,7 @@ $(function() {	// execute on document load
     router();	//************* START APPLICATION *********
 });
 
-var $scope, L, tbheaders, btnOkCancel, btnBack;
+var $scope, userId, currentURL, L, tbheaders, btnOkCancel, btnBack;
 var ajaxstate = {during:false, callback:[], count:0, cache:[]};
 var mastersearch = $("#master-search");
 
@@ -270,51 +271,29 @@ document.onkeydown = function(e) {
     }
 }
 
-/*** Translate JS call edit('func', arg1, arg2,... var1=value, var2=value,...) to window.location ***/
-edit = function() { // args is: 0 - controller name (some 'pair' or 'found'), args1, args2...
-    var url, arg, vars=[];
-    // redirect to web2py auth dialog if UNAUTHORIZED
-    if (!$scope.user) url = `user/login?_next=${rootpath}index${escape(window.location.hash)}`;	// MDN templating
-    else {
-        var url = '#/edit'+arguments[0], len = arguments.length;
-        // assign url some /#editpair/arg1/arg2
-        if (len>1) {
-            for(var i=1; i<len; i++) {
-		arg = arguments[i];
-		if (typeof arg == "string" && arg.indexOf('=') > 0) vars.push(arg);
-		else url += '/'+arguments[i];
-            }
-	    // spike, for "Edit chain" in Vertical view, add new arg "/chain" if checked checkbox
-	    if (arguments[0] == 'pair' && localStorage.editchain == 'true') url += '/chain';
-	    // end spike
-	    if (vars.length) url += '?' + vars.join('&');
-	    //console.log(url);
-	}
-    }
-    window.location.href = url;
-}
-
-A_Cross = function(o) { return `<a href='javascript:edit("cross",${o.crossId})' title='${L._EDIT_CROSS_} ${o.cross}'>${o.cross}</a>` }
+//A_Cross = function(o) { return `<a href='#/editcross/${o.crossId}' title='${L._EDIT_CROSS_} ${o.cross}'>${o.cross.escapeHTML()}</a>` }
+A_Cross = function(o) { return `<a href='#/editcross/${o.crossId}' title='${L._EDIT_CROSS_} ${o.cross}'>${o.cross}</a>` }
 
 A_Vertical = function(o, _class) {
     _class = _class ? `class="${_class}"` : '';
-    return `<a ${_class} href='#/vertical/${o.verticalId}' title='${L._VIEW_VERT_} ${o.vertical}'>${o.header || o.vertical}</a>`;
-}
+    //return `<a ${_class} href='#/vertical/${o.verticalId}' title='${L._VIEW_VERT_} ${o.vertical}'>${(o.header || o.vertical).escapeHTML()}</a>`; }
+    return `<a ${_class} href='#/vertical/${o.verticalId}' title='${L._VIEW_VERT_} ${o.vertical}'>${o.header || o.vertical}</a>`; }
+
+A_Plint = function(o) {
+    var start1 = o.pairId+o.start1-1;
+    //return `<sup>${o.start1}</sup><a href="#/editplint/${o.plintId}" title="${L._EDIT_PLINT_} ${o.plint}">${o.plint.escapeHTML()}</a>`; }
+    return `<sup>${o.start1}</sup><a href="#/editplint/${o.plintId}" title="${L._EDIT_PLINT_} ${o.plint}">${o.plint}</a>`; }
+
+A_Pair = function(o) {
+    var start1 = o.pairId+o.start1-1;
+    return `<a href="#/editpair/${o.plintId}/${o.pairId}" title="${L._EDIT_PAIR_} ${start1}">${L._PAIR_} ${start1}</a>`; }
 
 function pairRow(pair, depth, colv) {
     depth = typeof depth !== 'undefined' ? depth : 4;
-    //colv = typeof colv !== 'undefined' ? colv : false;
-    var start1 = pair.pairId+pair.start1-1
-    var tds = [A_Cross(pair), A_Vertical(pair),
-	       `<sup>${pair.start1}</sup><a href='javascript:edit("plint",${pair.plintId})' title='${L._EDIT_PLINT_} ${pair.plint}'>${pair.plint}</a>`,
-	       //pair.pairId+pair.start1-1
-	       `<a href='javascript:edit("pair",${pair.plintId},${pair.pairId})' title='${L._EDIT_PAIR_} ${start1}'>${L._PAIR_} ${start1}</a>`
-	       ];
-    var row = '';
-    var cell;
+    var cell, row = '', tds = [A_Cross, A_Vertical, A_Plint, A_Pair];
     for(var i=0; i<depth; i++) {
 	cell = colv ? `<td class="colv${i}">` : '<td>';
-	row += cell+tds[i]+'</td>';
+	row += cell+tds[i](pair)+'</td>';
     }
     return row;
 }

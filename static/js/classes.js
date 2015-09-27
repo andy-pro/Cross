@@ -23,7 +23,7 @@ Form.prototype.init = function() {  // emulate run event_handler, fill all input
 $inputChange = function(event) {
     var El = $(this);
     var form = event.data.form;    // retrieve object 'this'
-    form.inputstext.each(function() { form.inputs[this.name] = this.value.escapeHTML(); });
+    form.inputstext.each(function() { form.inputs[this.name] = this.value; });
     form.inputscheckbox.each(function() { form.inputs[this.name] = Number(this.checked); });
     //console.log(form.inputs);
     if (El.hasClass('delete')) {
@@ -62,7 +62,7 @@ function Link(form, url, link) {
     tr.appendTo(form.chaintable);
     form.chaintable.css({color:'inherit'});   // make table visible
     this.stage = stages[0];
-    if (!this.cache.crosses) this.cache.crosses = sLoad('index').crosses;
+    if (!this.cache.crosses) this.cache.crosses = sLoad('index', {unescape:true}).crosses;
     this.controls.crossEl.append($('<option>').text(L._NOT_CROSSED_).attr('value', 0));
     this.addOptFromObj(this.cache.crosses);
     this.setVertical();

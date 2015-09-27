@@ -4,18 +4,28 @@ from gluon.utils import web2py_uuid
 def ajax_lexicon():
     return L
 
-def http404():
-    raise HTTP(404)
+def error():
+    response.view='default/error.html'
+    errors = (403,'Access denied'), (404,'Not found'), (500,'Internal server error')
+    res = dict(x='', msg='Unknown error')
+    try:
+        error = request.args(0, cast = int)
+    except:
+        return res
+    for x, msg in errors:
+        if error==x:
+            return dict(x=x, msg=msg)
+    return res
 
 def index():
     return dict()
 
 def ajax_index():
-    #return dict(user=get_user_id(), crosses=dict((r.id, dict(title=r.title, verticals=dict((w.id, dict(title=w.title)) for w in db(db.vertical_table.parent == r.id).select() )))  for r in db(db.cross_table).select()))
-    return {'user':get_user_id(), 'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.vertical_table.parent == r.id).select()}} for r in db(db.cross_table).select()}}
+    return {'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.vertical_table.parent == r.id).select()}} for r in db(db.cross_table).select()}}
 
 def ajax_vertical():
     query = request.vars.search or False
+    #print query
     news = bool(request.vars.news)
     title = cross = ''
     if query:
@@ -61,7 +71,7 @@ def ajax_vertical():
         tr['pairs'] = td
         if query or news: add_root(tr, plint)
         plints.append(tr)
-    return dict(user=get_user_id(), header=header, query=query, news=news, plints=plints, users=users, vertical=title, cross=cross)
+    return dict(header=header, query=query, news=news, plints=plints, users=users, vertical=title, cross=cross)
 
 def ajax_plints():
     return dict(data=[(i.id,i.title,int(i.start1)) for i in db(db.plint_table.parent == request.args(0, cast = int)).select(*pfset1, orderby=db.plint_table.id)])
@@ -110,7 +120,7 @@ def ajax_editfound():
 
 def add_formkey(data):
     s = request.function[5:]
-    data.update(dict(formname=s, formkey=formUUID(s), user=get_user_id()))
+    data.update(dict(formname=s, formkey=formUUID(s)))
     return data
 
 def getchain(q, exclude=False, pairId=''):
@@ -282,9 +292,9 @@ def restore():
         except Exception as msg:
             pass
         session.flash = msg
-        redirect(URL('index'))
-    response.view='default/dialog.html'
-    return dict(form=form, title=L._IMPORT_)
+        redirect(URL('default', 'index'))
+    response.view='default/user.html'
+    return dict(form=form)
 
 @auth.requires_membership('administrators')
 def cleardb():

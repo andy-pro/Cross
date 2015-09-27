@@ -6,9 +6,17 @@
     <div class="row">
       <div id="web2py_user_form" class="col-md-6">
         <div class="panel panel-primary">
-        <div class="panel-heading">
-            {{=T('Sign Up') if request.args(0) == 'register' else T('Log In') if request.args(0) == 'login' else T(request.args(0).replace('_',' ').title())}}
-        </div>
+          <div class="panel-heading">
+          {{
+          if response.title:
+              =response.title
+          pass
+          else:
+              =T('Sign Up') if request.args(0) == 'register' else T('Log In') if request.args(0) == 'login' else T(request.args(0).replace('_',' ').title())
+          pass
+          }}
+          <button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="{{=L._BACK_}} (Esc)">&times;</button>
+          </div>
         <div class="panel-body">
         {{
         if request.args(0)=='login':

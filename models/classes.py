@@ -3,10 +3,9 @@
 import os, time
 from gluon.storage import Storage
 
-_404_ = URL('static', '404.html')
-
 #==================================================================
 L = Storage() # Lexicon storage object
+L.a = '<b>&<i>'
 L._ADD_LINK_ = T('Add link to chain')
 L._ADMIN_DB_ = T('Direct edit DB')
 L._BACK_ = T('Back')
@@ -43,8 +42,6 @@ L._NOT_CROSSED_ = T('Not crossed')
 L._OLDPL_ = T('Existing plint')
 L._PAIR_ = T('Pair')
 L._PAIR_T_ = T('Pair titles')
-L._PASTE_ = T('Paste')
-L._PASTE_CB_ = T('Paste from Clipboard')
 L._PLINT_ = T('Plint')
 L._PLINT_T_ = T('Plint title')
 L._REPLACE_ = T('Replace')
@@ -126,9 +123,11 @@ class Vertical:
         del db.vertical_table[self.index]
 
     def update(self, vars):
-        db.vertical_table[self.index] = {'title': vars.title}
-        cnt = int(vars.count)
         mainchange = False
+        if self.title != vars.title:
+            db.vertical_table[self.index] = {'title': vars.title}
+            mainchange = True
+        cnt = int(vars.count)
         if cnt:
             try:
                 fp = int(vars.from_plint)

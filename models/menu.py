@@ -29,7 +29,7 @@ response.menu = [
 #response.menu.append((T('Import DB'), False, URL('default', 'restore')))
 
 if auth.has_membership('managers'):
-    tools_menu = [LI(A(I(_class="glyphicon glyphicon-th-list"), ' ', L._NEW_CROSS_, _href='javascript:edit("cross?new=true")'))]
+    tools_menu = [LI(A(I(_class="glyphicon glyphicon-th-list"), ' ', L._NEW_CROSS_, _href=URL('default', 'index#/editcross', vars={'new':'true'})))]
     if auth.has_membership('administrators'):
         hr = LI(_class="divider")
         tools_menu.append((hr, LI(A(I(_class="glyphicon glyphicon-upload"), ' ', L._BACKUP_, _href=URL('default', 'backup'))),

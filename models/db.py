@@ -34,6 +34,7 @@ response.form_label_separator = myconf.take('forms.separator')
 #########################################################################
 
 from gluon.tools import Auth, Service, PluginManager
+#from gluon.contrib import simplejson
 
 auth = Auth(db)
 service = Service()
@@ -53,7 +54,7 @@ auth.settings.registration_requires_verification = False
 auth.settings.registration_requires_approval = False
 auth.settings.reset_password_requires_verification = True
 
-from gluon.contrib import simplejson
+response.headers['User-Id'] = get_user_id()
 
 db.define_table('cross_table',
                 Field('title', length=40)

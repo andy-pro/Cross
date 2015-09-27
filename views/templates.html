@@ -48,13 +48,13 @@ var verticals = crosses[ci]["verticals"]; %>
           <tr>
           <% if (query || news) { print(pairRow(plint, 2, true)); } %>
           <td class="colv1" style="border-right:2px solid #ddd;">
-             <a href='javascript:edit("plint", <%=plint.id%>)' title="<%=_title%>"><%=plint.title%></a>
+             <a href="#/editplint/<%=plint.id%>" title="<%=_title%>"><%=plint.title%></a>
           </td>
           <%
             for( var cj in pairs ) {
                 var idx = parseInt(cj);
                 var pair = pairs[idx];
-                var t = pair[0], found = '', href;
+                var t = pair[0], found = '';
                 _title = "";
                 if (news) {
                     var pidx = pair[1]+1;
@@ -66,8 +66,7 @@ var verticals = crosses[ci]["verticals"]; %>
                                 if (t.indexOf(query) >= 0) found = 'class="found"';
                         }
                     }
-                if (news || !user) href = '#/chain/'+plint.id+'/'+pidx;
-                    else href = 'javascript:edit("pair",'+plint.id+','+pidx+')';
+                var href = ((news || !userId) ? '#/chain/' : '#/editpair/') + plint.id + '/' + pidx;
             %>
                  <td <%=found%>>
                    <a href='<%=href%>' title="<%=_title%>"><sup><%=idx+start1%></sup><%=t%></a>
