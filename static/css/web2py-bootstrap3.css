@@ -31,14 +31,13 @@ div.table-container{
 .checkbox label, .radio label{
     color: #337ab7;
 }
+.inmenu label{ padding-right: 20px; }
 /*div.checkbox.inmenu, div.radio.inmenu{*/
 .inmenu{
     padding-right: 50px;
     margin: 0!important;
 }
-.myright {
-    text-align: right;
-}
+.myright { text-align: right; }
 #ajaxlivesearch{
     display: none;
     background: #ffc;
@@ -109,6 +108,7 @@ table#chaintable {
     color: #fff;
 }
 table#chaintable td { padding: 3px 3px; }
+
 /** vertical table css rules **/
 table.vertical { table-layout: fixed; }
 table.vertical td {
@@ -132,19 +132,11 @@ table sup {
 }
 .colv0 { width: 56px; }
 .colv1 { width: 44px; }
-table.vertical tr:hover {
-/*color:#FFF;*/
-background: #ffc;
-}
-/*td.loop {background: #faa;}*/
+table.vertical tr:hover { background: #ffc; }
 td.found {background: #cfc;}
 td.new {background: #ffb;}
 td.cdfound {background: #cfc;}
-/*td.found.loop {background: linear-gradient(to top, #cfc, #faa);}*/
-td.commondata {
-    font-size: 9pt;
-    color:#808;
-}
+td.commondata a { color:#808; }
 /** cross table css rules **/
 
 div.flash {

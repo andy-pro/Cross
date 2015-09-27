@@ -32,7 +32,7 @@ $inputChange = function(event) {
 	form.panel.removeClass(del ? $clrp : $clrd);
 	form.panel.addClass(del ? $clrd : $clrp);
     }
-    f = form.event_handler;
+    var f = form.event_handler;
     if (typeof f == 'function') f(event, El);
     return false;
 }

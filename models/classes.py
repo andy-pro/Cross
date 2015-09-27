@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import os, time
+#import os
 from gluon.storage import Storage
 
 #==================================================================
 L = Storage() # Lexicon storage object
-L.a = '<b>&<i>'
 L._ADD_LINK_ = T('Add link to chain')
 L._ADMIN_DB_ = T('Direct edit DB')
 L._BACK_ = T('Back')
@@ -33,7 +32,8 @@ L._FOUND_ = T('Found: ')
 L._HELP_ = T('Help')
 L._HOME_ = T('Home')
 L._LAST_MOD_ = T('Last modified')
-L._MERGE_ = T('Merge')
+L._MERGE_ = T('Merge through')
+L._MERGE_DB_ = T('Merge DB')
 L._NEW_CROSS_ = T('New cross')
 L._NEWPL_ = T('New plint')
 L._NEWS_ = T('News')
@@ -59,20 +59,6 @@ L._VIEW_VERT_ = T('View vertical')
 L._WRAP_ = T('Wrap text')
 #==================================================================
 
-BSFORM = lambda *a: FORM(*a, _class="form-horizontal", _role="form")
-FHEAD = lambda t: DIV(t, _class='form-header')
-FTEXT = lambda t=L._TITLE_, n='title', v='', h='', r='': DIV(
-    LABEL(t,  _class="col-md-2 control-label"),
-    DIV(INPUT(_name=n, _value=v, requires=r, _class="form-control"), _class="col-md-8"), _title=h, _class="form-group")
-
-FCDATA = lambda v: FTEXT(L._COMMON_DATA_, 'comdata', v)
-FCHECK = lambda t, n, v=True, h='', f='': DIV(LABEL(t), INPUT(_type='checkbox', _class='boolean', _name=n, value=v, _onclick=f), _title=h, _class='form-row')
-FSTART = lambda v: FCHECK(T('Numeration start 1:'), 'start1', v)
-FDEL = lambda t: DIV(LABEL(t), INPUT(_type='checkbox', _class='delete', _name='delete', value=False), _class='form-row')
-FLABEL = lambda t: DIV(t, _class='form-row')
-FOK = lambda: INPUT(_type='submit', _class='pull-right btn-primary')
-FOKCANCEL = lambda u: DIV(A(T('Cancel'), _href=u, _class='btn btn-primary pull-right'), FOK())
-
 users = {}  # global dictionary, cashe type, contains printable user name
 def get_user_name(uid):
     if uid:
@@ -84,11 +70,8 @@ def get_user_name(uid):
         who = ''
     return who
 
-def get_user_id():
-    return auth.user.id if auth.user else False
-
-get_whenwho = lambda: dict(modon=request.now.date(), modby=auth.user.id)
-
+get_user_id = lambda: auth.user.id if auth.user else False
+get_whenwho = lambda: dict(modon=request.now.date(), modby=get_user_id())
 #==================================================================
 
 class Cross:
@@ -180,7 +163,7 @@ class Plint:
         self.comdata = _rec.comdata
         self.start1 = _rec.start1
 
-    get_pair_titles = lambda self: [self.record('pid' + `i`) for i in xrange(1, 11)]
+    get_pair_titles = lambda self: [self.record(pairtitles[i]) for i in xrange(10)]
 
     def delete(self):
         del db.plint_table[self.index]
@@ -190,14 +173,14 @@ class Plint:
         pnew = vars.pairtitles.splitlines()
         pl = len(pnew)
         pairdata = {}
-        for i in xrange(0, 10):
+        for i in xrange(10):
             v = pnew[i] if pl > i else ''
             pairdata[i+1] = v
-        return plint_update(self.index, maindata, pairdata, bool(vars.merge))
+        return plint_update(self.index, maindata, pairdata, bool(vars.merge), vars.mergechar or '')
 
 #==================================================================
 
-def plint_update(index, maindata, pairdata, merge=False):
+def plint_update(index, maindata, pairdata, merge=False, mergechar=''):
     """
     index - record id
     maindata - dict, possible keys: title, start1, comdata
@@ -219,7 +202,7 @@ def plint_update(index, maindata, pairdata, merge=False):
         for key in keys:
             sk = str(key)
             pairkey = 'pid' + sk
-            if merge: pairdata[key] = plint(pairkey) + pairdata[key]
+            if merge: pairdata[key] = (plint(pairkey) + mergechar + pairdata[key]).strip()
             if plint(pairkey) != pairdata[key]:
                 mainchange = True
                 maindata[pairkey] = pairdata[key]
@@ -241,7 +224,6 @@ class Pair:
         self.pair = _pair
         self.vertical = self.plint.vertical
         f = pairfields[_pair-1]
-        self.fp = f
         self.title = _rec(f[0])
         dx = 0 if _rec.start1 else -1
         self.header = self.plint.header + ', %s %s' % (L._PAIR_, _pair + dx)
@@ -250,115 +232,60 @@ class Pair:
 
 #==================================================================
 
-class TimeMeter:
-    def __init__(self):
-        self.points = []
-        self.timestart = time.time()
-
-    def append(self, s):
-        qt = int((time.time() - self.timestart)*1000.0)
-        self.points.append(s+' time = %sms'%qt)
-        self.timestart = time.time()
-
-    def show(self, s):
-        self.append(s)
-        return DIV([DIV(I(s)) for s in self.points], _class='well')
-#==================================================================
-
 def import_from_txt1(f):
     import cStringIO
-
-    def readstring(f):
-        return f.readline().strip().replace(',', '.')
-
-    datenow = str(request.now.date())
+    import csv
+    readstring = lambda f: f.readline().strip()
+    cyr_to_lat = lambda s: s # s.replace('БМ', 'BM').replace('БКТ', 'BKT').replace('М', 'M').replace('К', 'K').replace('Р', 'P')
+    table_header = lambda table, fset: writer.writerows([['TABLE ' + table], ['%s.%s' % (table, f) for f in fset]])
+    table_footer = lambda: writer.writerows([[], []])
+    #datenow = str(request.now.date())
+    #dateold = datetime.date(2014, 11, 12)
     dateold = '2014-11-12'
-    #dateold = datetime.date(2014, 11, 122)
     dateplint = dateold
     datepair = dateold
-
-    crosses = []
-    verticals = []
-    plintnames = []
-
     csvfile = cStringIO.StringIO()
-    print >> csvfile, 'TABLE cross_table'
-    print >> csvfile, 'cross_table.id,cross_table.title'
-    for i in xrange(1, int(f.readline()) + 1):
-        s1 = readstring(f)   # is a cross_title
-        print >> csvfile, '%d,%s' % (i,s1)
-        crosses.append([s1, readstring(f)])  # [cross title, vertical count in cross]
-    table = 'vertical_table'
-    print >> csvfile, '\n\nTABLE ' + table
-    print >> csvfile, ','.join('%s.%s' % (table, i) for i in ('id', 'parent', 'title'))
+    writer = csv.writer(csvfile)    # by default, delimeter=',' and quotechar='"'
+
+    table_header('cross_table', ('id', 'title'))
+    crosses = []
+    for i in xrange(int(f.readline())):
+        writer.writerow([i+1, readstring(f)])   # cross_index, cross_title
+        crosses.append([i+1, int(readstring(f))])  # cross_index, vertical count in cross
+    table_footer()
+
+    table_header('vertical_table', ('id', 'parent', 'title'))
+    verticals = []
     x = 1
-    for cross_index, crossitem in enumerate(crosses, start = 1):
-        for i in xrange(1, int(crossitem[1]) + 1):    # crossitem[1] is a vertical_count
-            s1 = readstring(f)   # vertical title
-            s2 = readstring(f)   # plint count in vertical
-            s3 = readstring(f)   # numeration start 1 vertical
-            print >> csvfile, '%i,%d,%s' % (x, cross_index, s1)
+    for cross in crosses:
+        for i in xrange(cross[1]):    # cross[1] is a vertical_count
+            writer.writerow([x, cross[0], readstring(f)])  # vertical_index, cross_index, vertical_title
+            verticals.append([cross[0], x, int(readstring(f)), readstring(f)])   # cross_index, vertical_index, plint count in vertical, start 1
             x += 1
-            lst = [s1, s2, s3, cross_index]
-            verticals.append(lst)
+    table_footer()
 
-    for vertical_index, verticalitem in enumerate(verticals, start = 1):
-        for i in xrange(1, int(verticalitem[1]) + 1):
-            s1 = readstring(f)
-            lb = False   # rus to lat replace
-            if lb:
-                pass
-                #s1 = s1.replace('БМ', 'BM')
-                #s1 = s1.replace('БКТ', 'BKT')
-                #s1 = s1.replace('М', 'M')
-                #s1 = s1.replace('К', 'K')
-                #s1 = s1.replace('Р', 'P')
-            # plint title, start with?, cross_index,     vertical_index
-            lst = [s1, verticalitem[2], verticalitem[3], vertical_index]
-            plintnames.append(lst)
-
-    table = 'plint_table'
-    print >> csvfile, '\n\nTABLE ' + table
-    #print >> csvfile, ','.join('%s.%s' % (table, i) for i in ['id', 'root', 'parent'] + plintfields + [s1 for s2 in pairfields for s1 in s2])
-    lst = ['id','root','parent']+plintfields+sum(pairfields,[])
-    fieldcount = len(lst)
-    print >> csvfile, ','.join('%s.%s'%(table,i) for i in lst)
+    table_header('plint_table', ('id','root','parent')+plintfields+tuple(sum(pairfields,[])))
+    plints = []
+    for vertical in verticals:
+        for i in xrange(vertical[2]):   # vertical[1] is a plint_count
+            plints.append([vertical[0], vertical[1], cyr_to_lat(readstring(f)), vertical[3]])  # cross_index, vertical_index, plint_title, start 1
     x = 1
-    for plintitem in plintnames:
-        sp = ''
-        for i in xrange(0, 10):
-            s1 = readstring(f)   # pair name
-            s2 = readstring(f)   # pair loopback
-            #lb = str(bool(int(s2)))
-            # 'pid','pmodon','pmodby'
-            spx = (',%s,%s,1' % (s1, datepair))
-            if i == 0:
-                sp0 = spx
-            else:
-                sp = sp + spx
+    for plint in plints:
+        sp = []
+        for i in xrange(10):
+            spx = [readstring(f), datepair, 1]  # pid(pair_title), pmodon, pmodby
+            s1 = f.readline()   # pair loop, not used
+            if i == 0: sp0 = spx
+            else: sp = sp + spx
         s1 = readstring(f)   # common data
-        s2 = readstring(f)   # start with?
-        start1 = True
-        if plintitem[1] == '0':
-            start1 = False
-        if s2 == '1':
-            start1 = not start1
-        if start1:
-            sp = sp + sp0
-        else:
-            sp = sp0 + sp
-        #   id                               root,         parent,      title,       start1,    comdata, modon, modby
-        a = '%i,%d,%d,%s,%s,%s,%s,1' % (x, plintitem[2], plintitem[3], plintitem[0], str(start1), s1, dateplint) + sp
-        if x == 1:
-            if len(a.split(',')) != fieldcount:
-                raise Exception('Fields not corresponding to values')
-        print >> csvfile, a
+        start1 = (readstring(f)=='0') ^ (plint[3]=='0')   # start inverse?
+        sp = sp + sp0 if start1 else sp0 + sp
+        #                id   root    parent    title       start1    comdata modon  modby
+        writer.writerow([x, plint[0], plint[1], plint[2], str(start1), s1, dateplint, 1] + sp)
         x += 1
+    table_footer()
 
-    print >> csvfile, '\n\nEND'
-    #db.import_from_csv_file(csvfile, restore=True)
-    #return csvfile.getvalue()
+    writer.writerow(['END'])
     csvfile.seek(0)
+    #for line in csvfile: print line,
     return csvfile
-
-    #csvfile.close()

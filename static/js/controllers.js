@@ -14,17 +14,21 @@ function VerticalCtrl(params, route) {	// requests: #/vertical/id, #/vertical?se
     editChain = function(checked) { localStorage.editchain = checked; }
 
     $scope = sLoad(route.ajaxurl, {params:params});
-    var header = $scope.query || '', news = $scope.news;
+    var header = $scope.query || '', news = $scope.news, verticalId = false;
     mastersearch.val(header.unescapeHTML());
     header= $scope.header;
     if (!news) {
 	var href, _title;
-	if (params.args[0]) { href = `#/editvertical/${params.args[0]}`; _title = `${L._EDIT_VERT_} ${$scope.vertical}`; }
-	    else { href = `#/editfound?search=${$scope.query}`; _title = ''; }
+	if (params.args[0]) {
+	    verticalId = params.args[0];
+	    href = `#/editvertical/${verticalId}`;
+	    _title = `${L._EDIT_VERT_} ${$scope.vertical}`;
+
+	} else { href = `#/editfound?search=${$scope.query}`; _title = ''; }
 	header = `<a href="${href}" title="${_title}">${header}</a>`;
       }
 
-    render(route, news?L._NEWS_:$scope.header, {plints:$scope.plints, users:$scope.users, header:header, query:$scope.query, news:news});
+    render(route, news?L._NEWS_:$scope.header, {plints:$scope.plints, users:$scope.users, header:header, query:$scope.query, news:news, verticalId:verticalId});
 
     if (localStorage.wraptext == "true") { $("#wraptext").prop("checked", true); wrapToggle(true); }
     if (localStorage.editchain == "true") { $("#editchain").prop("checked", true); }
@@ -71,23 +75,23 @@ function EditVerticalCtrl(params, route) {
 
 	//var form = event.data.form;    // retrieve object 'this'
 	//console.info(inputs);
-	//var inputs = form.inputs;
-        var titles = chaindata.titles;
 	$("table#watchtable tr").remove(".refreshing");
-	//vertical = [];
-	vertical.length = 0;
+	vertical.length	= 0;	// same as vertical = [];
 	if (inputs.delete) return;
-	$('#changehead').text(inputs.title);
-	var cd_rem = inputs.comdatareplace; // && inputs.cross_0 > 0);
-	var re, res = /%(\d+)/.exec(inputs.plintmask);
-	if (res) re = Number(res[1]);
+	$('#verttitle').text(inputs.title);
 
-	var comdata = inputs.cdmask.replace(/%1/g, titles.cross||'').replace(/%2/g, titles.vertical||'');
-	var rcomdata = inputs.cdmask.replace(/%1/g, $scope.cross).replace(/%2/g, $scope.vertical).unescapeHTML();
+	var plintmask = inputs.plintmask;
+	if (!plintmask) return;
 
 	var cnt = inputs.count;
 	if (isNaN(cnt) || cnt=='' || cnt>100 || cnt<0) $('div.numeric').addClass('has-error');
 	else {
+	    var titles = chaindata.titles;
+	    var re, res = /%(\d+)/.exec(plintmask);
+	    if (res) re = Number(res[1]);
+	    var comdata = inputs.cdmask.replace(/%1/g, titles.cross||'').replace(/%2/g, titles.vertical||'');
+	    var rcomdata = inputs.cdmask.replace(/%1/g, $scope.cross).replace(/%2/g, $scope.vertical).unescapeHTML();
+
 	    $('div.numeric').removeClass('has-error');
 	    var si = titles.plintindex;
 	    var ta_pts = taEl.val().split('\n');
@@ -98,8 +102,8 @@ function EditVerticalCtrl(params, route) {
 		if (res) {
 		    ti = String(re+i)
 		    while (ti.length < res[1].length) ti = '0' + ti // for titles like '01', '001', ...
-		    ti = inputs.plintmask.replace(res[0], ti);
-		} else ti = inputs.plintmask;
+		    ti = plintmask.replace(res[0], ti);
+		} else ti = plintmask;
 		var _class, st, idx = matchTitle($scope.plints, ti);
 		var cd, rcd, start1;
 		if (idx >= 0) {
@@ -122,7 +126,7 @@ function EditVerticalCtrl(params, route) {
 		rcd = rcomdata;
 		if (titles.vertical && chaindata.plints[si+i]) {
 		    st = chaindata.plints[si+i][1];
-		    if (inputs.comdatareplace) {
+		    if (inputs.rcdreplace) {
 			rcd = rcd.replace(/%0/g, chaindata.plints[si+i][3]);
 			rcd = $.trim(rcd.replace(/%3/g, ti));
 			vertical.push({name:'rcomdata_'+i, value:rcd});
@@ -154,7 +158,7 @@ function EditVerticalCtrl(params, route) {
 	}
     }
 
-    matchTitle = function(arr, query) {
+    var matchTitle = function(arr, query) {
 	for(var o in arr) if (arr[o].title && arr[o].title == query.escapeHTML()) return o;
 	return -1;
     }
@@ -209,16 +213,18 @@ function EditVerticalCtrl(params, route) {
     form.chaindata = [];
     form.chaindata.push(new Link(form, 'plintscd'));
     var chaindata = form.chaindata[0],	// shorthands
-	vertical = [],
-	inputs = form.inputs;
+	inputs = form.inputs,
+	vertical = [];
+
     viewChange();
 
     form.form.submit(function(event) {
 	//console.log(form);
+	if (!inputs.title) return false;
 	vertical.push({name:'title', value:inputs.title});
 	vertical.push({name:'count', value:inputs.count || 0});
 	vertical.push({name:'vertical', value:params.args[0]});
-	if (inputs.comdatareplace) {
+	if (inputs.rcdreplace) {
 	    vertical.push({name:'from_vert', value:chaindata.link.verticalId});
 	    vertical.push({name:'from_plint', value:chaindata.link.plintId});
 	}
@@ -235,6 +241,7 @@ function EditPlintCtrl(params, route) {
 
     plintChange = function() {
 	if (form.inputs.delete) return;
+	mergechar.disabled = !form.inputs.merge;
 	$('ol').attr('start', parseInt(form.inputs.start1));
     }
 
@@ -243,6 +250,7 @@ function EditPlintCtrl(params, route) {
     render(route, $scope.address, {plint:$scope});
     $('textarea').val($scope.pairtitles.unescapeHTML());   // insert multiline pairtitles by templating system gives loss first new line (\n), ;-( ?
     var form = new Form(plintChange);
+    var mergechar = form.inputstext.filter('[name=mergechar]')[0];
     form.init();
 
     form.form.submit(function(event) {
@@ -310,10 +318,6 @@ function EditPairCtrl(params, route) {
 //======================================
 /*** Edit Found Controller ***/
 function EditFoundCtrl(params, route) {
-
-    regexpHelp = function() {
-        $.get(staticpath + "regexphelp.html").success(function(data) { web2pyflash(data, 'default', 0); });
-    }
 
     function refreshFoundTable() {
 	//console.time("assignments");

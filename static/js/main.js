@@ -14,8 +14,8 @@ const stages = ['cross','vertical','plint','pair'];
 function log(msg) { console.log(msg); }
 //======================================
 /*** String escape Helper  ***/
-String.prototype.escapeHTML = function() { return this.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-String.prototype.unescapeHTML = function() { return this.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>'); }
+String.prototype.escapeHTML = function() { return this.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\\"/g,'&quot;'); }
+String.prototype.unescapeHTML = function() { return this.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"'); }
 /*** String format Helper  ***/
 String.prototype.format = function() {
     var newStr = this, i = 0;
@@ -45,9 +45,9 @@ $.fn.enumoptions = function (start) {
     }
 }
 //======================================
-function login_request(next) { return `user/login?_next=${rootpath}index${escape(next || '')}` }
+function login_request(next) { return `user/login?_next=${rootpath}index${encodeURIComponent(next || '')}` }
 // status: 401 - UNAUTHORIZED; 403 - FORBIDDEN; 404 - NOT FOUND
-function raise_html(s) { window.location.href = (s==401) ? login_request() : 'error/'+s; }
+function raise_html(s, txt) { window.location.href = (s==401) ? login_request() : 'error/%s/%s'.format(s, txt); }
 //======================================
 function addFormKey(dest, src) {
     dest.push({name:'user', value:userId});
@@ -68,23 +68,17 @@ function saveData(data, formdata, event) {
 	data.status = false;
 	data.location = '#';
     }
-    web2pyflash(data.details, data.status ? 'success' : 'danger');
-    if (data.location) window.location.href = data.location;
-    else history.back();
-    //return false;
-    //location.reload();
+    if (data) {
+	web2pyflash(data.details, data.status ? 'success' : 'danger');
+	if (data.location) window.location.href = data.location;
+	else history.back();
+    }
 }
 //======================================
 /*** Ajax sync Load  ***/
 function sLoad(ajaxurl, opts) {
-    //args = typeof args !== 'undefined' ? args : [];
-    //vars = typeof vars !== 'undefined' ? vars : [];
-    //type = typeof type !== 'undefined' ? type : 'GET';
-
     opts = opts || {};
     opts.params = opts.params || {args:[], vars:{}};
-    //opts.type = opts.type || 'GET';
-    //opts.escape = opts.escape || false;
     //console.info(opts);
     var out, url = '';
     for(var i in opts.params.args) url += '/' + opts.params.args[i];
@@ -96,8 +90,18 @@ function sLoad(ajaxurl, opts) {
         async: false,
         data: opts.data,
 	dataFilter: opts.unescape ? undefined : function(data) { return data.escapeHTML(); },
-        success: function(data, textStatus, jqXHR) { out=data; userId=parseInt(jqXHR.getResponseHeader('User-Id')); }, // userId = NaN or > 1
-        error: function(jqXHR) { raise_html(jqXHR.status); }
+        success: function(data, textStatus, jqXHR) {
+	    out=data;
+	    //console.info(out);
+	    userId=parseInt(jqXHR.getResponseHeader('User-Id'));  // userId = NaN or > 1
+	    Admin=Boolean(jqXHR.getResponseHeader('Admin'));
+	},
+        error: function(jqXHR, txt, obj) {
+	    console.warn(jqXHR);
+	    console.warn(txt);
+	    console.warn(obj);
+	    raise_html(jqXHR.status, txt);
+	}
     });
     return out;
 }
@@ -223,27 +227,27 @@ function render(route, title, context) {
 	// redirect to web2py auth dialog if UNAUTHORIZED
 	if (route.indexOf('edit')>=0 && !userId) location.href = login_request(currentURL);
 	else {
-		// spike, for "Edit chain" in Vertical view, add new arg "/chain" if checked checkbox
-		if (route == 'editpair' && localStorage.editchain == 'true') {
-		    params.args.push('chain');
-		    //location.replace(location.href+'/chain');
-		}
-		// end spike
-		route = routes[route];   // Get route by url
-		if (route && route.controller) {
-		    route.targetEl = document.getElementById(route.targetId); // Lazy load view element
-		    if (route.targetEl) {
-			params.args = params.args.slice(2);
-			route.controller(params, route);
-		    }
+	    // spike, for "Edit chain" in Vertical view, add new arg "/chain" if checked checkbox
+	    if (route == 'editpair' && localStorage.editchain == 'true') {
+		params.args.push('chain');
+		//location.replace(location.href+'/chain');
+	    }
+	    // end spike
+	    route = routes[route];   // Get route by url
+	    if (route && route.controller) {
+		route.targetEl = document.getElementById(route.targetId); // Lazy load view element
+		if (route.targetEl) {
+		    params.args = params.args.slice(2);
+		    route.controller(params, route);
 		}
 	    }
+	}
 	currentURL = location.hash; // this is allow return to current page after login
 	//log(currentURL)
     }
 })();
 //======================================
-
+//************* START APPLICATION *********
 $(function() {	// execute on document load
 
     L = sLoad('lexicon', {unescape:true});   // Global lexicon
@@ -254,13 +258,12 @@ $(function() {	// execute on document load
 
 /***  Set routes. args: ( [ path(toLowerCase), [name=path, by default] ] )  ***/
 /***  templateId = name+Tmpl, controller = name+Ctrl  ***/
-    var rs = [ ['', 'Cross'], ['Vertical'], ['Chain'], ['EditCross'], ['EditVertical'], ['EditPlint'], ['EditPair'], ['EditFound'] ];
-    $.each(rs, function () { route(this); });
+    $.each([['','Cross'],['Vertical'],['Chain'],['EditCross'],['EditVertical'],['EditPlint'],['EditPair'],['EditFound']], function () { route(this); });
     window.addEventListener('hashchange', router);    // Listen on hash change
     router();	//************* START APPLICATION *********
 });
 
-var $scope, userId, currentURL, L, tbheaders, btnOkCancel, btnBack;
+var $scope, userId, Admin, currentURL, L, tbheaders, btnOkCancel, btnBack;
 var ajaxstate = {during:false, callback:[], count:0, cache:[]};
 var mastersearch = $("#master-search");
 

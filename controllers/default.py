@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 from gluon.utils import web2py_uuid
+from gluon import contenttype
+import cStringIO
 
 def ajax_lexicon():
     return L
 
 def error():
     response.view='default/error.html'
-    errors = (403,'Access denied'), (404,'Not found'), (500,'Internal server error')
-    res = dict(x='', msg='Unknown error')
-    try:
-        error = request.args(0, cast = int)
-    except:
-        return res
-    for x, msg in errors:
-        if error==x:
-            return dict(x=x, msg=msg)
+    codes = ('403','Access denied'), ('404','Not found'), ('500','Internal server error')
+    code = request.args(0) or ''
+    msg = request.args(1) or 'Unknown error'
+    res = dict(code=code, msg=msg)
+    for code, msg in codes:
+        if res['code']==code:
+            res['msg'] = msg
     return res
 
 def index():
@@ -53,7 +53,7 @@ def ajax_vertical():
         td = []
         old = plint.pmodon1
         idx = 0
-        for i in xrange(0, 10):
+        for i in xrange(10):
             pairtitle = plint(pairtitles[i])
             when = plint(pairfields[i][1])
             if news:
@@ -127,7 +127,7 @@ def getchain(q, exclude=False, pairId=''):
     rows = search_plints(q, False)
     pairs = []
     for plint in rows:
-        for i in xrange(0, 10):
+        for i in xrange(10):
             if plint(pairtitles[i]) == q:
                 if exclude:
                     if pairId == '%s_%s' % (plint.id, i+1):
@@ -180,7 +180,6 @@ def formUUID(formname):
     keyname = '_formkey[%s]' % formname
     session[keyname] = list(session.get(keyname, []))[-9:] + [formkey]
     return formkey
-
 
 @auth.requires_membership('managers')
 def ajax_update():
@@ -256,9 +255,19 @@ def ajax_update():
     return result
 
 @auth.requires_membership('administrators')
+def backupvertical():
+    stream=cStringIO.StringIO()
+    vertical = Vertical(request.args(0, cast = int))
+    print >> stream, 'TABLE plint_table'
+    db(db.plint_table.parent == vertical.index).select(orderby=db.plint_table.id).export_to_csv_file(stream)
+    print >> stream, '\n\nEND'
+    response.headers['Content-Type'] = contenttype.contenttype('.csv')
+    filename = 'cross-%s-vertical-%s-%s.csv' % (vertical.cross.title, vertical.title, request.now.date())
+    response.headers['Content-disposition'] = 'attachment; filename=' + filename.replace(' ', '_')
+    return stream.getvalue()
+
+@auth.requires_membership('administrators')
 def backup():
-    import gluon.contenttype
-    import cStringIO
     stream=cStringIO.StringIO()
     print >> stream, 'TABLE cross_table'
     db(db.cross_table.id).select().export_to_csv_file(stream)
@@ -268,12 +277,11 @@ def backup():
     db(db.plint_table.id).select().export_to_csv_file(stream)
     print >> stream, '\n\nEND'
     #db.export_to_csv_file(stream)  # all tables
-    response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
+    response.headers['Content-Type'] = contenttype.contenttype('.csv')
     response.headers['Content-disposition'] = 'attachment; filename=dbcross-%s.csv' % request.now.date()
     return stream.getvalue()
 
 @auth.requires_membership('administrators')
-#@auth.requires_membership('managers')
 def restore():
     response.title = L._IMPORT_
     form = FORM(INPUT(_type='file', _name='fn'),
@@ -281,11 +289,11 @@ def restore():
     if form.process().accepted:
         try:
             f = form.vars.fn.file
-            print f.name
+            #print f.name
             if f.name != None:  # is tmp file, txt
                 if request.vars.mode != 'csv': f = import_from_txt1(f)
                 if f:
-                    db.import_from_csv_file(f, restore=True)
+                    db.import_from_csv_file(f, restore = not bool(request.vars.merge))
                     msg = T('Database restored')
             else:
                 msg = L._ERROR_

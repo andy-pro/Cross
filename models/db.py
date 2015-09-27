@@ -7,13 +7,14 @@
 ## app configuration made easy. Look inside private/appconfig.ini
 from gluon.contrib.appconfig import AppConfig
 ## once in production, remove reload=True to gain full speed
-myconf = AppConfig(reload=True)
+#myconf = AppConfig(reload=True)
+myconf = AppConfig()
 
 db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['all'])
 
 ## by default give a view/generic.extension to all actions from localhost
 ## none otherwise. a pattern can be 'controller/function.extension'
-response.generic_patterns = ['*'] if request.is_local else []
+response.generic_patterns = ['*'] if request.is_local else ['*.json']
 ## choose a style for forms
 response.formstyle = myconf.take('forms.formstyle')  # or 'bootstrap3_stacked' or 'bootstrap2' or other
 response.form_label_separator = myconf.take('forms.separator')
@@ -54,8 +55,6 @@ auth.settings.registration_requires_verification = False
 auth.settings.registration_requires_approval = False
 auth.settings.reset_password_requires_verification = True
 
-response.headers['User-Id'] = get_user_id()
-
 db.define_table('cross_table',
                 Field('title', length=40)
                )
@@ -67,30 +66,31 @@ db.define_table('vertical_table',
 
 selfields = []
 pairfields = []     # this list contain [pid1, pmodon1, pmodby1], [pid2, pmodon2, pmodby2], ...
-pairtitles = ('pid','pmodon','pmodby')
+pairtitles = []
+pfset1 = ('pid','pmodon','pmodby')
 
 # КДП 0В M10/1 max title "БЗ 287 ТЛГ пер контроль льотного поля вишка"
 for i in xrange(1, 11):
-    fnames = [name+`i` for name in pairtitles]
+    fnames = [name+`i` for name in pfset1]
     pairfields.append(fnames)
+    pairtitles.append(fnames[0])
     selfields.append(Field(fnames[0], length=80, default=''))
     selfields.append(Field(fnames[1], 'date', default=request.now.date()))
     selfields.append(Field(fnames[2], db.auth_user, default=auth.user))
 
-plintfields = ['title','start1','comdata','modon','modby']
+plintfields = ('title','start1','comdata','modon','modby')
 
 db.define_table('plint_table',
                 Field('root', db.cross_table),
                 Field('parent', db.vertical_table),
-                Field(plintfields[0], length=40, default=''),
-                Field(plintfields[1], 'boolean', default=True),
-                Field(plintfields[2], length=40, default=''),
-                Field(plintfields[3], 'date', default=request.now.date()),
-                Field(plintfields[4], db.auth_user, default=auth.user),
+                Field(plintfields[0], length=40, default=''),  # title
+                Field(plintfields[1], 'boolean', default=True),  # start1
+                Field(plintfields[2], length=40, default=''),  # comdata
+                Field(plintfields[3], 'date', default=request.now.date()),  # modon
+                Field(plintfields[4], db.auth_user, default=auth.user),  # modby
                 *selfields
                )
 
-pairtitles = [pairfields[z][0] for z in xrange(0, 10)]
 pairtitles.append(plintfields[2])    # this list contain pid1, pid2,..., pid10, comdata
 pfset1 = [db.plint_table.id, db.plint_table.title, db.plint_table.start1, db.plint_table.comdata]
 

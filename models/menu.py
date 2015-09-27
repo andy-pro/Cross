@@ -29,12 +29,16 @@ response.menu = [
 #response.menu.append((T('Import DB'), False, URL('default', 'restore')))
 
 if auth.has_membership('managers'):
-    tools_menu = [LI(A(I(_class="glyphicon glyphicon-th-list"), ' ', L._NEW_CROSS_, _href=URL('default', 'index#/editcross', vars={'new':'true'})))]
+    toolsmenu = [LI(A(I(_class="glyphicon glyphicon-th-list"), ' ', L._NEW_CROSS_, _href=URL('default', 'index#/editcross', vars={'new':'true'})))]
     if auth.has_membership('administrators'):
+        response.headers['Admin'] = True
         hr = LI(_class="divider")
-        tools_menu.append((hr, LI(A(I(_class="glyphicon glyphicon-upload"), ' ', L._BACKUP_, _href=URL('default', 'backup'))),
-                           LI(A(I(_class="glyphicon glyphicon-download"), ' ', L._RESTORE_, _href=URL('default', 'restore', vars={'mode':'csv'}))), hr,
-                           LI(A(I(_class="glyphicon glyphicon-import"), ' ', L._IMPORT_, _href=URL('default', 'restore'))),
-                           LI(A(I(_class="glyphicon glyphicon-warning-sign"), ' ', L._ADMIN_DB_, _href=URL('appadmin', 'index'))), hr,
-                           LI(A(I(_class="glyphicon glyphicon-remove"), ' ', L._CLEAR_DB_, _href=URL('default', 'cleardb')))))
-    response.toolsmenu = LI(A(L._TOOLS_, _href='#'), UL(tools_menu, _class="dropdown-menu"), _class="dropdown")
+        toolsmenu.append((hr, LI(A(I(_class="glyphicon glyphicon-upload"), ' ', L._BACKUP_, _href=URL('default', 'backup'))),
+            LI(A(I(_class="glyphicon glyphicon-download"), ' ', L._RESTORE_, _href=URL('default', 'restore', vars={'mode':'csv'}))),
+            LI(A(I(_class="glyphicon glyphicon-plus"), ' ', L._MERGE_DB_, _href=URL('default', 'restore', vars={'mode':'csv', 'merge':'true'}))), hr,
+            LI(A(I(_class="glyphicon glyphicon-import"), ' ', L._IMPORT_, _href=URL('default', 'restore'))),
+            LI(A(I(_class="glyphicon glyphicon-warning-sign"), ' ', L._ADMIN_DB_, _href=URL('appadmin', 'index'))), hr,
+            LI(A(I(_class="glyphicon glyphicon-remove"), ' ', L._CLEAR_DB_, _href=URL('default', 'cleardb')))))
+    response.toolsmenu = LI(A(L._TOOLS_, _href='#'), UL(toolsmenu, _class="dropdown-menu"), _class="dropdown")
+
+response.headers['User-Id'] = get_user_id()
