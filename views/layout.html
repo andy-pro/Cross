@@ -81,7 +81,7 @@
           <form class="navbar-form navbar-right livesearch">
             <div class="col-lg-6">
               <div class="input-group">
-                <input id="master-search" class="form-control" placeholder="Search" value="" autocomplete="off"/>
+                <input id="master-search" class="form-control" placeholder="{{=L._SEARCH_}}" value="" autocomplete="off"/>
                 <span class="input-group-btn">
                   <button type="none" class="btn btn-inverse"><span class="glyphicon glyphicon-search"></span></button>
                 </span>
@@ -113,7 +113,7 @@
     <footer class="footer">
       <div class="container-fluid">
         <div class="pull-right">
-          <a href="http://www.uksatse.ua" target="_blank">{{=_UKSATSE_}} &#169; {{=request.now.year}}</a>
+          <a href="http://www.uksatse.ua" target="_blank">{{=L._UKSATSE_}} &#169; {{=request.now.year}}</a>
         </div>
       </div>
     </footer>
@@ -125,8 +125,8 @@
     <script src="{{=URL('static','js/bootstrap.min.js')}}"></script>
     <script src="{{=URL('static','js/web2py-bootstrap3.js')}}"></script>
     <script src="{{=URL('static','js/main.js')}}"></script>
-    <script src="{{=URL('static','js/editpairctrl.js')}}"></script>
-    <script src="{{=URL('static','js/editfoundctrl.js')}}"></script>
+    <script src="{{=URL('static','js/classes.js')}}"></script>
+    <script src="{{=URL('static','js/controllers.js')}}"></script>
     {{block page_js}}{{end page_js}}
 
   </body>

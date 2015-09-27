@@ -1,103 +1,74 @@
 # -*- coding: utf-8 -*-
 
 import os, time
+from gluon.storage import Storage
 
-_UKSATSE_ = T('Uksatse')  #T('Украэрорух')
 _CREATE_NEW_CROSS_ = T('Create new cross')
-_CROSS_ = T('Cross')
-_VERTICAL_ = T('Vertical')
-_PLINT_ = T('Plint')
-_PAIR_ = T('Pair')
-_TITLE_ = T('Title')
-_COMMON_DATA_ = T('Common data: ')
-_LOOP_ = T('Loop')
-_CROSS_TO_ = T('Cross to ')
-_CROSSED_TO_ = T('Crossed to ')
-_NOT_CROSSED_ = T('Not crossed')
-_REPLACE_TITLE_ = T('Raplace title')
-_COME_FROM_ = T('Come from: ')
-_LAST_MODIFIED_ON_ = T('Last modified on')
-_SEARCH_ = T('Search')
 _NEW_CROSS_ = T('New cross')
 _EDIT_ = T('Edit ')
 _EDIT_CROSS_ = T('Edit cross')
 _EDIT_VERTICAL_ = T('Edit vertical')
-_SIZE_ = 11 # size of <select> input fields
-_404_ = URL('static', '404.html')
 _ERROR_ = T('Error')
-_BACKUP_ = T(' Backup database')
-_RESTORE_ = T(' Restore database')
-_BACK_ = T('Back')
+_404_ = URL('static', '404.html')
 
-#PFORM = lambda t, *a: FORM(DIV(t, _class='form-header'), DIV(*a, _class='form-body'))
+#==================================================================
+L = Storage() # Lexicon storage object
+L._ADD_LINK_ = T('Add link to chain')
+L._ADMIN_DB_ = T('Direct edit DB')
+L._BACK_ = T('Back')
+L._BACKUP_ = T('Backup DB')
+L._CANCEL_ = T('Cancel')
+L._CHAIN_ = T('Edit chain')
+L._CLEAR_DB_ = T('Clear DB')
+L._COMMON_DATA_ = T('Common data')
+L._COUNT_ = T('Count')
+L._CROSS_ = T('Cross')
+L._DB_UPD_ = T('Database update success!')
+L._DEL_ = T('Delete')
+L._IMPORT_ = T('Import DB')
+L._FIND_ = T('Find')
+L._FNDRES_ = T('Found results for "%s"')
+L._FOLLOW_ = T('Follow')
+L._FOR_ALL_ = T('Apply for all')
+L._FOUND_ = T('Found: ')
+L._HELP_ = T('Help')
+L._HOME_ = T('Home')
+L._LAST_MOD_ = T('Last modified')
+L._NEWPL_ = T('New plint')
+L._NEWS_ = T('News')
+L._NOCHANGE_ = T('No changes')
+L._NOT_CROSSED_ = T('Not crossed')
+L._OLDPL_ = T('Existing plint')
+L._PAIR_ = T('Pair')
+L._PAIR_T_ = T('Pair titles')
+L._PLINT_ = T('Plint')
+L._PLINT_T_ = T('Plint title')
+L._REPLACE_ = T('Replace')
+L._RESTORE_ = T('Restore DB')
+L._REM_CD_ = T('Replace remote common data')
+L._SEARCH_ = T('Search')
+L._START_1_ = T('Numeration start 1')
+L._TITLE_ = T('Title')
+L._TOOLS_ = T('Tools')
+L._UKSATSE_ = T('Uksatse')
+L._VERTICAL_ = T('Vertical')
+L._VERT_T_ = T('Vertical title')
+L._WRAP_ = T('Wrap text')
+#==================================================================
+
 BSFORM = lambda *a: FORM(*a, _class="form-horizontal", _role="form")
-
-#PFORM = lambda t, *a: FORM(DIV(DIV(B(t), _class='panel-heading'), DIV(DIV(*a), _class='panel-body'), _class="panel panel-warning"), _role="form")
-#PFORM = lambda t, *a: FORM(DIV(DIV(B(t), _class='panel-heading'), DIV(DIV(*a), _class='panel-body'), _class="panel panel-warning"), _role="form")
-
 FHEAD = lambda t: DIV(t, _class='form-header')
-#FTEXT = lambda t=_TITLE_, n='title', v='', h='', r='': DIV(LABEL(t), INPUT(_name=n, _value=v, requires=r), _title=h, _class='form-row')
-#FTEXT = lambda t=_TITLE_, n='title', v='', h='', r='': DIV(LABEL(t), INPUT(_name=n, _value=v, requires=r), _title=h)
-FTEXT = lambda t=_TITLE_, n='title', v='', h='', r='': DIV(
+FTEXT = lambda t=L._TITLE_, n='title', v='', h='', r='': DIV(
     LABEL(t,  _class="col-md-2 control-label"),
     DIV(INPUT(_name=n, _value=v, requires=r, _class="form-control"), _class="col-md-8"), _title=h, _class="form-group")
 
-FCDATA = lambda v: FTEXT(_COMMON_DATA_, 'comdata', v)
+FCDATA = lambda v: FTEXT(L._COMMON_DATA_, 'comdata', v)
 FCHECK = lambda t, n, v=True, h='', f='': DIV(LABEL(t), INPUT(_type='checkbox', _class='boolean', _name=n, value=v, _onclick=f), _title=h, _class='form-row')
 FSTART = lambda v: FCHECK(T('Numeration start 1:'), 'start1', v)
 FDEL = lambda t: DIV(LABEL(t), INPUT(_type='checkbox', _class='delete', _name='delete', value=False), _class='form-row')
 FLABEL = lambda t: DIV(t, _class='form-row')
-#FOK = lambda: DIV(INPUT(_type='submit', _class='pull-right'), _class='submit-row')
 FOK = lambda: INPUT(_type='submit', _class='pull-right btn-primary')
 FOKCANCEL = lambda u: DIV(A(T('Cancel'), _href=u, _class='btn btn-primary pull-right'), FOK())
-BCOME = lambda t: DIV(FLABEL(B(t)),
-                      FCHECK(T('Replace common data:'), 'replace_comdata', True, T("Autofill 'Common data' field\nwith 'Cross Vertical Plint' format")),
-                      DIV(TABLE(TR(TD(_CROSS_), TD(_VERTICAL_), TD(_PLINT_)),
-                                TR(get_select(3), get_select(4), get_select(5))), _class='form-row'))
-AJAXANIME = DIV(_class='ajaxanimation')
-#get_select = lambda i: TD(SELECT([], _id=selfields[i][0], _name=selfields[i][1], _size=_SIZE_))
-#get_select = lambda i, lst: TD(SELECT(lst, _id=selfields[i][0], _name=selfields[i][1], _size=_SIZE_, _class="form-control col-xs-4"))
-get_select = lambda i, lst: DIV(SELECT(lst, _id=selfields[i][0], _name=selfields[i][1], _size=_SIZE_, _class="form-control"), _class="mycol")
-get_plint_info = lambda plint: plint and " ".join((plint.root.title, plint.parent.title, plint.title)) or ''
-def get_chain(chain):
-    labels = _CROSS_, _VERTICAL_, _PLINT_, _PAIR_
-    tr0 = TR(TD(INPUT(_value=simplejson.dumps(chain), _name='chaindata', _type='hidden')))
-    tr1 = TR([TD(label) for label in labels])
-    return TABLE(tr0, tr1, _id="chaintable", _class="table-dialog")
-
-def get_select_chain():
-    labels = _CROSS_, _VERTICAL_, _PLINT_, _PAIR_
-    #fields = [cross.title for cross in db(db.cross_table).select()], [], [], []
-    stages = (
-        ('crossPos', 'crosses', 'cross'),
-        ('verticalPos', 'verticals[link.crossId]', 'vertical'),
-        ('plintPos', 'plints[link.verticalId]', 'plint'),
-        ('pairPos', 'pairs[link.pairId]', 'pair'))
-    tr1 = TR([TD(label) for label in labels])
-    #tr2 = TR([TD(SELECT(item, _class="form-control")) for item in fields])
-    #tr2 = TR([TD(SELECT(item, _class="form-control", _ng-model="link.crossId")) for item in fields])
-    #tr2 = TR([TD(XML('<select class="form-control" ng-model="link.%s"></select>' % stage)) for stage in stages], _class="myclass", ng={"repeat": "link in chain"})
-    #tr2 = TR([TD(XML('<select class="form-control" ng-model="link.%s"></select>' % stage)) for stage in stages], **{"ng-repeat": "link in chain"})
-    #SELECT(item, _class="form-control", _ng-model="link.crossId")) for item in fields])
-    tr2 = TR(([TD(SELECT(OPTION("{?item[1]?}", **{"_ng-repeat":"item in %s" % stage[1], "_value":"{?$index?}"}),
-                  **{"_class":"form-control",
-                     "_ng-model":"link.%s" % stage[0],
-                     "_ng-change":"%schange(link.%s, $index)" % (stage[2], stage[0]),
-                     #"_size":"25",
-                     })) for stage in stages]), **{"_ng-repeat":"link in chain"})
-    return TABLE(tr1, tr2, _class="table-dialog")
-
-#get_add_panel = lambda: INPUT(_type='button', _class='btn-sm btn-success pull-right', value='+', _title=T('Add link to chain'), **{"_ng-click":"addLink()"})
-get_add_panel = lambda: INPUT(_type='button', _class='btn-sm btn-success pull-right', value='+', _title=T('Add link to chain'), _onclick="addLink()")
-    #return DIV(XML('<button type="button" class="btn-success pull-right">+</button>'), _class='form-row')
-    #return ''
-
-    #crosses = []
-    #return DIV(DIV(SELECT([cross.title for cross in crosses], _class="form-control input-small"), SELECT([], _class="form-control col-sx-3"), SELECT([], _class="form-control col-sm-2")), _class="form-group")
-    #return DIV(TABLE(TR(TD(_CROSS_), TD(_VERTICAL_), TD(_PLINT_), _class="info"), TR(get_select(3, crosses), get_select(4, []), get_select(5, [])), _class="table"), _class="form-group")
-    #return DIV(TABLE(TR(TD(_CROSS_), TD(_VERTICAL_), TD(_PLINT_), _class="info"), TR(get_select(3, crosses), get_select(4, []), get_select(5, [])), _class="table"), _class="form-group")
-    #return DIV(DIV(_CROSS_, _VERTICAL_, _PLINT_, _class="info"), DIV(get_select(3, crosses), get_select(4, []), get_select(5, []), _class="info"), _class="form-group form-inline")
-
 
 users = {}  # global dictionary, cashe type, contains printable user name
 def get_user_name(uid):
@@ -113,22 +84,8 @@ def get_user_name(uid):
 def get_user_id():
     return auth.user.id if auth.user else False
 
-def get_iter_label(s):
-    import re
-    x=list(re.finditer('%\d+', s))
-    if x:
-        p1 = x[-1].span()[0]
-        p2 = x[-1].span()[1]
-        s1 = s[0:p1]
-        s2 = int(s[p1+1:p2])
-        s3 = s[p2:]
-    else:
-        x=list(re.finditer('%', s))
-        p1 = x[-1].span()[0]
-        s1 = s[0:p1]
-        s2 = 1
-        s3 = s[p1+1:]
-    return s1, s2, s3
+get_whenwho = lambda: dict(modon=request.now.date(), modby=auth.user.id)
+
 #==================================================================
 
 class Cross:
@@ -138,11 +95,12 @@ class Cross:
         if not self.record: raise HTTP(404)
         _rec = self.record
         self.title = _rec.title
-        self.header = _CROSS_+' '+self.title
+        self.header = L._CROSS_+' '+self.title
 
-    def update(self, t, ch):
-        db.cross_table[self.index] = {'title': t}
-        return db.vertical_table.update_or_insert(title=ch, parent=self.index) if ch else None
+    def update(self, vars):
+        db.cross_table[self.index] = {'title': vars.title}
+        vt = vars.verticaltitle
+        return db.vertical_table.update_or_insert(title=vt, parent=self.index) if vt else None  # return id of new record
 
     def delete(self):
         del db.cross_table[self.index]
@@ -156,7 +114,7 @@ class Vertical:
         _rec = self.record
         self.cross = Cross(_rec.parent.id)
         self.title = _rec.title
-        self.header = self.cross.header + ', %s %s' % (_VERTICAL_, self.title)
+        self.header = self.cross.header + ', %s %s' % (L._VERTICAL_, self.title)
 
     def delete(self):
         del db.vertical_table[self.index]
@@ -164,8 +122,8 @@ class Vertical:
     def update(self, vars):
         db.vertical_table[self.index] = {'title': vars.title}
         cnt = int(vars.count)
+        mainchange = False
         if cnt:
-            who = dict(modon=request.now.date(), modby=auth.user)
             try:
                 fp = int(vars.from_plint)
                 fv = int(vars.from_vert)
@@ -180,21 +138,21 @@ class Vertical:
                 si = str(idx)
                 idx += 1
                 pt = vars['title_'+si]  # plint title, add new or modify if it exist
-
                 xp = db((db.plint_table.title==pt) & (db.plint_table.parent==self.index)).select().first()
                 if not xp:
                     xp = db.plint_table.insert(root=self.cross.index, parent=self.index, title=pt)
                 #plint = Plint(xp.id)
-                data = dict(comdata=vars['comdata_'+si])
+                maindata = dict(comdata=vars['comdata_'+si])
                 if vars['start1_'+si]:
-                    data['start1'] = vars['start1_'+si]
-                data.update(who)
-                db.plint_table[xp.id] = data
+                    maindata['start1'] = vars['start1_'+si]
+                if plint_update(xp.id, maindata, {}):
+                    mainchange = True
                 if pc and pi < pc and vars['rcomdata_'+si]:
-                    data['comdata'] = vars['rcomdata_'+si]
-                    del data['start1']
-                    db.plint_table[outplints[pi].id] = data
+                    maindata = dict(comdata=vars['rcomdata_'+si])
+                    if plint_update(outplints[pi].id, maindata, {}):
+                        mainchange = True
                     pi += 1
+        return mainchange
 
 #==================================================================
 
@@ -208,19 +166,53 @@ class Plint:
         self.cross = self.vertical.cross
         self.title =_rec.title
         self.titles = self.cross.title, self.vertical.title,  self.title
-        self.header = self.vertical.header + ', %s %s' % (_PLINT_, self.title)
+        self.header = self.vertical.header + ', %s %s' % (L._PLINT_, self.title)
         self.address = '%s %s %s' % self.titles
-        self.modified_info = '%s %s, %s' % (_LAST_MODIFIED_ON_, _rec.modon, get_user_name(_rec.modby))
+        self.modified_info = '%s %s, %s' % (L._LAST_MOD_, _rec.modon, get_user_name(_rec.modby))
         self.comdata = _rec.comdata
         self.start1 = _rec.start1
 
-    get_pair_titles = lambda self: (self.record('pid' + `i`) for i in xrange(1, 11))
+    get_pair_titles = lambda self: [self.record('pid' + `i`) for i in xrange(1, 11)]
 
     def delete(self):
         del db.plint_table[self.index]
 
     def update(self, vars):
-        db.plint_table[self.index] = {'title': vars.title}
+        maindata = dict(title=vars.title, start1=bool(vars.start1), comdata=vars.comdata)
+        pnew = vars.pairtitles.splitlines()
+        pl = len(pnew)
+        pairdata = {}
+        for i in xrange(0, 10):
+            v = pnew[i] if pl > i else ''
+            pairdata[i+1] = v
+        return plint_update(self.index, maindata, pairdata)
+
+#==================================================================
+
+def plint_update(index, maindata, pairdata):
+    plint = db.plint_table[index]
+    whenwho = get_whenwho()
+    mainchange = False
+    if maindata:
+        keys = maindata.keys()
+        for key in keys:
+            if plint(key) != maindata[key]:
+                mainchange = True
+                break
+    if pairdata:
+        keys = pairdata.keys()
+        for key in keys:
+            sk = str(key)
+            pairkey = 'pid' + sk
+            if plint(pairkey) != pairdata[key]:
+                mainchange = True
+                maindata[pairkey] = pairdata[key]
+                maindata['pmodon' + sk] = whenwho['modon']
+                maindata['pmodby' + sk] = whenwho['modby']
+    if mainchange:
+        maindata.update(whenwho)
+        db.plint_table[index] = maindata
+    return mainchange
 
 #==================================================================
 
@@ -235,9 +227,9 @@ class Pair:
         self.fp = f
         self.title = _rec(f[0])
         dx = 0 if _rec.start1 else -1
-        self.header = self.plint.header + ', %s %s' % (_PAIR_, _pair + dx)
+        self.header = self.plint.header + ', %s %s' % (L._PAIR_, _pair + dx)
         self.address = self.title + ' ' + self.plint.address
-        self.modified_info = '%s %s, %s' % (_LAST_MODIFIED_ON_, _rec(f[1]), get_user_name(_rec(f[2])))
+        self.modified_info = '%s %s, %s' % (L._LAST_MOD_, _rec(f[1]), get_user_name(_rec(f[2])))
 
 #==================================================================
 
@@ -264,6 +256,9 @@ def import_from_txt1(f):
 
     datenow = str(request.now.date())
     dateold = '2014-11-12'
+    #dateold = datetime.date(2014, 11, 122)
+    dateplint = dateold
+    datepair = dateold
 
     crosses = []
     verticals = []
@@ -295,9 +290,10 @@ def import_from_txt1(f):
             s1 = readstring(f)
             lb = False   # rus to lat replace
             if lb:
+                pass
                 #s1 = s1.replace('БМ', 'BM')
                 #s1 = s1.replace('БКТ', 'BKT')
-                s1 = s1.replace('М', 'M')
+                #s1 = s1.replace('М', 'M')
                 #s1 = s1.replace('К', 'K')
                 #s1 = s1.replace('Р', 'P')
             # plint title, start with?, cross_index,     vertical_index
@@ -318,7 +314,7 @@ def import_from_txt1(f):
             s2 = readstring(f)   # pair loopback
             #lb = str(bool(int(s2)))
             # 'pid','pmodon','pmodby'
-            spx = (',%s,%s,1' % (s1,datenow))
+            spx = (',%s,%s,1' % (s1, datepair))
             if i == 0:
                 sp0 = spx
             else:
@@ -335,7 +331,7 @@ def import_from_txt1(f):
         else:
             sp = sp0 + sp
         #   id                               root,         parent,      title,       start1,    comdata, modon, modby
-        a = '%i,%d,%d,%s,%s,%s,%s,1' % (x, plintitem[2], plintitem[3], plintitem[0], str(start1), s1, dateold) + sp
+        a = '%i,%d,%d,%s,%s,%s,%s,1' % (x, plintitem[2], plintitem[3], plintitem[0], str(start1), s1, dateplint) + sp
         if x == 1:
             if len(a.split(',')) != fieldcount:
                 raise Exception('Fields not corresponding to values')

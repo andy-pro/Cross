@@ -1,29 +1,71 @@
-//======================================
-/*** Class: Link, responce <selector> sequence to table ***/
+//================================================
+/*** Class: Form, performs form setup actions ***/
+    /* constructor, usage: var form = new Form(...);
+    event_handler - callback will be performed, when any input changing occured
+    init - run event_handler, fill all inputs fields */
+function Form(event_handler, init) {
 
+    this.panel = $('div.panel').filter(':first');
+    this.form = this.panel.find('form');
+    this.chaintable = $("#chaintable");
+    this.cache = {};     // use own data cache for ajax request
+    this.inputfirst = this.form.find("input:text:visible:first");
+    this.inputfirst.focus();
+    this.event_handler = event_handler;
+    this.inputs = {};
+    this.inputstext = this.form.find('input[type!=checkbox][name]').on('input', {form:this}, $inputChange);
+    this.inputscheckbox = this.form.find('input:checkbox').on('change', {form:this}, $inputChange);
+    if (init) this.init;
+}
+
+Form.prototype.init = function() {
+     this.inputfirst.trigger('input');
+}
+
+$inputChange = function(event) {
+    var El = $(this);
+    var form = event.data.form;    // retrieve object 'this'
+    form.inputstext.each(function() { form.inputs[this.name] = this.value.escapeHTML(); });
+    form.inputscheckbox.each(function() { form.inputs[this.name] = Number(this.checked); });
+    //console.log(form.inputs);
+    if (El.hasClass('delete')) {
+	//console.log('del click');
+	var del = form.inputs.delete;
+	form.panel.removeClass(del ? $clrp : $clrd);
+	form.panel.addClass(del ? $clrd : $clrp);
+    }
+    f = form.event_handler;
+    if (typeof f == 'function') f(event, El);
+    return false;
+}
+
+//==========================================================
+/*** Class: Link, responce <selector> sequence to table ***/
 // constructor, usage: var link = new Link(...);
-function Link(index, target, link, depth, cache, url) {
-    //const stages = ['cross','vertical','plint','pair'];
-    this.index = index;
+function Link(form, url, link) {
+
+    if (typeof link === 'undefined') { link = {}; $.each(stages, function() { link[this+'Id'] = 0; }); }
+    this.index = form.chaindata.length;
     this.link = link;
-    this.depth = depth;
-    this.cache = cache;
+    //this.depth = form.chaindepth ? form.chaindepth : 1;
+    this.depth = form.chaindepth || 1;
+    this.cache = form.cache;
     this.url = url;
     this.controls = {};
     this.titles = {};
-    //this.names = {};
     var tr = $('<tr>');
-    for (var i = 0; i < depth; i++) {
+    for (var i = 0; i < this.depth; i++) {
         var td = $('<td>');
-        var sel = $('<select>', {class:"form-control", name:stages[i]+"_"+index})
-            .prop('disabled', true).data('link', this).data('stage', stages[i]).change($selectChange).appendTo(td);    // disabled controls
+        var sel = $('<select>', {class:"form-control", name:stages[i]+"_"+this.index}).prop('disabled', true).data('stage', stages[i]).appendTo(td);
+        sel.on('change', {this:this, form:form}, $selectChange);
         td.appendTo(tr);
         this.controls[stages[i]+'El'] = sel;
         }
-    tr.appendTo(target);
+    tr.appendTo(form.chaintable);
+    form.chaintable.css({color:'inherit'});   // make table visible
     this.stage = stages[0];
     if (!this.cache.crosses) this.cache.crosses = sLoad('index').crosses;
-    this.controls.crossEl.append($('<option>').text('Not crossed').attr('value', 0));
+    this.controls.crossEl.append($('<option>').text(L._NOT_CROSSED_).attr('value', 0));
     this.addOptFromObj(this.cache.crosses);
     this.setVertical();
 }
@@ -154,104 +196,18 @@ Link.prototype.addOptFromObj = function(data) {
 /*** End Class: Link ***/
 //======================================
 
-$selectChange = function() {
+$selectChange = function(event) {
+    var obj = event.data.this;    // retrieve object 'this'
+    //console.log(event)
     var El = $(this);
-    var obj = El.data('link');    // retrieve object Link
     var stage = El.data('stage');
     obj.link[stage+'Id'] = El.val();        // !!! write select option to Link here !!!
     //obj.names[stage] = El.children(':selected').text();
     if (stage != 'pair') obj[stage+'Change']();  // prototype function name, execute crossChange, verticalChange or plintChange
-    var f = window['OnSelectChange'];
+    var f = event.data.form.onLinkChange;
     if (typeof f == 'function') {
-        if (ajaxstate.during) ajaxstate.callback.push(function() {f(El)});
-        else f(El);
+        if (ajaxstate.during) ajaxstate.callback.push(function() {f(event, El)});
+        else f(event, El);
     }
+    return false;
 }
-
-emptyLink = function () {
-    var emptylink = {};
-    $.each(stages, function() { emptylink[this+'Id'] = 0; });
-    return emptylink
-}
-
-//======================================
-/*** Edit Pair Controller ***/
-function EditPairCtrl(params, route) {
-// start Edit Pair Controller, Chain, new, class approach
-
-//~~~~~~~~~~~~for debug~~~~~~~~~~~~~~
-    refreshWatch = function() {
-    //console.log(++watchcnt);
-        $("table#watchtable tr").remove(".refreshing");
-        $.each(chaindata, function(i, link) {
-            var tr = $('<tr>', {class:"refreshing"});
-            $('<td>', {class:"warning"}).text(i).appendTo(tr);
-            $.each(stages, function() { $('<td>').text(link.link[this+'Id']).appendTo(tr); });
-            //watchtableId = $("#watchtable");
-            //tr.appendTo(watchtableId);
-            tr.appendTo(watchtable);   // id of element, without declare variable!!!
-        });
-    }
-//~~~~~~~~~~~~end for debug~~~~~~~~~~~~~~
-
-    addLink = function () {
-        var link = new Link(chaindata.length, chaintableId, emptyLink(), depth, cache, 'plints');
-        chaindata.push(link);
-        //~~~~~~$$$$$$$$$$$$$$$$$~~~~~~~~~~~~~
-        if (_DEBUG_) refreshWatch();
-        //~~~~~~$$$$$$$$$$$$$$$$$~~~~~~~~~~~~~
-    }
-
-    const depth = 4;
-    var cache = {};     // use own data cache
-    var watchcnt=0;
-    //var args = [params.args[0], params.args[1]];
-    //if (localStorage.editchain) args.push('chain');
-    //console.log(params)
-    $scope = sLoad(route.ajaxurl, params.args);
-
-    if (!$scope) raise404();
-
-    chaindata = [ {link:{crossId: 0, verticalId: 0, plintId: params.args[0], pairId: params.args[1]}} ] // native link
-    if ($scope.chain) for (i in $scope.chain) chaindata.push({link:$scope.chain[i]});
-    if (_DEBUG_) OnSelectChange = refreshWatch;
-        else OnSelectChange = null;
-
-    //log(chaindata)
-    //chaindata.push({link:{crossId:2, verticalId:39, plintId:558, pairId:1}});  //Cross РШ 1Р, Vertical 0В, Plint БM4, Pair 0
-    //chaindata.push({link:{crossId:8, verticalId:64, plintId:845, pairId:2}});  // Cross ЛАЗ, Vertical П15, Plint Р4, Pair 2
-    //chaindata.push({link:{crossId:8, verticalId:61, plintId:810, pairId:8}});  // Cross ЛАЗ, Vertical 1В, Plint M5, Pair 8
-    //chaindata.push({link:{crossId:1, verticalId:37, plintId:541, pairId:4}});
-    //chaindata.push({link:{crossId:4, verticalId:44, plintId:650, pairId:3}});
-    //chaindata.push({link:{crossId:6, verticalId:47, plintId:0, pairId:0}});    // empty vertical
-    //chaindata.push({link:{crossId:0, verticalId:0, plintId:0, pairId:0}});     // empty link
-    //chaindata.push({link:{crossId:22, verticalId:0, plintId:0, pairId:0}});    // empty cross
-
-    document.title = $scope.address;
-    render(route, {data:$scope});
-    var chaintableId = $("#chaintable");
-    for (i=1; i<chaindata.length; i++)
-        chaindata[i] = new Link(i, chaintableId, chaindata[i].link, depth, cache, 'plints');
-    $(_inputfirst).focus();
-
-    //~~~DEBUG~~~$$$$$$$$$$$$$$$$$~~~~~~
-    //debugger;
-    if (_DEBUG_) {
-        route.targetEl.insertAdjacentHTML('beforeend', tmpl('watchtableTmpl', {}));
-        refreshWatch();
-    }
-    //~~~DEBUG~~~$$$$$$$$$$$$$$$$$~~~~~~
-
-    $('form.edit').submit(function(event) {
-        var pair = $('form.edit').serializeArray();
-        pair.push({name:'cross_0', value:0});
-        pair.push({name:'plint_0', value:params.args[0]});
-        pair.push({name:'pair_0',  value:params.args[1]});
-        pair.push({name:'chain',  value:true});
-        // saveData - add formkey, ajax(POST) data toserver, flash status result;
-        // arg0 - data to be saved to server; arg1 - object, containing formname & formkey information
-        pair.push({name:'update_mode', value:'pair'});
-        saveData(pair, $scope, event);
-    });
-}
-/* end edit pair controller */

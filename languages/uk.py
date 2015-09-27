@@ -38,7 +38,6 @@
 'appadmin is disabled because insecure channel': 'використовується незахищенний канал (HTTP). Appadmin вимкнено',
 'Are you sure you want to delete this object?': "Ви впевнені, що хочете вилучити цей об'єкт?",
 'Available Databases and Tables': 'Доступні бази даних та таблиці',
-'Buy this book': 'Купити книжку',
 'cache': 'кеш',
 'Cache': 'Кеш',
 'Cache Keys': 'Ключі кешу',

@@ -65,7 +65,7 @@ db.define_table('vertical_table',
                )
 
 selfields = []
-pairfields = []
+pairfields = []     # this list contain [pid1, pmodon1, pmodby1], [pid2, pmodon2, pmodby2], ...
 pairtitles = ('pid','pmodon','pmodby')
 
 # КДП 0В M10/1 max title "БЗ 287 ТЛГ пер контроль льотного поля вишка"
@@ -89,8 +89,8 @@ db.define_table('plint_table',
                 *selfields
                )
 
-pairtitles = [pairfields[z][0] for z in xrange(0, 10)]    # this fields contains pair titles
-pairtitles.append(plintfields[2])
+pairtitles = [pairfields[z][0] for z in xrange(0, 10)]
+pairtitles.append(plintfields[2])    # this list contain pid1, pid2,..., pid10, comdata
 pfset1 = [db.plint_table.id, db.plint_table.title, db.plint_table.start1, db.plint_table.comdata]
 
 ## after defining tables, uncomment below to enable auditing

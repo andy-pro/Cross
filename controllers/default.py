@@ -1,104 +1,8 @@
 # -*- coding: utf-8 -*-
-
-'''
-trash
-
-def ajax_getCrossList():
-    #return dict(crosses = db(db.cross_table).select().as_list())
-    rows = db(db.cross_table).select()
-    #crosses = [dict(id=0, title=_NOT_CROSSED_)] + [dict(id=i.id, title=i.title) for i in rows]
-    items = [(0,_NOT_CROSSED_)] + [(i.id,i.title) for i in rows]
-    return dict(items=items)
-
-def ajax_getVerticalList():
-    rows = db(db.vertical_table.parent == request.args(0, cast = int)).select()
-    items = [(i.id,i.title) for i in rows]
-    return dict(items=items)
-
-
-    ## for AJAX request
-    #def crossdata():
-        #data = {}
-        #tm = TimeMeter()     # for Debug
-        #try:
-            #dbId = request.args[0]
-            #if dbId == 'crosses':
-            #else:
-                #itemId = request.args(1, cast = int)
-                #if dbId == 'cross':
-                    #cross = Cross(itemId)
-                    #data['title'] = cross.header
-                    #data['verticals'] = db(db.vertical_table.parent == cross.index).select(db.vertical_table.id, db.vertical_table.title).as_list()
-                #elif dbId == 'vertical':
-                        #vertical = Vertical(itemId)
-                        #data['title'] = vertical.header
-                        #data['plints'] = db(db.plint_table.parent == vertical.index).select().as_list()
-                        ##print data
-            #data['time'] = tm.show('DB query')
-        #except:
-            #data = 'Bad request'
-
-
-
-def cross():
-    cross = Cross(request.args(0, cast = int))
-    verticals = db(db.vertical_table.parent == cross.index).select()
-    back = A('Back', _href=URL('crosses'), cid=request.cid)
-    return DIV(back, P(), cross.title, verticals, back)
-
-
-def ask():
-    form=SQLFORM.factory(
-        Field('your_email',requires=IS_EMAIL()),
-        Field('question',requires=IS_NOT_EMPTY()))
-    if form.process().accepted:
-        print "ok is cid"
-        print request.cid
-        if mail.send(to='admin@example.com',
-                  subject='from %s' % form.vars.your_email,
-                  message = form.vars.question):
-            response.flash = 'Thank you'
-            response.js = "jQuery('#%s').hide()" % request.cid
-        else:
-            form.errors.your_email = "Unable to send the email"
-        return "ask rec"
-    response.view='default/dialog.html'
-    return dict(form=form, title="Ask question")
-
-def common(div):
-    if request.env.http_web2py_component_location:
-        return div
-    else:
-        response.view='default/common.html'
-        return dict(div=div)
-
-def pindex():
-    return dict()
-
-def auxiliary1():
-    form=SQLFORM.factory(Field('name'))
-    if form.accepts(request.vars): return "Hello %s" % form.vars.name
-    return form
-def auxiliary2():
-    form=SQLFORM.factory(Field('name'))
-    if form.accepts(request.vars): return "Hello %s" % form.vars.name
-    return form
-def auxiliary3():
-    form=SQLFORM.factory(Field('name'))
-    if form.accepts(request.vars): return "Hello %s" % form.vars.name
-    return form
-def auxiliary4():
-
-    ma = DIV(A('qu-qu',_href=URL('chmo'), cid=request.cid), _id='testw2p')
-    return ma
-
-def chmo():
-    return 'QU_QU'
-
-'''
-
-
 from gluon.utils import web2py_uuid
+
+def ajax_lexicon():
+    return L
 
 def http404():
     raise HTTP(404)
@@ -107,18 +11,20 @@ def index():
     return dict()
 
 def ajax_index():
-    return dict(user=get_user_id(), crosses=dict((r.id, dict(title=r.title, verticals=dict((w.id, dict(title=w.title)) for w in db(db.vertical_table.parent == r.id).select() )))  for r in db(db.cross_table).select()))
+    #return dict(user=get_user_id(), crosses=dict((r.id, dict(title=r.title, verticals=dict((w.id, dict(title=w.title)) for w in db(db.vertical_table.parent == r.id).select() )))  for r in db(db.cross_table).select()))
+    return {'user':get_user_id(), 'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.vertical_table.parent == r.id).select()}} for r in db(db.cross_table).select()}}
 
 def ajax_vertical():
-    #print request
-    query = request.vars.search
+    query = request.vars.search or False
+    news = bool(request.vars.news)
+    title = cross = ''
     if query:
-        #print query
         rows = search_plints(query)
-        title = cross = ''
-        header = T('Found results for "%s"') % query if rows else '"%s" - %s' % (query, response.searchstatus)
+        header = L._FNDRES_ % query if rows else '"%s" - %s' % (query, response.searchstatus)
+    elif news:
+        rows = db(db.plint_table).select(orderby=~db.plint_table.modon, limitby=(0, 20))
+        header = L._LAST_MOD_
     else:
-        query = False
         vertical = Vertical(request.args(0, cast = int))
         title = vertical.title
         header = vertical.header
@@ -126,27 +32,37 @@ def ajax_vertical():
         rows = db(db.plint_table.parent == vertical.index).select(orderby=db.plint_table.id)
     plints = []   #plints = {}
     for plint in rows:
-        td = []
-        if not request.edit_mode:   # in edit mode pairs not needed
-            for i in xrange(0, 10):
-                pairtitle = plint(pairtitles[i])
-                when = plint(pairfields[i][1])
-                who = plint(pairfields[i][2])
-                get_user_name(who)
-                td.append((pairtitle,when,who))
-        get_user_name(plint.modby)
+        who = plint.modby
+        get_user_name(who)
         tr={'id':plint.id,
             'title':plint.title,
             'start1':int(plint.start1),
             'comdata':plint.comdata,
             'modon':plint.modon,
-            'modby':plint.modby,
-            'pairs':td}
-        if query:
-            tr['root'] = [plint.root, plint.root.title]
-            tr['parent'] = [plint.parent, plint.parent.title]
+            'modby':who.id}
+        if not request.edit_mode:   # in edit mode(see ajax_editvertical) pairs not needed,
+            td = []
+            old = plint.pmodon1
+            idx = 0
+            for i in xrange(0, 10):
+                when = plint(pairfields[i][1])
+                if news:
+                    if when>old:    # searching newest pair
+                        old = when
+                        idx = i
+                else:
+                    pairtitle = plint(pairtitles[i])
+                    who = plint(pairfields[i][2])
+                    get_user_name(who)
+                    td.append((pairtitle,when,who))
+            if news:
+                 td.append((plint(pairtitles[idx]),idx))
+            tr['pairs'] = td
+        if query or news:
+            tr['root'] = (plint.root, plint.root.title)
+            tr['parent'] = (plint.parent, plint.parent.title)
         plints.append(tr)
-    return dict(user=get_user_id(), header=header, query=query, plints=plints, users=users, title=title, cross=cross)
+    return dict(user=get_user_id(), header=header, query=query, news=news, plints=plints, users=users, title=title, cross=cross)
 
 def ajax_plints():
     return dict(data=[(i.id,i.title,int(i.start1)) for i in db(db.plint_table.parent == request.args(0, cast = int)).select(*pfset1, orderby=db.plint_table.id)])
@@ -155,19 +71,24 @@ def ajax_plintscd():    # add common data to response
     return dict(data=[(i.id,i.title,int(i.start1),i.comdata) for i in db(db.plint_table.parent == request.args(0, cast = int)).select(*pfset1, orderby=db.plint_table.id)])
 
 @auth.requires_membership('managers')
+def ajax_editcross():
+    data = Cross(request.args(0, cast = int))
+    return add_formkey(dict(header=data.header, title=data.title))
+
+@auth.requires_membership('managers')
 def ajax_editvertical():
     request.edit_mode = True;
-    return add_formkey('editvertical', ajax_vertical())
+    return add_formkey(ajax_vertical())
 
 def comdict(data):
-    return dict(user=get_user_id(), header=data.header, address=data.address, modinfo=data.modified_info, title=data.title)
+    return dict(header=data.header, address=data.address, modinfo=data.modified_info, title=data.title)
 
 @auth.requires_membership('managers')
 def ajax_editplint():
     data = Plint(request.args(0, cast = int))
     result = comdict(data)
-    result.update(dict(pairs='\n'.join(data.get_pair_titles()), start1=data.start1, comdata=data.comdata))
-    return add_formkey('editplint', result)
+    result.update(dict(pairtitles=('\n'.join(data.get_pair_titles())).rstrip(), start1=data.start1, comdata=data.comdata, vertical=data.vertical.index))
+    return add_formkey(result)
 
 @auth.requires_membership('managers')
 def ajax_editpair():
@@ -175,37 +96,17 @@ def ajax_editpair():
     result = comdict(data)
     if (request.args(2) and test_query(data.title) and request.args(2, cast=str) == 'chain'):
         result['chain'] = getchain(data.title, True, '%s_%s' % (data.index, data.pair))
-    return add_formkey('editpair', result)
+    result['vertical'] = data.plint.vertical.index
+    return add_formkey(result)
 
 @auth.requires_membership('managers')
 def ajax_editfound():
-    return add_formkey('editfound', ajax_vertical())
+    return add_formkey(ajax_vertical())
 
-def add_formkey(formname, result):
-    result['formname'] = formname
-    result['formkey'] = formUUID(formname)
-    return result
-
-'''
-
-def ajax_getPairList():
-    vertical = Vertical(request.args(0, cast = int))
-    plints = db(db.plint_table.parent == vertical.index).select()
-    items = []
-    pairs = []
-    for plint in plints:
-        get_user_name(plint.modby)
-        items.append((plint.id,plint.title,int(plint.start1),plint.comdata,plint.modon,plint.modby))
-        td = []
-        for i in xrange(0, 10):
-            pairtitle = plint(pairtitles[i])
-            when = plint(pairfields[i][1])
-            who = plint(pairfields[i][2])
-            get_user_name(who)
-            td.append((pairtitle,when,who))
-        pairs.append(td)
-    return dict(title=vertical.header,items=items, pairs=pairs, users=users)
-'''
+def add_formkey(data):
+    s = request.function[5:]
+    data.update(dict(formname=s, formkey=formUUID(s), user=get_user_id()))
+    return data
 
 def getchain(q, exclude=False, pairId=''):
     rows = search_plints(q)
@@ -284,47 +185,55 @@ def ajax_update():
     except:
         return dict(status=False, details=msg if msg else T('Unexpected error!'))
 
-    result = dict(status=True, details=T('Database update success!'))
-    if request.vars.update_mode == 'vertical':
+    result = dict(status=True)
+    if formname == 'editcross':
+        # saveData from Edit Cross Controller
+        cross = Cross(request.vars.cross)
+        if request.vars.delete:
+            cross.delete()
+            result['location'] = '#'    # this will redirect to index/#
+        else:
+            vt = cross.update(request.vars)
+            if vt: result['location'] = '#/editvertical/' + str(vt)
+            request.vars.delete = bool(vt)
+    elif formname == 'editvertical':
         # saveData from Edit Vertical Controller
         vertical = Vertical(request.vars.vertical)
         if request.vars.delete:
             vertical.delete()
             result['location'] = '#'    # this will redirect to index/#
         else:
-            vertical.update(request.vars)
-    elif request.vars.update_mode == 'plint':
+            request.vars.delete = vertical.update(request.vars)
+            result['location'] = '#/vertical/' + str(vertical.index)
+    elif formname == 'editplint':
         plint = Plint(request.vars.plint)
         if request.vars.delete:
             plint.delete()
         else:
-            plint.update(request.vars)
-    elif request.vars.update_mode == 'pair':
+            request.vars.delete = plint.update(request.vars)
+    elif formname == 'editpair' or formname == 'editfound':
         # saveData from Edit Found Controller, Edit Pair Controller
         if request.vars.chain: title = request.vars.title  # one title for all pairs, it's a chain
         idx = 0
         while(request.vars['cross_'+str(idx)] and idx < 1000):
             si = str(idx)
             idx += 1
-            rec = 'plint_'+si
-            if (request.vars[rec]):
-                rec = request.vars[rec]
+            index = request.vars['plint_'+si]
+            if (index):
                 pid = request.vars['pair_'+si]
                 if not request.vars.chain: # each pair has own title
                     title = request.vars['title_'+si]
-                #print 'plint:%s pair:%s title:%s' % (rec, pid, title)
-                db.plint_table[rec] = {'pid'+pid : title,
-                                       'pmodon'+pid : request.now.date(),
-                                       'pmodby'+pid : auth.user}
-
+                #print 'plint:%s pair:%s title:%s' % (index, pid, title)
+                request.vars.delete = plint_update(index, {}, {pid : title})
     else:
         pass
+    result['details'] = L._DB_UPD_ if request.vars.delete else L._NOCHANGE_
     return result
 
 @auth.requires_membership('administrators')
 #@auth.requires_membership('managers')
 def restore():
-    response.title = _RESTORE_
+    response.title = L._IMPORT_
     form = FORM(INPUT(_type='file', _name='fn'),
                 INPUT(_type='submit', _class='pull-right btn-primary'))
     if form.process().accepted:
@@ -340,7 +249,7 @@ def restore():
         #redirect_updatemenu(URL('index'))
         redirect(URL('index'))
     response.view='default/dialog.html'
-    return dict(form=form, title=_RESTORE_)
+    return dict(form=form, title=L._IMPORT_)
 
 def user():
     """

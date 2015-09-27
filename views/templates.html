@@ -7,12 +7,12 @@
 <script type="text/template" id="btnOkCancelTmpl">
 <div class="pull-right">
 <input type="submit" class="btn btn-primary"/>
-<button class="btn btn-primary" onclick="history.back();return false;">Cancel</button>
+<button class="btn btn-primary" onclick="history.back();return false;"><%=L._CANCEL_%></button>
 </div>
 </script>
 
 <script type="text/template" id="btnBackTmpl">
-<button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="Back (Esc)">&times;</button>
+<button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="<%=L._BACK_%> (Esc)">&times;</button>
 </script>
 
 <script type="text/template" id="CrossTmpl">
@@ -21,11 +21,11 @@ var verticals = crosses[ci]["verticals"]; %>
 <div class="col-md-4">
   <div class="panel panel-default">
     <div class="panel-heading">
-      <a class="mybtn-link" href="#/crossEdit/<%= ci %>"><%= crosses[ci]["title"] %></a>
+      <a class="mybtn-link" href='javascript:edit("cross",<%=ci%>)'><%=crosses[ci]["title"]%></a>
     </div>
     <div class="panel-body">
       <% for ( var cj in verticals ) { %>
-        <a class="mybtn-link" href="#/vertical/<%= cj %>"><%= verticals[cj].title %></a>
+        <a class="mybtn-link" href="#/vertical/<%=cj%>"><%=verticals[cj].title%></a>
       <% } %>
     </div>
   </div>
@@ -35,92 +35,128 @@ var verticals = crosses[ci]["verticals"]; %>
 
 <script type="text/template" id="VerticalTmpl">
   <div class="panel panel-default">
-    <div class="panel-heading">
-      <a href='javascript:edit(<%=href%>)'><%=header%></a>
-      <%=btnBack%>
+    <div class="panel-heading"><%=header%><%=btnBack%>
       <div class="checkbox inmenu right">
-        <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)"/>Wrap text</label>
+        <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)"/><%=L._WRAP_%></label>
       </div>
       <div class="checkbox inmenu right">
-        <label><input id="editchain" type="checkbox" onclick="editChain(this.checked)"/>Edit chain</label>
+        <label><input id="editchain" type="checkbox" onclick="editChain(this.checked)"/><%=L._CHAIN_%></input></label>
       </div>
     </div>
     <table class="vertical table table-bordered table-striped"><tbody>
-      <% for ( var ci in plints) {
-      var pairs = plints[ci].pairs;
-      var start1 = parseInt(plints[ci].start1); %>
-        <tr>
-          <% if (query) { %>
+      <%for ( var ci in plints) {
+        var plint = plints[ci];
+        var pairs=plint.pairs, start1=parseInt(plint.start1), when=plint.modon, who=users[plint.modby];
+        var _title = "Plint: %s\n%s\n%s\nCommon data: %s".format(plint.title, when, who, plint.comdata); 
+        %>
+          <tr>
+          <% if (query || news) { %>
             <td class="colv0">
-              <a href="#/crossEdit/<%=plints[ci].root[0]%>" title=Cross <%=plints[ci].root[1]%>"><%=plints[ci].root[1]%></a>
+              <a href='javascript:edit("cross",<%=plint.root[0]%>)' title="Cross <%=plint.root[1]%>"><%=plint.root[1]%></a>
             </td>
             <td class="colv1">
-              <a href="#/vertical/<%=plints[ci].parent[0]%>"title="Vertical <%=plints[ci].parent[1]%>"><%=plints[ci].parent[1]%></a>
+              <a href="#/vertical/<%=plint.parent[0]%>"title="Vertical <%=plint.parent[1]%>"><%=plint.parent[1]%></a>
             </td>
           <% } %>
           <td class="colv1" style="border-right:2px solid #ddd;">
-          <% var _title = "Plint: "+plints[ci].title+"\n"+plints[ci].modon+"\n"+users[plints[ci].modby]+"\nCommon data: "+plints[ci].comdata; %>
-            <a href='javascript:edit("plint",<%=plints[ci].id%>)' title="<%=_title%>"><%=plints[ci].title%></a>
+             <a href='javascript:edit("plint", <%=plint.id%>)' title="<%=_title%>"><%=plint.title%></a>
           </td>
-          <% for ( var cj in pairs ) {
-            var t = pairs[cj][0];
-            var found = '';
-            if (t) { _title = t+"\n"+pairs[cj][1]+"\n"+users[pairs[cj][2]];
-                     if (t.indexOf(query) >= 0) found = 'class="found"'; }
-              else _title = ""; %>
-            <td <%=found%>>
-              <a href='javascript:edit("pair",<%=plints[ci].id%>,<%=parseInt(cj)+1%>)' title="<%=_title%>">
-              <sup><%=parseInt(cj)+start1%></sup><%=t%></a>
-            </td>
-          <% };
-          t = plints[ci].comdata;
-          found = "commondata";
-          if (t && query && t.indexOf(query) >= 0) found += " cdfound"; %>
-          <td class="<%=found%>" style="border-left:2px solid #ddd;"><%=t%></td>
+          <% 
+            for ( var cj in pairs ) {
+                var idx = parseInt(cj);
+                var pair = pairs[idx];
+                var t = pair[0], found = '';
+                _title = "";             
+                if (news) {
+                    var pidx = pair[1]+1;
+                    t = '%s, %s, %s %s, "%s"'.format(when, who, L._PAIR_, pair[1]+start1, t);
+                }
+                else {                        
+                        var pidx = idx+1;
+                        if (t) { _title = t+"\n"+pair[1]+"\n"+users[pair[2]];
+                                if (t.indexOf(query) >= 0) found = 'class="found"'; 
+                        }
+                    } %>
+                 <td <%=found%>>
+                   <a href='javascript:edit("pair",<%=plint.id%>,<%=pidx%>)' title="<%=_title%>"><sup><%=idx+start1%></sup><%=t%></a>
+                 </td>
+          <% }
+          
+          if (!news) {
+            t = plint.comdata, found = "commondata";
+            if (t && query && t.indexOf(query) >= 0) found += " cdfound"; %>
+            <td class="<%=found%>" style="border-left:2px solid #ddd;"><%=t%></td>
+          <% }; %>
         </tr>
       <% }; %>
     </tbody></table>
   </div>
 </script>
 
-<script type="text/template" id="editVerticalTmpl">
+<script type="text/template" id="EditCrossTmpl">
 <div class="col-md-6">
   <div class="panel panel-primary">
-    <div class="panel-heading"><a style="color:inherit;" href="#/vertical/<%=vertical.vertical%>" target="_blank"><%=vertical.header%></a><%=btnBack%></div>
+    <div class="panel-heading"><%=cross.header%><%=btnBack%></div>
     <div class="panel-body">
       <form class="form-horizontal edit">
         <div class="form-group">
-          <label class="col-md-3 control-label"><%=T._TITLE_%></label>
+          <label class="col-md-3 control-label"><%=L._TITLE_%></label>
+          <div class="col-md-8"><input type="text" name="title" class="form-control" value="<%=cross.title%>"/></div>
+        </div>
+        <div class="form-group">
+          <div class="checkbox col-md-offset-3 col-md-8"><label>
+            <input name="delete" class="delete" type="checkbox"/><%=L._DEL_%> <%=L._CROSS_%>
+          </label></div>
+        </div>
+        <div class="form-group">
+          <label class="col-md-3 control-label"><%=L._VERT_T_%></label>
+          <div class="col-md-8"><input type="text" name="verticaltitle" class="form-control"/></div>
+        </div>
+        <%=btnOkCancel%>
+      </form>
+    </div>
+  </div>
+</div>
+</script>
+
+<script type="text/template" id="EditVerticalTmpl">
+<div class="col-md-6">
+  <div class="panel panel-primary">
+    <div class="panel-heading"><a style="color:inherit;" href="#/vertical/<%=vertical.vertical%>"><%=vertical.header%></a><%=btnBack%></div>
+    <div class="panel-body">
+      <form class="form-horizontal edit">
+        <div class="form-group">
+          <label class="col-md-3 control-label"><%=L._TITLE_%></label>
           <div class="col-md-8"><input type="text" name="title" class="form-control" value="<%=vertical.title%>"/></div>
         </div>
 
         <div class="form-group">
           <div class="checkbox col-md-offset-3 col-md-8"><label>
-            <input name="delete" class="delete" type="checkbox"/>Delete vertical
+            <input name="delete" class="delete" type="checkbox"/><%=L._DEL_%> <%=L._VERTICAL_%>
           </label></div>
         </div>
 
         <div class="form-group">
-          <label class="col-md-3 control-label">Plint title</label>
+          <label class="col-md-3 control-label"><%=L._PLINT_T_%></label>
           <div class="col-md-3"><input name="plinttitle" type="text" class="form-control" value="M%1"/></div>
-          <label class="col-md-2 control-label">Count</label>
+          <label class="col-md-2 control-label"><%=L._COUNT_%></label>
           <div class="col-md-3 numeric"><input type="number" min="0" max="100" name="count" class="form-control" value="0"/></div>
         </div>
 
         <div class="form-group">
           <div class="checkbox col-md-offset-3 col-md-8">
-            <label><input name="start1" type="checkbox" checked/>Numeration start 1</label>
-            <label class="right"><input name="start1all" type="checkbox"/>Apply for all</label>
+            <label><input name="start1" type="checkbox" checked/><%=L._START_1_%></label>
+            <label class="right"><input name="start1all" type="checkbox"/><%=L._FOR_ALL_%></label>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="col-md-3 control-label">Common data</label>
+          <label class="col-md-3 control-label"><%=L._COMMON_DATA_%></label>
           <div class="col-md-8">
             <div class="input-group">
                 <input type="text" name="comdata" class="form-control" value="%0 %1 %2 %3"/>
                 <span class="input-group-btn">
-                    <button class="btn btn-default" type="button" title="Help" onclick="commondataHelp()">?</button>
+                    <button class="btn btn-default" type="button" title="<%=L._HELP_%>" onclick="commondataHelp()">?</button>
                 </span>
             </div>
           </div>
@@ -128,7 +164,7 @@ var verticals = crosses[ci]["verticals"]; %>
 
         <div class="form-group">
           <div class="checkbox col-md-offset-3 col-md-8"><label>
-            <input name="comdatareplace" type="checkbox" checked/>Replace remote common data
+            <input name="comdatareplace" type="checkbox" checked/><%=L._REM_CD_%>
           </label></div>
         </div>
 
@@ -149,75 +185,72 @@ var verticals = crosses[ci]["verticals"]; %>
 
 <div class="col-md-6">
   <div class="panel panel-default">
-    <div class="panel-heading">Changes: vertical <span id="changehead"><%=vertical.title%></span></div>
+    <div class="panel-heading"><%=L._VERTICAL_%> <span id="changehead"><%=vertical.title%></span></div>
     <div class="table-container">
     <table class="table table-bordered table-condensed" id="watchtable">
-      <tr class="info"><th width="15%"><%=tbheaders[2]%></th><th width="8%">+/~</th><th width="38%">Common Data</th><th>Remote Common Data</th></tr>
+      <tr class="info"><th width="15%"><%=tbheaders[2]%></th><th width="8%">+/~</th><th width="38%"><%=L._COMMON_DATA_%></th><th><%=L._REM_CD_%></th></tr>
     </table>
     </div>
   </div>
 </div>
-
 </script>
 
-<script type="text/template" id="editPlintTmpl">
+<script type="text/template" id="EditPlintTmpl">
 <div class="col-md-6">
   <div class="panel panel-primary">
-    <div class="panel-heading"><%=plint.header%><%=btnBack%></div>
+    <div class="panel-heading"><a style="color:inherit;" href="#/vertical/<%=plint.vertical%>"><%=plint.header%></a><%=btnBack%></div>
     <div class="panel-body">
       <p><i><%=plint.modinfo%></i></p>
       <form class="form-horizontal edit">
         <div class="form-group">
-          <label class="col-md-3 control-label"><%=T._TITLE_%></label>
+          <label class="col-md-3 control-label"><%=L._TITLE_%></label>
           <div class="col-md-8"><input type="text" name="title" class="form-control" value="<%=plint.title%>"/></div>
         </div>
 
         <div class="form-group">
           <div class="checkbox col-md-offset-3 col-md-8"><label>
-            <input name="delete" class="delete" type="checkbox"/>Delete plint
+            <input name="delete" class="delete" type="checkbox"/><%=L._DEL_%> <%=L._PLINT_%>
           </label></div>
         </div>
 
         <div class="form-group">
           <div class="checkbox col-md-offset-3 col-md-8">
-            <label><input name="start1" type="checkbox" <%=plint.start1%>/>Numeration start 1</label>
+            <label><input name="start1" type="checkbox" <%=plint.start1%>/><%=L._START_1_%></label>
           </div>
         </div>
 
         <div class="form-group">
-          <label class="col-md-3 control-label">Common data</label>
+          <label class="col-md-3 control-label"><%=L._COMMON_DATA_%></label>
           <div class="col-md-8"><input type="text" name="comdata" class="form-control" value="<%=plint.comdata%>"/></div>
         </div>
 
         <div class="form-group">
-          <label class="col-md-3 control-label">Pair titles</label>
+          <label class="col-md-3 control-label"><%=L._PAIR_T_%></label>
           <div class="col-md-8">
             <div class="pair-ol"><ol start="0"><% for (var i=0; i<10; i++) print("<li></li>"); %></ol></div>
-            <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairtitles"><%=plint.pairs%></textarea>
+            <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairtitles"></textarea>
           </div>
         </div>
 
         <%=btnOkCancel%>
       </form>
     </div>
-
   </div>
 </div>
-
 </script>
 
-<script type="text/template" id="editPairTmpl">
+<script type="text/template" id="EditPairTmpl">
 <div class="col-md-6">
   <div class="panel panel-primary">
-    <div class="panel-heading"><%=pair.header%><%=btnBack%></div>
+    <div class="panel-heading"><a style="color:inherit;" href="#/vertical/<%=pair.vertical%>"><%=pair.header%></a><%=btnBack%></div>
     <div class="panel-body">
       <p><i><%=pair.modinfo%></i></p>
       <form class="form-horizontal edit">
         <div class="form-group">
-          <label class="col-md-2 control-label"><%=T._TITLE_%></label>
+          <label class="col-md-2 control-label"><%=L._TITLE_%></label>
           <div class="col-md-8"><input name="title" class="form-control" value="<%=pair.title%>"/></div>
         </div>
-        <button type="button" class="btn btn-sm btn-success pull-right" title="Add link to chain" onclick="addLink()">+</button>
+        <button type="button" class="btn btn-sm btn-success pull-right" title="<%=L._ADD_LINK_%>" onclick="addLink()">+</button>
         <table id="chaintable">
           <tr><% for ( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %> </tr>
         </table>
@@ -242,7 +275,7 @@ var verticals = crosses[ci]["verticals"]; %>
 </div>
 </script>
 
-<script type="text/template" id="editFoundTmpl">
+<script type="text/template" id="EditFoundTmpl">
 <div class="col-md-7">
   <div class="panel panel-primary">
     <div class="panel-heading"><%=header%><%=btnBack%></div>
@@ -251,16 +284,16 @@ var verticals = crosses[ci]["verticals"]; %>
       <form class="form-horizontal edit">
         <button type="button" class="btn btn-sm btn-default pull-right" title="RegExp help" onclick="regexpHelp()">?</button>
         <div class="form-group">
-          <label class="col-md-2 control-label"><%=T._FIND_%></label>
-          <div class="col-md-8"><input id="find" class="form-control" value="<%=query%>"/></div>
+          <label class="col-md-2 control-label"><%=L._FIND_%></label>
+          <div class="col-md-8"><input name="find" class="form-control" value="<%=query%>"/></div>
         </div>
         <div class="form-group">
-          <label class="col-md-2 control-label"><%=T._REPLACE_%></label>
-          <div class="col-md-8"><input id="replace" class="form-control" value="<%=query%>"/></div>
+          <label class="col-md-2 control-label"><%=L._REPLACE_%></label>
+          <div class="col-md-8"><input name="replace" class="form-control" value="<%=query%>"/></div>
         </div>
         <div class="form-group">
             <div class="checkbox col-md-offset-2 col-md-8"><label>
-                  <input id="follow" type="checkbox" checked="checked"/><%=T._FOLLOW_%>
+                  <input name="follow" type="checkbox" checked="checked"/><%=L._FOLLOW_%>
             </label></div>
         </div>
 
@@ -273,10 +306,10 @@ var verticals = crosses[ci]["verticals"]; %>
       <th width="12%"><%=tbheaders[1]%></th>
       <th width="10%"><%=tbheaders[2]%></th>
       <th width="8%"><%=tbheaders[3]%></th>
-      <th>Title</th>
+      <th><%=L._TITLE_%></th>
       </tr>
     </table>
-    <div class="panel-footer"><div class="myright">Found <%=count%> results.</div></div>
+    <div class="panel-footer"><div class="myright"><%=L._FOUND_%><%=count%></div></div>
   </div>
 </div>
 </script>

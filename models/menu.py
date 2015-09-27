@@ -5,7 +5,7 @@
 ## Customize your APP title, subtitle and menus here
 #########################################################################
 
-response.logo = A(B('CROSS'), XML('&trade;&nbsp;'), _class="navbar-brand",_href=URL('index'), _id="cross-logo")
+response.logo = A(B('CROSS'), XML('&trade;&nbsp;'), _class="navbar-brand",_href=URL('default', 'index'), _id="cross-logo")
 response.title = request.application.replace('_',' ').title()
 response.subtitle = ''
 
@@ -23,26 +23,16 @@ response.google_analytics_id = None
 #########################################################################
 
 response.menu = [
-    (T('Home'), False, URL('index#'), [])
+    (L._HOME_, False, URL('default', 'index#')),
+    (L._NEWS_, False, URL('default', 'index#/vertical?news=true'))
 ]
 #response.menu.append((T('Import DB'), False, URL('default', 'restore')))
 
 if auth.has_membership('administrators'):
-    response.toolsmenu = LI(A(T('Tools'), _href='#'),
-        UL(LI(A(I(_class="glyphicon glyphicon-upload"), _BACKUP_, _href=URL('default', 'backup'))),
-        LI(A(I(_class="glyphicon glyphicon-download"), _RESTORE_, _href=URL('default', 'restore', args=['csv']))), LI(_class="divider"),
-        LI(A(I(_class="glyphicon glyphicon-import"), T(' Import DB'), _href=URL('default', 'restore'))),
-        LI(A(I(_class="glyphicon glyphicon-warning-sign"), T(' Direct edit DB'), _href=URL('appadmin', 'index'))), LI(_class="divider"),
-        LI(A(I(_class="glyphicon glyphicon-remove"), T(' Clear database'), _href=URL('default', 'cleardb'))),
+    response.toolsmenu = LI(A(L._TOOLS_, _href='#'),
+        UL(LI(A(I(_class="glyphicon glyphicon-upload"), ' ', L._BACKUP_, _href=URL('default', 'backup'))),
+        LI(A(I(_class="glyphicon glyphicon-download"), ' ', L._RESTORE_, _href=URL('default', 'restore', args=['csv']))), LI(_class="divider"),
+        LI(A(I(_class="glyphicon glyphicon-import"), ' ', L._IMPORT_, _href=URL('default', 'restore'))),
+        LI(A(I(_class="glyphicon glyphicon-warning-sign"), ' ', L._ADMIN_DB_, _href=URL('appadmin', 'index'))), LI(_class="divider"),
+        LI(A(I(_class="glyphicon glyphicon-remove"), ' ', L._CLEAR_DB_, _href=URL('default', 'cleardb'))),
         _class="dropdown-menu"), _class="dropdown")
-
-'''
-def updatemainarray():
-    return [ [r.id, r.title, [ [w.id, w.title] for w in db(db.vertical.parent == r.id).select() ] ] for r in db(db.cross).select()]
-
-#mainarray=XML(simplejson.dumps(updatemainarray()))
-
-def redirect_updatemenu(url):
-    updatemainarray()
-    return redirect(url)
-'''

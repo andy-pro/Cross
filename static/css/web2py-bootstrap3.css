@@ -113,6 +113,7 @@ table#chaintable {
     table-layout: fixed;
     width: 100%;
     margin: 15px 0px;
+    color: #fff;
 }
 table#chaintable td {
     padding: 3px 3px;
@@ -142,9 +143,8 @@ table sup {
     color:#111;
 }
 
-.colv0 { width: 50px; }
-.colv1 { width: 40px; }
-table td.colc1 { width: 50px; }
+.colv0 { width: 56px; }
+.colv1 { width: 44px; }
 /*.coln { width: 80px; }*/
 
 /*tr.oddrow {background: #e8e8e8;}*/
