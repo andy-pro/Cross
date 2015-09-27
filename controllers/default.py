@@ -22,7 +22,7 @@ def ajax_vertical():
         rows = search_plints(query)
         header = L._FNDRES_ % query if rows else '"%s" - %s' % (query, response.searchstatus)
     elif news:
-        rows = db(db.plint_table).select(orderby=~db.plint_table.modon, limitby=(0, 20))
+        rows = db(db.plint_table).select(orderby=~db.plint_table.modon, limitby=(0, 50))
         header = L._LAST_MOD_
     else:
         vertical = Vertical(request.args(0, cast = int))
@@ -40,24 +40,25 @@ def ajax_vertical():
             'comdata':plint.comdata,
             'modon':plint.modon,
             'modby':who.id}
-        if not request.edit_mode:   # in edit mode(see ajax_editvertical) pairs not needed,
-            td = []
-            old = plint.pmodon1
-            idx = 0
-            for i in xrange(0, 10):
-                when = plint(pairfields[i][1])
-                if news:
-                    if when>old:    # searching newest pair
-                        old = when
-                        idx = i
-                else:
-                    pairtitle = plint(pairtitles[i])
-                    who = plint(pairfields[i][2])
-                    get_user_name(who)
-                    td.append((pairtitle,when,who))
+        td = []
+        old = plint.pmodon1
+        idx = 0
+        for i in xrange(0, 10):
+            pairtitle = plint(pairtitles[i])
+            when = plint(pairfields[i][1])
             if news:
-                 td.append((plint(pairtitles[idx]),idx))
-            tr['pairs'] = td
+                if when>old:    # searching newest pair
+                    old = when
+                    idx = i
+            elif request.edit_mode:   # in edit mode(see ajax_editvertical) pairs whenwho not needed
+                td.append(pairtitle)
+            else:
+                who = plint(pairfields[i][2])
+                get_user_name(who)
+                td.append((pairtitle,when,who))
+        if news:
+             td.append((plint(pairtitles[idx]),idx))
+        tr['pairs'] = td
         if query or news:
             tr['root'] = (plint.root, plint.root.title)
             tr['parent'] = (plint.parent, plint.parent.title)
@@ -72,8 +73,12 @@ def ajax_plintscd():    # add common data to response
 
 @auth.requires_membership('managers')
 def ajax_editcross():
-    data = Cross(request.args(0, cast = int))
-    return add_formkey(dict(header=data.header, title=data.title))
+    if request.vars.new:
+        result = dict(header=L._NEW_CROSS_, new=True)
+    else:
+        data = Cross(request.args(0, cast = int))
+        result = dict(header=data.header, title=data.title)
+    return add_formkey(result)
 
 @auth.requires_membership('managers')
 def ajax_editvertical():
@@ -165,10 +170,11 @@ def formUUID(formname):
 
 @auth.requires_membership('managers')
 def ajax_update():
+    vars = request.vars
     try:
         msg = ''
-        formname = request.vars.formname
-        formkey = request.vars.formkey
+        formname = vars.formname
+        formkey = vars.formkey
         keyname = '_formkey[%s]' % formname
         formkeys = list(session.get(keyname, []))
         if formkey and formkeys and formkey in formkeys:  # check if user tampering with form and void CSRF
@@ -179,7 +185,7 @@ def ajax_update():
         if not auth.user:
             msg = T('UNAUTHORIZED!')
             raise
-        if int(request.vars.user) != int(auth.user.id):
+        if int(vars.user) != int(auth.user.id):
             msg = T('Access error!')
             raise
     except:
@@ -188,47 +194,69 @@ def ajax_update():
     result = dict(status=True)
     if formname == 'editcross':
         # saveData from Edit Cross Controller
-        cross = Cross(request.vars.cross)
-        if request.vars.delete:
-            cross.delete()
-            result['location'] = '#'    # this will redirect to index/#
+        if vars.new:
+            idx = db.cross_table.update_or_insert(title=vars.title)
+            vars.delete = bool(idx)
+            if idx: result['location'] = '#/editcross/'+str(idx)
         else:
-            vt = cross.update(request.vars)
-            if vt: result['location'] = '#/editvertical/' + str(vt)
-            request.vars.delete = bool(vt)
+            cross = Cross(vars.cross)
+            if vars.delete:
+                cross.delete()
+                result['location'] = '#'    # this will redirect to home page index/#
+            else:
+                vt = cross.update(vars)
+                if vt: result['location'] = '#/editvertical/' + str(vt)
+                vars.delete = bool(vt)
     elif formname == 'editvertical':
         # saveData from Edit Vertical Controller
-        vertical = Vertical(request.vars.vertical)
-        if request.vars.delete:
+        vertical = Vertical(vars.vertical)
+        if vars.delete:
             vertical.delete()
-            result['location'] = '#'    # this will redirect to index/#
+            result['location'] = '#'
         else:
-            request.vars.delete = vertical.update(request.vars)
+            vars.delete = vertical.update(vars)
             result['location'] = '#/vertical/' + str(vertical.index)
     elif formname == 'editplint':
-        plint = Plint(request.vars.plint)
-        if request.vars.delete:
+        plint = Plint(vars.plint)
+        if vars.delete:
             plint.delete()
         else:
-            request.vars.delete = plint.update(request.vars)
+            vars.delete = plint.update(vars)
     elif formname == 'editpair' or formname == 'editfound':
         # saveData from Edit Found Controller, Edit Pair Controller
-        if request.vars.chain: title = request.vars.title  # one title for all pairs, it's a chain
+        if vars.chain: title = vars.title  # one title for all pairs, it's a chain
         idx = 0
-        while(request.vars['cross_'+str(idx)] and idx < 1000):
+        while(vars['cross_'+str(idx)] and idx < 1000):
             si = str(idx)
             idx += 1
-            index = request.vars['plint_'+si]
+            index = vars['plint_'+si]
             if (index):
-                pid = request.vars['pair_'+si]
-                if not request.vars.chain: # each pair has own title
-                    title = request.vars['title_'+si]
+                pid = vars['pair_'+si]
+                if not vars.chain: # each pair has own title
+                    title = vars['title_'+si]
                 #print 'plint:%s pair:%s title:%s' % (index, pid, title)
-                request.vars.delete = plint_update(index, {}, {pid : title})
+                vars.delete = plint_update(index, {}, {pid : title})
     else:
         pass
-    result['details'] = L._DB_UPD_ if request.vars.delete else L._NOCHANGE_
+    result['details'] = L._DB_UPD_ if vars.delete else L._NOCHANGE_
     return result
+
+@auth.requires_membership('administrators')
+def backup():
+    import gluon.contenttype
+    import cStringIO
+    stream=cStringIO.StringIO()
+    print >> stream, 'TABLE cross_table'
+    db(db.cross_table.id).select().export_to_csv_file(stream)
+    print >> stream, '\n\nTABLE vertical_table'
+    db(db.vertical_table.id).select().export_to_csv_file(stream)
+    print >> stream, '\n\nTABLE plint_table'
+    db(db.plint_table.id).select().export_to_csv_file(stream)
+    print >> stream, '\n\nEND'
+    #db.export_to_csv_file(stream)  # all tables
+    response.headers['Content-Type'] = gluon.contenttype.contenttype('.csv')
+    response.headers['Content-disposition'] = 'attachment; filename=dbcross-%s.csv' % request.now.date()
+    return stream.getvalue()
 
 @auth.requires_membership('administrators')
 #@auth.requires_membership('managers')
@@ -239,17 +267,28 @@ def restore():
     if form.process().accepted:
         try:
             f = form.vars.fn.file
+            print f.name
             if f.name != None:  # is tmp file, txt
-                f = import_from_txt1(f)
-            db.import_from_csv_file(f, restore=True)
-            msg = T('Database restored')
+                if request.vars.mode != 'csv': f = import_from_txt1(f)
+                if f:
+                    db.import_from_csv_file(f, restore=True)
+                    msg = T('Database restored')
+            else:
+                msg = L._ERROR_
         except Exception as msg:
             pass
         session.flash = msg
-        #redirect_updatemenu(URL('index'))
         redirect(URL('index'))
     response.view='default/dialog.html'
     return dict(form=form, title=L._IMPORT_)
+
+@auth.requires_membership('administrators')
+def cleardb():
+    db.plint_table.truncate()
+    db.vertical_table.truncate()
+    db.cross_table.truncate()
+    session.flash = T('Database cleared')
+    redirect(URL('index'))
 
 def user():
     """

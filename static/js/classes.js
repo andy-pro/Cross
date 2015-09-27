@@ -1,9 +1,8 @@
 //================================================
 /*** Class: Form, performs form setup actions ***/
     /* constructor, usage: var form = new Form(...);
-    event_handler - callback will be performed, when any input changing occured
-    init - run event_handler, fill all inputs fields */
-function Form(event_handler, init) {
+    event_handler - callback will be performed, when any input changing occured */
+function Form(event_handler) {
 
     this.panel = $('div.panel').filter(':first');
     this.form = this.panel.find('form');
@@ -11,14 +10,13 @@ function Form(event_handler, init) {
     this.cache = {};     // use own data cache for ajax request
     this.inputfirst = this.form.find("input:text:visible:first");
     this.inputfirst.focus();
-    this.event_handler = event_handler;
+    this.event_handler = event_handler || undefined;
     this.inputs = {};
     this.inputstext = this.form.find('input[type!=checkbox][name]').on('input', {form:this}, $inputChange);
-    this.inputscheckbox = this.form.find('input:checkbox').on('change', {form:this}, $inputChange);
-    if (init) this.init;
+    this.inputscheckbox = this.form.find('input:checkbox[name]').on('change', {form:this}, $inputChange);
 }
 
-Form.prototype.init = function() {
+Form.prototype.init = function() {  // emulate run event_handler, fill all inputs fields
      this.inputfirst.trigger('input');
 }
 
@@ -54,7 +52,7 @@ function Link(form, url, link) {
     this.controls = {};
     this.titles = {};
     var tr = $('<tr>');
-    for (var i = 0; i < this.depth; i++) {
+    for(var i = 0; i < this.depth; i++) {
         var td = $('<td>');
         var sel = $('<select>', {class:"form-control", name:stages[i]+"_"+this.index}).prop('disabled', true).data('stage', stages[i]).appendTo(td);
         sel.on('change', {this:this, form:form}, $selectChange);
@@ -101,7 +99,7 @@ Link.prototype.setPlint = function() {
                     self.plints = self.vertical[self.url].data; // shortcut, [url] - content of cache defined by urls, specific of "aLoad"
                     //console.log(plints)
                     if (self.plints.length) {
-                        El = self.controls.plintEl;
+                        var El = self.controls.plintEl;
                         if (_DEBUG_) $.each(self.plints, function() {El.append($('<option>').text(this[1]+' : '+this[0]).attr('value', this[0]));});
                             else $.each(self.plints, function() {El.append($('<option>').text(this[1]).attr('value', this[0]));});
                         El.prop('disabled', false);
@@ -115,7 +113,7 @@ Link.prototype.setPlint = function() {
                             pair = 1;
                         }
                         self.plintTitle();
-                        si = El[0].selectedIndex;
+                        var si = El[0].selectedIndex;
                         if (self.depth > 3) {
                             El = self.controls.pairEl;
                             El.enumoptions(self.plints[si][2]);

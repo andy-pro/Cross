@@ -3,12 +3,6 @@
 import os, time
 from gluon.storage import Storage
 
-_CREATE_NEW_CROSS_ = T('Create new cross')
-_NEW_CROSS_ = T('New cross')
-_EDIT_ = T('Edit ')
-_EDIT_CROSS_ = T('Edit cross')
-_EDIT_VERTICAL_ = T('Edit vertical')
-_ERROR_ = T('Error')
 _404_ = URL('static', '404.html')
 
 #==================================================================
@@ -25,6 +19,8 @@ L._COUNT_ = T('Count')
 L._CROSS_ = T('Cross')
 L._DB_UPD_ = T('Database update success!')
 L._DEL_ = T('Delete')
+L._EDITOR_ = T('Editor')
+L._ERROR_ = T('Error')
 L._IMPORT_ = T('Import DB')
 L._FIND_ = T('Find')
 L._FNDRES_ = T('Found results for "%s"')
@@ -34,6 +30,8 @@ L._FOUND_ = T('Found: ')
 L._HELP_ = T('Help')
 L._HOME_ = T('Home')
 L._LAST_MOD_ = T('Last modified')
+L._MERGE_ = T('Merge')
+L._NEW_CROSS_ = T('New cross')
 L._NEWPL_ = T('New plint')
 L._NEWS_ = T('News')
 L._NOCHANGE_ = T('No changes')
@@ -41,6 +39,8 @@ L._NOT_CROSSED_ = T('Not crossed')
 L._OLDPL_ = T('Existing plint')
 L._PAIR_ = T('Pair')
 L._PAIR_T_ = T('Pair titles')
+L._PASTE_ = T('Paste')
+L._PASTE_CB_ = T('Paste from Clipboard')
 L._PLINT_ = T('Plint')
 L._PLINT_T_ = T('Plint title')
 L._REPLACE_ = T('Replace')
@@ -145,7 +145,10 @@ class Vertical:
                 maindata = dict(comdata=vars['comdata_'+si])
                 if vars['start1_'+si]:
                     maindata['start1'] = vars['start1_'+si]
-                if plint_update(xp.id, maindata, {}):
+                pairdata = {}
+                for pj in xrange(1, 11):
+                    pairdata[pj] = vars['pid_%s_%i' % (si, pj)] or ''
+                if plint_update(xp.id, maindata, pairdata):
                     mainchange = True
                 if pc and pi < pc and vars['rcomdata_'+si]:
                     maindata = dict(comdata=vars['rcomdata_'+si])
@@ -185,11 +188,18 @@ class Plint:
         for i in xrange(0, 10):
             v = pnew[i] if pl > i else ''
             pairdata[i+1] = v
-        return plint_update(self.index, maindata, pairdata)
+        return plint_update(self.index, maindata, pairdata, bool(vars.merge))
 
 #==================================================================
 
-def plint_update(index, maindata, pairdata):
+def plint_update(index, maindata, pairdata, merge=False):
+    """
+    index - record id
+    maindata - dict, possible keys: title, start1, comdata
+    pairdata - dict, possible keys: 1, 2, ... 10: value - pair title
+    merge - boolean, if True, new pair title merge with existing
+    used by editpair, editfound, editplint (through Plint.update), editvertical (through Vertical.update)
+    """
     plint = db.plint_table[index]
     whenwho = get_whenwho()
     mainchange = False
@@ -204,6 +214,7 @@ def plint_update(index, maindata, pairdata):
         for key in keys:
             sk = str(key)
             pairkey = 'pid' + sk
+            if merge: pairdata[key] = plint(pairkey) + pairdata[key]
             if plint(pairkey) != pairdata[key]:
                 mainchange = True
                 maindata[pairkey] = pairdata[key]

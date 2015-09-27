@@ -24,15 +24,17 @@ response.google_analytics_id = None
 
 response.menu = [
     (L._HOME_, False, URL('default', 'index#')),
-    (L._NEWS_, False, URL('default', 'index#/vertical?news=true'))
+    (L._NEWS_, False, URL('default', 'index#/vertical', vars={'news':'true'}))
 ]
 #response.menu.append((T('Import DB'), False, URL('default', 'restore')))
 
-if auth.has_membership('administrators'):
-    response.toolsmenu = LI(A(L._TOOLS_, _href='#'),
-        UL(LI(A(I(_class="glyphicon glyphicon-upload"), ' ', L._BACKUP_, _href=URL('default', 'backup'))),
-        LI(A(I(_class="glyphicon glyphicon-download"), ' ', L._RESTORE_, _href=URL('default', 'restore', args=['csv']))), LI(_class="divider"),
-        LI(A(I(_class="glyphicon glyphicon-import"), ' ', L._IMPORT_, _href=URL('default', 'restore'))),
-        LI(A(I(_class="glyphicon glyphicon-warning-sign"), ' ', L._ADMIN_DB_, _href=URL('appadmin', 'index'))), LI(_class="divider"),
-        LI(A(I(_class="glyphicon glyphicon-remove"), ' ', L._CLEAR_DB_, _href=URL('default', 'cleardb'))),
-        _class="dropdown-menu"), _class="dropdown")
+if auth.has_membership('managers'):
+    tools_menu = [LI(A(I(_class="glyphicon glyphicon-th-list"), ' ', L._NEW_CROSS_, _href='javascript:edit("cross?new=true")'))]
+    if auth.has_membership('administrators'):
+        hr = LI(_class="divider")
+        tools_menu.append((hr, LI(A(I(_class="glyphicon glyphicon-upload"), ' ', L._BACKUP_, _href=URL('default', 'backup'))),
+                           LI(A(I(_class="glyphicon glyphicon-download"), ' ', L._RESTORE_, _href=URL('default', 'restore', vars={'mode':'csv'}))), hr,
+                           LI(A(I(_class="glyphicon glyphicon-import"), ' ', L._IMPORT_, _href=URL('default', 'restore'))),
+                           LI(A(I(_class="glyphicon glyphicon-warning-sign"), ' ', L._ADMIN_DB_, _href=URL('appadmin', 'index'))), hr,
+                           LI(A(I(_class="glyphicon glyphicon-remove"), ' ', L._CLEAR_DB_, _href=URL('default', 'cleardb')))))
+    response.toolsmenu = LI(A(L._TOOLS_, _href='#'), UL(tools_menu, _class="dropdown-menu"), _class="dropdown")

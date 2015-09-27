@@ -14,6 +14,7 @@ textarea.pair-titles {
     width: 100%;
     resize: none;
     padding-left: 50px;
+    font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
 }
 pre.mypre {
     margin: 0;
@@ -23,22 +24,21 @@ pre.mypre {
     white-space: pre-wrap;
 }
 div.table-container{
-    max-height: 500px;
+    width: 100%;
+    max-height: 568px;
     overflow: auto;
 }
-.checkbox label{
+.checkbox label, .radio label{
     color: #337ab7;
 }
-div.checkbox.inmenu{
-    color: #337ab7;
+/*div.checkbox.inmenu, div.radio.inmenu{*/
+.inmenu{
     padding-right: 50px;
-    margin: 0;
+    margin: 0!important;
 }
-
 .myright {
     text-align: right;
 }
-
 #ajaxlivesearch{
     display: none;
     background: #ffc;
@@ -97,7 +97,6 @@ div#editdialog {
     height:     100%;
     width:      100%;
     padding: 100px 50px;
-    /*margin: 0px auto;*/
 }
 
 a.mybtn-link {

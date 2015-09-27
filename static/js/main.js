@@ -38,7 +38,7 @@ $.fn.enumoptions = function (start) {
 	    else $.each(e, function (i) {this.text = i + start});
     } else {
         this.prop('disabled', false);   // if it was early cleared and disabled, append new options
-        for (i= 1; i <= 10; i++) {
+        for(var i= 1; i <= 10; i++) {
             if (_DEBUG_) this.append($('<option>').text(i+start-1 + _dbgstr1+String(i)).attr('value', i));
 		else this.append($('<option>').text(i+start-1).attr('value', i));
         }
@@ -81,7 +81,7 @@ function sLoad(ajaxurl, args, vars, senddata, type) {
     type = typeof type !== 'undefined' ? type : 'GET';
     var out;
     var url = '';
-    for (var i in args) url += '/' + args[i];
+    for(var i in args) url += '/' + args[i];
     if (!$.isEmptyObject(vars)) url += '?' + $.param(vars);
     //console.log(ajaxurl+'.json'+url)
 
@@ -114,7 +114,7 @@ function sLoad(ajaxurl, args, vars, senddata, type) {
 function aLoad(cache, callback, ajaxurl, args) {
     args = typeof args !== 'undefined' ? args : [];
     var url = '';
-    for (var i in args) url = url + '/' + args[i];
+    for(var i in args) url = url + '/' + args[i];
     if (!cache[ajaxurl]) {
         cache[ajaxurl] = {};
         cache[ajaxurl].targets = [];
@@ -152,7 +152,7 @@ function aLoad(cache, callback, ajaxurl, args) {
     var flash = $("div.flash");
     web2pyflash = function(msg, status, delay) {
         status = typeof status !== 'undefined' ? status : 'success';
-        delay = typeof delay !== 'undefined' ? delay : 3000;
+        delay = typeof delay !== 'undefined' ? delay : 5000;
         flash.html('<button type="button" class="close" aria-hidden="true">&times;</button>' + msg);
         var color;
         switch (status) {
@@ -165,7 +165,7 @@ function aLoad(cache, callback, ajaxurl, args) {
         if (delay) flash.slideDown().delay(delay).slideUp();
             else flash.slideDown();
     }
-    web2pynoflash = function() { flash.slideUp(); }
+    web2pynoflash = function() { flash.slideUp().html(''); }
 })();
 //======================================
 /*** Simple JavaScript Templating John Resig - http://ejohn.org/ - MIT Licensed ***/
@@ -277,9 +277,9 @@ edit = function() { // args is: 0 - controller name (some 'editpair' or 'editfou
     if (!$scope.user) url = `user/login?_next=${rootpath}index${escape(window.location.hash)}`;	// MDN templating
     else {
         var url = '#/edit'+arguments[0], len = arguments.length;
-        //for (idx in arguments) url += arguments[idx] + '/'; // assign url some /#editpair/arg1/arg2, version with args only
+        //for(var idx in arguments) url += arguments[idx] + '/'; // assign url some /#editpair/arg1/arg2, version with args only
         if (len>1) {
-            for(var i=1;i<len;i++) {
+            for(var i=1; i<len; i++) {
 		arg = arguments[i];
 		if (typeof arg == "string" && arg.indexOf('=') > 0) vars.push(arg);
 		else url += '/'+arguments[i];
@@ -339,6 +339,6 @@ edit = function() { // args is: 0 - controller name (some 'editpair' or 'editfou
 //console.error('error');
 
 //console.time("assignments");
-//for (var i=0; i<1000000; i++)
+//for(var i=0; i<1000000; i++)
   //var a = 1;
 //console.timeEnd("assignments");
