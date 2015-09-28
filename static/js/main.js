@@ -1,7 +1,7 @@
 /*** Global constants  ***/
 const rootpath = '/Cross/default/';
 const staticpath = '/Cross/static/';
-const rootpathajax = rootpath + 'ajax_';
+const rootpathajax = '/Cross/ajax/';
 //const _DEBUG_ = true;
 const _DEBUG_ = false;
 const _dbgstr1 = ' : value';
