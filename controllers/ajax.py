@@ -59,13 +59,12 @@ def index():
     return {'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.vertical_table.parent == r.id).select()}} for r in db(db.cross_table).select()}}
 
 def vertical():
-    query = request.vars.search or False
-    #print query
+    search = request.vars.search or False
     news = bool(request.vars.news)
     title = cross = ''
-    if query:
-        rows = search_plints(query)
-        header = T('Found results for "%s"') % query if rows else '"%s" - %s' % (query, response.searchstatus)
+    if search:
+        rows = search_plints(search)
+        header = T('Found results for "%s"') % search if rows else '"%s" - %s' % (search, response.searchstatus)
     elif news:
         rows = db(db.plint_table).select(orderby=~db.plint_table.modon, limitby=(0, 50))
         header = T('Last modified')
@@ -104,9 +103,9 @@ def vertical():
         if news:
              td.append((plint(pairtitles[idx]),idx))
         tr['pairs'] = td
-        if query or news: add_root(tr, plint)
+        if search or news: add_root(tr, plint)
         plints.append(tr)
-    return dict(header=header, query=query, news=news, plints=plints, users=users, vertical=title, cross=cross)
+    return dict(header=header, plints=plints, users=users, vertical=title, cross=cross)
 
 def plints():
     return dict(data=[(i.id,i.title,int(i.start1)) for i in db(db.plint_table.parent == request.args(0, cast = int)).select(*pfset1, orderby=db.plint_table.id)])
@@ -168,7 +167,7 @@ def getchain(q, exclude=False, pairId=''):
                     if pairId == '%s_%s' % (plint.id, i+1):
                         exclude = False
                         continue
-                tr = {'plintId':plint.id, 'pairId':i+1, 'plint':plint.title, 'start1':int(plint.start1)}
+                tr = dict(plintId=plint.id, pairId=i+1, plint=plint.title, start1=int(plint.start1), comdata=plint.comdata)
                 add_root(tr, plint)
                 pairs.append(tr)
     return pairs
@@ -191,7 +190,7 @@ def search_plints(q, like=True):
         else:
             queries = [db.plint_table[field] == q for field in pairtitles]
         query = reduce(lambda a, b: (a | b), queries)
-        result = db(query).select()
+        result = db(query).select(orderby=db.plint_table.root)  # sort by crosses
         response.searchstatus = 'OK' if result else T('not found!')
         return result
     else:

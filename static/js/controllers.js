@@ -8,13 +8,11 @@ function CrossCtrl(params, route) {
 
 //======================================
 /*** Vertical Controller ***/
-function VerticalCtrl(params, route) {	// requests: #/vertical/id, #/vertical?search=query, #/vertical?news=true
-
-    wrapToggle = function(checked) { $('table.vertical td').css({'white-space': checked ? 'pre-line' : 'nowrap'}); localStorage.wraptext = checked; }
-    editChain = function(checked) { localStorage.editchain = checked; }
+function VerticalCtrl(params, route) {	// requests: #/vertical/id, #/vertical?search=search, #/vertical?news=true
 
     $scope = sLoad(route.ajaxurl, {params:params});
-    var header = $scope.query || '', news = $scope.news, verticalId = false;
+    var search = params.vars.search, news = params.vars.news, verticalId = false;
+    var header = search || '';
     mastersearch.val(header.unescapeHTML());
     header= $scope.header;
     if (!news) {
@@ -24,14 +22,16 @@ function VerticalCtrl(params, route) {	// requests: #/vertical/id, #/vertical?se
 	    href = `#/editvertical/${verticalId}`;
 	    _title = `${L._EDIT_VERT_} ${$scope.vertical}`;
 
-	} else { href = `#/editfound?search=${$scope.query}`; _title = ''; }
+	} else {
+		href = `#/editfound?search=${search}`;
+		_title = '';
+	    }
 	header = `<a href="${href}" title="${_title}">${header}</a>`;
       }
 
-    render(route, news?L._NEWS_:$scope.header, {plints:$scope.plints, users:$scope.users, header:header, query:$scope.query, news:news, verticalId:verticalId});
-
-    if (localStorage.wraptext == "true") { $("#wraptext").prop("checked", true); wrapToggle(true); }
-    if (localStorage.editchain == "true") { $("#editchain").prop("checked", true); }
+    render(route, news?L._NEWS_:$scope.header, {plints:$scope.plints, users:$scope.users, header:header, search:search, news:news, verticalId:verticalId});
+    set_wraptext();
+    set_editchain();
 }
 /* end vertical controller */
 
@@ -41,8 +41,9 @@ function ChainCtrl(params, route) {
     params.args.push('chain')
     $scope = sLoad(route.ajaxurl, {params:params});
     render(route, $scope.address, {chain:$scope});
+    set_editchain();
 }
-/* end vertical controller */
+/* end chain controller */
 
 //======================================
 /*** Edit Cross Controller ***/
@@ -320,7 +321,6 @@ function EditPairCtrl(params, route) {
 function EditFoundCtrl(params, route) {
 
     function refreshFoundTable() {
-	//console.time("assignments");
         var ftext = inputs.find.escapeHTML();
         var rtext = inputs.replace.escapeHTML();
 	var out = '<span style="background-color: #ff6">'+(inputs.follow ? rtext : ftext)+'</span>';
@@ -329,7 +329,6 @@ function EditFoundCtrl(params, route) {
 	    pair.cell.innerHTML = _mypre.format(pair.title.replace(ftext, out));
 	    pair._title = pair.title.replace(ftext, rtext);
 	}
-	//console.timeEnd("assignments");
     }
 
     $scope = sLoad(route.ajaxurl, {params:params});
@@ -338,7 +337,7 @@ function EditFoundCtrl(params, route) {
     $.each($scope.plints, function(key, plint) {  // convert : array of plints to array of pairs
         var start1 = parseInt(plint.start1);
         $.each(this.pairs, function(idx, pair) {
-            if (pair[0].indexOf($scope.query) >= 0)
+            if (pair[0].indexOf(params.vars.search) >= 0)
                 fdata.push({cross: plint.cross,
 			    crossId: plint.crossId,
 			    vertical: plint.vertical,
@@ -352,7 +351,7 @@ function EditFoundCtrl(params, route) {
         });
     });
 
-    render(route, $scope.header, {query:$scope.query, header:$scope.header, count:fdata.length});
+    render(route, $scope.header, {search:params.vars.search, header:$scope.header, count:fdata.length});
     var form = new Form(refreshFoundTable);
     var inputs = form.inputs;
 

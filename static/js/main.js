@@ -274,20 +274,26 @@ document.onkeydown = function(e) {
     }
 }
 
-//A_Cross = function(o) { return `<a href='#/editcross/${o.crossId}' title='${L._EDIT_CROSS_} ${o.cross}'>${o.cross.escapeHTML()}</a>` }
-A_Cross = function(o) { return `<a href='#/editcross/${o.crossId}' title='${L._EDIT_CROSS_} ${o.cross}'>${o.cross}</a>` }
+function wrapToggle(checked) { $('table.vertical td').css({'white-space': checked ? 'pre-line' : 'nowrap'}); localStorage.wraptext = checked; }
+function editChain(checked) { localStorage.editchain = checked; }
+function CB_editChain() { return userId ? `<label><input id="editchain" type="checkbox" onclick="editChain(this.checked)">${L._CHAIN_}</label>` : ''; }
+function set_wraptext() { if (localStorage.wraptext == "true") { $("#wraptext").prop("checked", true); wrapToggle(true); } }
+function set_editchain() { if (localStorage.editchain == "true") { $("#editchain").prop("checked", true); } }
 
-A_Vertical = function(o, _class) {
+//A_Cross = function(o) { return `<a href='#/editcross/${o.crossId}' title='${L._EDIT_CROSS_} ${o.cross}'>${o.cross.escapeHTML()}</a>` }
+function A_Cross(o) { return `<a href='#/editcross/${o.crossId}' title='${L._EDIT_CROSS_} ${o.cross}'>${o.cross}</a>` }
+
+function A_Vertical(o, _class) {
     _class = _class ? `class="${_class}"` : '';
     //return `<a ${_class} href='#/vertical/${o.verticalId}' title='${L._VIEW_VERT_} ${o.vertical}'>${(o.header || o.vertical).escapeHTML()}</a>`; }
     return `<a ${_class} href='#/vertical/${o.verticalId}' title='${L._VIEW_VERT_} ${o.vertical}'>${o.header || o.vertical}</a>`; }
 
-A_Plint = function(o) {
+function A_Plint(o) {
     var start1 = o.pairId+o.start1-1;
     //return `<sup>${o.start1}</sup><a href="#/editplint/${o.plintId}" title="${L._EDIT_PLINT_} ${o.plint}">${o.plint.escapeHTML()}</a>`; }
     return `<sup>${o.start1}</sup><a href="#/editplint/${o.plintId}" title="${L._EDIT_PLINT_} ${o.plint}">${o.plint}</a>`; }
 
-A_Pair = function(o) {
+function A_Pair(o) {
     var start1 = o.pairId+o.start1-1;
     return `<a href="#/editpair/${o.plintId}/${o.pairId}" title="${L._EDIT_PAIR_} ${start1}">${L._PAIR_} ${start1}</a>`; }
 

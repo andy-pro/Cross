@@ -16,27 +16,29 @@
 </script>
 
 <script type="text/template" id="CrossTmpl">
-<% for(var ci in crosses ) {
+<%for(var ci in crosses ) {
 var verticals = crosses[ci]["verticals"]; %>
 <div class="col-md-4">
   <div class="panel panel-default">
     <div class="panel-heading"><% print(A_Cross({crossId:ci, cross:crosses[ci].title})); %></div>
     <div class="panel-body">
-      <% for( var cj in verticals ) print(A_Vertical({verticalId:cj, vertical:verticals[cj].title}, "mybtn-link")); %>
+      <%for( var cj in verticals ) print(A_Vertical({verticalId:cj, vertical:verticals[cj].title}, "mybtn-link"));%>
     </div>
   </div>
 </div>
-<% } %>
+<%}%>
 </script>
 
 <script type="text/template" id="VerticalTmpl">
   <div class="panel panel-default">
     <div class="panel-heading"><%=header%><%=btnBack%>
-      <div class="checkbox inmenu right">
-        <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)"><%=L._WRAP_%></label>
-        <label><input id="editchain" type="checkbox" onclick="editChain(this.checked)"><%=L._CHAIN_%></label>
-        <% if (Admin && verticalId) { %><a href="<%=rootpath%>backupvertical/<%=verticalId%>">Backup Vertical</a><% } %>
-      </div>
+      <%if (!news) {%>
+        <div class="checkbox inmenu right">
+          <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)"><%=L._WRAP_%></label>
+          <% print(CB_editChain()); %>
+          <%if (Admin && verticalId) {%><a href="<%=rootpath%>backupvertical/<%=verticalId%>">Backup Vertical</a><%}%>
+        </div>
+      <%}%>  
     </div>
     <table class="vertical table table-bordered table-striped"><tbody>
       <%for( var ci in plints) {
@@ -45,7 +47,7 @@ var verticals = crosses[ci]["verticals"]; %>
         var _pattr = 'href="#/editplint/%s" title="Plint: %s\n%s\n%s\nCommon data: %s"'.format(plint.id, plint.title, when, who, plint.comdata);
         %>
           <tr>
-          <% if (query || news) { print(pairRow(plint, 2, true)); } %>
+          <%if (search || news) { print(pairRow(plint, 2, true)); }%>
           <td class="colv1" style="border-right:2px solid #ddd;">
             <a <%=_pattr%>><%=plint.title%></a>
           </td>
@@ -61,7 +63,7 @@ var verticals = crosses[ci]["verticals"]; %>
                 else {
                         var pidx = idx+1;
                         if (t) { _title = t+"\n"+pair[1]+"\n"+users[pair[2]];
-                                if (t.indexOf(query) >= 0) found = 'class="found"';
+                                if (t.indexOf(search) >= 0) found = 'class="found"';
                         }
                     }
                 var href = ((news || !userId) ? '#/chain/' : '#/editpair/') + plint.id + '/' + pidx;
@@ -73,7 +75,7 @@ var verticals = crosses[ci]["verticals"]; %>
 
           if (!news) {
             t = plint.comdata, found = "commondata";
-            if (t && query && t.indexOf(query) >= 0) found += " cdfound"; %>
+            if (t && search && t.indexOf(search) >= 0) found += " cdfound"; %>
             <td class="<%=found%>" style="border-left:2px solid #ddd;">
               <a <%=_pattr%>><%=t%></a>
             </td>
@@ -85,20 +87,19 @@ var verticals = crosses[ci]["verticals"]; %>
 </script>
 
 <script type="text/template" id="ChainTmpl">
-<div class="col-md-6">
+<div class="col-md-8">
   <div class="panel panel-default">
-    <div class="panel-heading"><% print(A_Vertical(chain), btnBack); %></div>
+    <div class="panel-heading"><label><%=chain.title%></label><%=btnBack%>
+        <div class="checkbox inmenu right"><% print(CB_editChain()); %></div>
+    </div>
     <div class="panel-body">
-      <p><label><%=chain.title%></label></p>
       <p><i><%=chain.modinfo%></i></p>
     </div>
     <table class="table table-bordered table-condensed" style="display:normal">
-        <tr class="info"><% for( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %> </tr>
+        <tr class="info"><% for( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %><td><%=L._COMMON_DATA_%></td></tr>
         <% for( var ci in chain.chain ) {
             var link = chain.chain[ci];
-            print("<tr>");
-            print(pairRow(link));
-            print("</tr>");
+            print(`<tr>${pairRow(link)}<td>${link.comdata}</td></tr>`);
             } %>
     </table>
     <div class="panel-footer"><div class="myright"><%=L._FOUND_%><%=chain.chain.length%></div></div>
@@ -301,11 +302,11 @@ var verticals = crosses[ci]["verticals"]; %>
       <form class="form-horizontal edit">
         <div class="form-group">
           <label class="col-md-2 control-label"><%=L._FIND_%></label>
-          <div class="col-md-8"><input type="text" name="find" class="form-control" value="<%=query%>"></div>
+          <div class="col-md-8"><input type="text" name="find" class="form-control" value="<%=search%>"></div>
         </div>
         <div class="form-group">
           <label class="col-md-2 control-label"><%=L._REPLACE_%></label>
-          <div class="col-md-8"><input type="text" name="replace" class="form-control" value="<%=query%>"></div>
+          <div class="col-md-8"><input type="text" name="replace" class="form-control" value="<%=search%>"></div>
         </div>
         <div class="form-group">
             <div class="checkbox col-md-offset-2 col-md-8"><label>

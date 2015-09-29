@@ -20,7 +20,7 @@ Form.prototype.init = function() {  // emulate run event_handler, fill all input
      this.inputfirst.trigger('input');
 }
 
-$inputChange = function(event) {
+var $inputChange = function(event) {
     var El = $(this);
     var form = event.data.form;    // retrieve object 'this'
     form.inputstext.each(function() { form.inputs[this.name] = this.value; });
@@ -194,7 +194,7 @@ Link.prototype.addOptFromObj = function(data) {
 /*** End Class: Link ***/
 //======================================
 
-$selectChange = function(event) {
+var $selectChange = function(event) {
     var obj = event.data.this;    // retrieve object 'this'
     //console.log(event)
     var El = $(this);
