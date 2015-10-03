@@ -19,14 +19,14 @@ function VerticalCtrl(params, route) {	// requests: #/vertical/id, #/vertical?se
 	var href, _title;
 	if (params.args[0]) {
 	    verticalId = params.args[0];
-	    href = `#/editvertical/${verticalId}`;
+	    href = `${startpath}editvertical/${verticalId}`;
 	    _title = `${L._EDIT_VERT_} ${$scope.vertical}`;
 
 	} else {
-		href = `#/editfound?search=${search}`;
+		href = `${startpath}editfound?search=${search}`;
 		_title = '';
 	    }
-	header = `<a href="${href}" title="${_title}">${header}</a>`;
+	header = `<a href="${href}" title="${_title}" ajax="1">${header}</a>`;
       }
 
     render(route, news?L._NEWS_:$scope.header, {plints:$scope.plints, users:$scope.users, header:header, search:search, news:news, verticalId:verticalId});
@@ -286,6 +286,7 @@ function EditPairCtrl(params, route) {
         //~~~~~~$$$$$$$$$$$$$$$$$~~~~~~~~~~~~~
     }
 
+    if (localStorage.editchain == 'true') params.args.push('chain');
     $scope = sLoad(route.ajaxurl, {params:params});
     render(route, $scope.address, {pair:$scope});
     var form = new Form();
@@ -406,7 +407,6 @@ function EditFoundCtrl(params, route) {
                     },
 		    dataFilter: function(data) { return data.escapeHTML(); },
                     success: function(data){
-                        //oldvalue = searchvalue;
                         if (data.search.length) {
                             div.html(tmpl("liveSearchTmpl", data));
                             $("#ajaxlivesearch a").hover(
@@ -427,41 +427,20 @@ function EditFoundCtrl(params, route) {
     mastersearch.on('keyup', function(event) { keypress = false; getPairTitles(event); });
     mastersearch.on('input', getPairTitles);
 
-    //mastersearch.focusout(function(event){
-    //div.focusout(function(event){
     mastersearch.blur(function(event){
-	//log($("#ajaxlivesearch a").queue())
-	//log(event);
-	//var da = $("#ajaxlivesearch a");
-	//log(da.queue())
 	oldvalue = searchvalue;
 	hidelive();
         if (mastersearch.val() != searchvalue) {
 	    mastersearch.val(searchvalue);
 	    setTimeout(function(){mastersearch.focus()}, 10);
-	    //mastersearch.focus();
-	    //$(document).queue(function(){mastersearch.focus();});
-	    //$(document).dequeue();
-	    //event.preventDefault;
-	    //event.stopImmediatePropagation();
-	    //return false;
 	}
-        //setTimeout(function(){hidelive()},500);
     });
 
     $('form.livesearch').submit(function() {
         var value = mastersearch.val();
-	//event.preventDefault();
         if (value.length > 2) {
             hidelive();
-            //log(decodeURIComponent(value))
-            //log(encodeURIComponent(value))
-            //log(encodeURI(value))
-            //location.hash = '#/vertical?search=' + encodeURIComponent(value);
-            //location.hash = '#/vertical?search=' + encodeURI(value);
-            //location.hash = '#/vertical?' + $("form.search").serialize(); // escape?
-            location.hash = '#/vertical?search=' + value;
-            //location.hash = '#/vertical?search=' + escape(value);
+            Router.navigate(startpath + 'vertical?search=' + value, true);
         } else web2pyflash(value + ' : ' + L._TOOSHORT_, 'danger');
         return false;
     });

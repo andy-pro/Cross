@@ -1,29 +1,30 @@
 /*** Global constants  ***/
+const mainpage = 'index';
 const rootpath = '/Cross/default/';
+const startpath = rootpath + mainpage + '/';
 const staticpath = '/Cross/static/';
 const rootpathajax = '/Cross/ajax/';
-//const _DEBUG_ = true;
+//const _DEBUG_ = true, _dbgstr1 = ' : value';
 const _DEBUG_ = false;
-const _dbgstr1 = ' : value';
 const _mypre = '<pre class="mypre">%s</pre>';
 const $clrp = 'panel-primary', $clrs = 'panel-success', $clri = 'panel-info', $clrw = 'panel-warning', $clrd = 'panel-danger';
 const stages = ['cross','vertical','plint','pair'];
+const targetDIV = 'crosshome';	// content div, default
 
 //======================================
 /*** log Helper  ***/
 function log(msg) { console.log(msg); }
 //======================================
-/*** String escape Helper  ***/
+/*** String Helpers  ***/
 String.prototype.escapeHTML = function() { return this.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\\"/g,'&quot;'); }
 String.prototype.unescapeHTML = function() { return this.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"'); }
-/*** String format Helper  ***/
+String.prototype.clearSlashes = function() { return this.replace(/\/$/, '').replace(/^\//, ''); }
 String.prototype.format = function() {
     var newStr = this, i = 0;
     while (/%s/.test(newStr)) newStr = newStr.replace("%s", arguments[i++]);
     return newStr;
 }
-// or use javascript embedded expression format:
-// `string1${arg1}string2${arg2}string3`
+// or use javascript embedded expression format: `string1${arg1}string2${arg2}string3`
 //======================================
 //---------- jQuery extension function ---------------
 $.fn.settofirst = function() { $(':nth-child(1)', this).attr('selected', 'selected'); }
@@ -45,10 +46,6 @@ $.fn.enumoptions = function (start) {
     }
 }
 //======================================
-function login_request(next) { return `user/login?_next=${rootpath}index${encodeURIComponent(next || '')}` }
-// status: 401 - UNAUTHORIZED; 403 - FORBIDDEN; 404 - NOT FOUND
-function raise_html(s, txt) { window.location.href = (s==401) ? login_request() : 'error/%s/%s'.format(s, txt); }
-//======================================
 function addFormKey(dest, src) {
     dest.push({name:'user', value:userId});
     $.each(['formname', 'formkey'], function(){dest.push({name:String(this), value:src[this]})});
@@ -61,16 +58,15 @@ function saveData(data, formdata, event) {
     event.stopPropagation();
     if (formdata.formkey && userId) {
 	addFormKey(data, formdata); // destination, source
-	//console.log(data)
 	data = sLoad('update', {data:data, type:'POST'});
     } else {
 	data.details = 'Security error!';
 	data.status = false;
-	data.location = '#';
+	data.location = startpath;
     }
     if (data) {
 	web2pyflash(data.details, data.status ? 'success' : 'danger');
-	if (data.location) window.location.href = data.location;
+	if (data.location) Router.navigate(data.location, true);
 	else history.back();
     }
 }
@@ -97,10 +93,8 @@ function sLoad(ajaxurl, opts) {
 	    Admin=Boolean(jqXHR.getResponseHeader('Admin'));
 	},
         error: function(jqXHR, txt, obj) {
-	    console.warn(jqXHR);
-	    console.warn(txt);
-	    console.warn(obj);
-	    raise_html(jqXHR.status, txt);
+	    console.warn(jqXHR); console.warn(txt); console.warn(obj);
+	    raise_error(jqXHR.status, txt);
 	}
     });
     return out;
@@ -200,52 +194,8 @@ function aLoad(cache, callback, ajaxurl, args) {
 })();
 function render(route, title, context) {
     document.title = title.unescapeHTML();
-    if (route.targetEl) route.targetEl.innerHTML = tmpl(route.templateId, context);
+    targetEl.innerHTML = tmpl(route.templateId, context);
 }
-
-//======================================
-/*** Router ***/
-(function(){
-    var routes = {};    // A hash to store our routes:
-    const targetDIV = 'crosshome';	// content div, default
-
-    route = function (args) {	// The route registering function:
-	var path = args[0].toLowerCase(),
-	    name = args[1] || args[0];
-	routes[path] = {ajaxurl: path || 'index', templateId: name+'Tmpl', controller: window[name+'Ctrl'], targetId: args[2] || targetDIV};
-    }
-
-    router = function  () {  // version with regex, replace
-	var params = {}, route;
-	params.vars = {};
-	params.args = location.hash.split('?');
-	if (params.args.length > 1) { $.each(params.args[1].split('&'), function(){ route=this.split('='); params.vars[route[0]]=route[1]}); } // variables exist
-	params.args = params.args[0].split('/');    // [''] - for home, ['#', 'part1', 'part2', ...]
-	if (params.args.length < 2) params.args.push('');
-	//console.info(params);
-	route = params.args[1];
-	// redirect to web2py auth dialog if UNAUTHORIZED
-	if (route.indexOf('edit')>=0 && !userId) location.href = login_request(currentURL);
-	else {
-	    // spike, for "Edit chain" in Vertical view, add new arg "/chain" if checked checkbox
-	    if (route == 'editpair' && localStorage.editchain == 'true') {
-		params.args.push('chain');
-		//location.replace(location.href+'/chain');
-	    }
-	    // end spike
-	    route = routes[route];   // Get route by url
-	    if (route && route.controller) {
-		route.targetEl = document.getElementById(route.targetId); // Lazy load view element
-		if (route.targetEl) {
-		    params.args = params.args.slice(2);
-		    route.controller(params, route);
-		}
-	    }
-	}
-	currentURL = location.hash; // this is allow return to current page after login
-	//log(currentURL)
-    }
-})();
 //======================================
 //************* START APPLICATION *********
 $(function() {	// execute on document load
@@ -255,47 +205,44 @@ $(function() {	// execute on document load
     /*** Global inline templates ***/
     btnOkCancel = tmpl("btnOkCancelTmpl", {});
     btnBack = tmpl("btnBackTmpl", {});
-
-/***  Set routes. args: ( [ path(toLowerCase), [name=path, by default] ] )  ***/
-/***  templateId = name+Tmpl, controller = name+Ctrl  ***/
-    $.each([['','Cross'],['Vertical'],['Chain'],['EditCross'],['EditVertical'],['EditPlint'],['EditPair'],['EditFound']], function () { route(this); });
-    window.addEventListener('hashchange', router);    // Listen on hash change
-    router();	//************* START APPLICATION *********
+    /***  Set routes. args: ( [ path(toLowerCase), [name=path, by default] ] )  ***/
+    /***  templateId = name+Tmpl, controller = name+Ctrl  ***/
+    $.each([['','Cross'],['Vertical'],['Chain'],['EditCross'],['EditVertical'],['EditPlint'],['EditPair'],['EditFound']], function () { Router.add(this); });
+    Router.navigate(get_url());	//************* START APPLICATION *********
+    $('body').on('click', 'a[ajax]', function(e){ e.preventDefault(); Router.navigate($(this).attr('href'), true); });
+    window.addEventListener("popstate", function(e) { e.preventDefault(); Router.navigate(get_url()); });
 });
 
-var $scope, userId, Admin, currentURL, L, tbheaders, btnOkCancel, btnBack;
-var ajaxstate = {during:false, callback:[], count:0, cache:[]};
-var mastersearch = $("#master-search");
+var $scope, userId, Admin, L, tbheaders, btnOkCancel, btnBack,
+    targetEl = document.getElementById(targetDIV),
+    ajaxstate = {during:false, callback:[], count:0, cache:[]},
+    mastersearch = $("#master-search");
 
-document.onkeydown = function(e) {
-    if (e.keyCode == 27) { // escape key code
-        history.back();
-        return false;
-    }
-}
+document.onkeydown = function(e) { if (e.keyCode == 27) { history.back(); return false; } } // escape key code
 
+function get_url() { return decodeURI(location.pathname + location.search); }
+function login_request(next) { return rootpath + 'user/login?_next=' + (next || startpath); }
+// status: 401 - UNAUTHORIZED; 403 - FORBIDDEN; 404 - NOT FOUND
+function raise_error(s, txt) { location.href = (s==401) ? login_request() : rootpath + 'error/%s/%s'.format(s, txt || ''); }
 function wrapToggle(checked) { $('table.vertical td').css({'white-space': checked ? 'pre-line' : 'nowrap'}); localStorage.wraptext = checked; }
 function editChain(checked) { localStorage.editchain = checked; }
 function CB_editChain() { return userId ? `<label><input id="editchain" type="checkbox" onclick="editChain(this.checked)">${L._CHAIN_}</label>` : ''; }
 function set_wraptext() { if (localStorage.wraptext == "true") { $("#wraptext").prop("checked", true); wrapToggle(true); } }
-function set_editchain() { if (localStorage.editchain == "true") { $("#editchain").prop("checked", true); } }
+function set_editchain() { if (localStorage.editchain == "true") $("#editchain").prop("checked", true); }
 
-//A_Cross = function(o) { return `<a href='#/editcross/${o.crossId}' title='${L._EDIT_CROSS_} ${o.cross}'>${o.cross.escapeHTML()}</a>` }
-function A_Cross(o) { return `<a href='#/editcross/${o.crossId}' title='${L._EDIT_CROSS_} ${o.cross}'>${o.cross}</a>` }
+function A_Cross(o) { return `<a href="${startpath}editcross/${o.crossId}" title="${L._EDIT_CROSS_} ${o.cross}" ajax="1">${o.cross}</a>` }
 
 function A_Vertical(o, _class) {
     _class = _class ? `class="${_class}"` : '';
-    //return `<a ${_class} href='#/vertical/${o.verticalId}' title='${L._VIEW_VERT_} ${o.vertical}'>${(o.header || o.vertical).escapeHTML()}</a>`; }
-    return `<a ${_class} href='#/vertical/${o.verticalId}' title='${L._VIEW_VERT_} ${o.vertical}'>${o.header || o.vertical}</a>`; }
+    return `<a ${_class} href="${startpath}vertical/${o.verticalId}" title="${L._VIEW_VERT_} ${o.vertical}" ajax="1">${o.header || o.vertical}</a>`; }
 
 function A_Plint(o) {
     var start1 = o.pairId+o.start1-1;
-    //return `<sup>${o.start1}</sup><a href="#/editplint/${o.plintId}" title="${L._EDIT_PLINT_} ${o.plint}">${o.plint.escapeHTML()}</a>`; }
-    return `<sup>${o.start1}</sup><a href="#/editplint/${o.plintId}" title="${L._EDIT_PLINT_} ${o.plint}">${o.plint}</a>`; }
+    return `<sup>${o.start1}</sup><a href="${startpath}editplint/${o.plintId}" title="${L._EDIT_PLINT_} ${o.plint}" ajax="1">${o.plint}</a>`; }
 
 function A_Pair(o) {
     var start1 = o.pairId+o.start1-1;
-    return `<a href="#/editpair/${o.plintId}/${o.pairId}" title="${L._EDIT_PAIR_} ${start1}">${L._PAIR_} ${start1}</a>`; }
+    return `<a href="${startpath}editpair/${o.plintId}/${o.pairId}" title="${L._EDIT_PAIR_} ${start1}" ajax="1">${L._PAIR_} ${start1}</a>`; }
 
 function pairRow(pair, depth, colv) {
     depth = typeof depth !== 'undefined' ? depth : 4;

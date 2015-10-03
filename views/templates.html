@@ -35,24 +35,22 @@ var verticals = crosses[ci]["verticals"]; %>
       <%if (!news) {%>
         <div class="checkbox inmenu right">
           <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)"><%=L._WRAP_%></label>
-          <% print(CB_editChain()); %>
-          <%if (Admin && verticalId) {%><a href="<%=rootpath%>backupvertical/<%=verticalId%>">Backup Vertical</a><%}%>
+          <% print(CB_editChain());
+             if (Admin && verticalId) {%><a href="<%=rootpath%>backupvertical/<%=verticalId%>">Backup Vertical</a><%}%>
         </div>
       <%}%>  
     </div>
     <table class="vertical table table-bordered table-striped"><tbody>
-      <%for( var ci in plints) {
+    <%  var mode = (news || !userId) ? 'chain' : 'editpair';
+        for( var ci in plints) {
         var plint = plints[ci];
         var pairs=plint.pairs, start1=parseInt(plint.start1), when=plint.modon, who=users[plint.modby];
-        var _pattr = 'href="#/editplint/%s" title="Plint: %s\n%s\n%s\nCommon data: %s"'.format(plint.id, plint.title, when, who, plint.comdata);
+        var _pattr = 'href="%seditplint/%s" title="Plint: %s\n%s\n%s\nCommon data: %s"'.format(startpath, plint.id, plint.title, when, who, plint.comdata);
         %>
           <tr>
           <%if (search || news) { print(pairRow(plint, 2, true)); }%>
-          <td class="colv1" style="border-right:2px solid #ddd;">
-            <a <%=_pattr%>><%=plint.title%></a>
-          </td>
-          <%
-            for( var cj in pairs ) {
+          <td class="colv1" style="border-right:2px solid #ddd;"><a <%=_pattr%> ajax="1"><%=plint.title%></a></td>
+          <%for( var cj in pairs ) {
                 var idx = parseInt(cj);
                 var pair = pairs[idx];
                 var t = pair[0], found = '', _title = "";
@@ -66,19 +64,14 @@ var verticals = crosses[ci]["verticals"]; %>
                                 if (t.indexOf(search) >= 0) found = 'class="found"';
                         }
                     }
-                var href = ((news || !userId) ? '#/chain/' : '#/editpair/') + plint.id + '/' + pidx;
+                var _href = '%s%s/%s/%s'.format(startpath, mode, plint.id, pidx);
             %>
-                 <td <%=found%>>
-                   <a href='<%=href%>' title="<%=_title%>"><sup><%=idx+start1%></sup><%=t%></a>
-                 </td>
+          <td <%=found%>><a href='<%=_href%>' title="<%=_title%>" ajax="1"><sup><%=idx+start1%></sup><%=t%></a></td>
           <% }
-
           if (!news) {
             t = plint.comdata, found = "commondata";
             if (t && search && t.indexOf(search) >= 0) found += " cdfound"; %>
-            <td class="<%=found%>" style="border-left:2px solid #ddd;">
-              <a <%=_pattr%>><%=t%></a>
-            </td>
+            <td class="<%=found%>" style="border-left:2px solid #ddd;"><a <%=_pattr%> ajax="1"><%=t%></a></td>
           <% }; %>
         </tr>
       <% }; %>

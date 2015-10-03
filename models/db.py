@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+startpath = '/Cross/default/index/'
 ## if SSL/HTTPS is properly configured and you want all HTTP requests to
 ## be redirected to HTTPS, uncomment the line below:
 # request.requires_https()
@@ -93,7 +94,7 @@ if is_admin: response.headers['Admin'] = True
 response.headers['User-Id'] = user_id
 
 if not request.ajax:
-    response.logo = A(B('CROSS'), XML('&trade;&nbsp;'), _class="navbar-brand",_href=URL('default', 'index'), _id="cross-logo")
+    response.logo = A(B('CROSS'), XML('&trade;&nbsp;'), _class="navbar-brand",_href=URL('default', 'index'), _id="cross-logo", _ajax="1")
     response.title = request.application.replace('_',' ').title()
     response.subtitle = ''
     ## read more at http://dev.w3.org/html5/markup/meta.name.html
@@ -103,9 +104,10 @@ if not request.ajax:
     response.meta.generator = 'Web2py Web Framework'
     ## your http://google.com/analytics id
     #response.google_analytics_id = None
-    response.menu = [(T('Home'), False, URL('default', 'index#')), (T('News'), False, URL('default', 'index#/vertical', vars={'news':'true'}))]
+    response.news = UL(LI(A(T('News'), _href=URL('default', 'index/vertical', vars={'news':'true'}), _ajax="1")), _class="nav navbar-nav")
+
     if auth.has_membership('managers'):
-        toolsmenu = [LI(A(I(_class="glyphicon glyphicon-th-list"), ' ', T('New cross'), _href=URL('default', 'index#/editcross', vars={'new':'true'})))]
+        toolsmenu = [LI(A(I(_class="glyphicon glyphicon-th-list"), ' ', T('New cross'), _href=URL('default', 'index/editcross', vars={'new':'true'}), _ajax="1"))]
         if is_admin:
             response.headers['Admin'] = True
             hr = LI(_class="divider")

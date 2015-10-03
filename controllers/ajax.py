@@ -245,25 +245,25 @@ def update():
         if vars.new:
             idx = db.cross_table.update_or_insert(title=vars.title)
             vars.delete = bool(idx)
-            if idx: result['location'] = '#/editcross/'+str(idx)
+            if idx: result['location'] = 'editcross/'+str(idx)
         else:
             cross = Cross(vars.cross)
             if vars.delete:
                 cross.delete()
-                result['location'] = '#'    # this will redirect to home page index/#
+                result['location'] = ''    # this will redirect to home page index/#
             else:
                 vt = cross.update(vars)
-                if vt: result['location'] = '#/editvertical/' + str(vt)
+                if vt: result['location'] = 'editvertical/' + str(vt)
                 vars.delete = bool(vt)
     elif formname == 'editvertical':
         # saveData from Edit Vertical Controller
         vertical = Vertical(vars.vertical)
         if vars.delete:
             vertical.delete()
-            result['location'] = '#'
+            result['location'] = ''
         else:
             vars.delete = vertical.update(vars)
-            result['location'] = '#/vertical/' + str(vertical.index)
+            result['location'] = 'vertical/' + str(vertical.index)
     elif formname == 'editplint':
         plint = Plint(vars.plint)
         if vars.delete:
@@ -287,4 +287,6 @@ def update():
     else:
         pass
     result['details'] = T('Database update success!') if vars.delete else T('No changes')
+    if result.has_key('location'):
+        result['location'] = startpath + result['location']
     return result

@@ -1,4 +1,39 @@
 //================================================
+/*** ========== Router ========== ***/
+var Router = {
+    routes: {},
+    root: startpath.clearSlashes(),
+    currentURL: '',
+    add: function(args) {
+	var path = args[0].toLowerCase(), name = args[1] || args[0];
+	this.routes[path] = {
+	    ajaxurl: path || mainpage,
+	    templateId: name+'Tmpl',
+	    controller: window[name+'Ctrl'],
+	    login_req: path.indexOf('edit')==0
+	}
+    },
+    navigate: function(url, addEntry) {
+	//console.info(url)
+	this.currentURL = get_url(); // this is allow return to current page after login
+	var params = {vars: {}, args: url.split('?')}, rt;
+	if (params.args.length > 1) { $.each(params.args[1].split('&'), function(){ rt=this.split('='); params.vars[rt[0]]=rt[1]}); } // variables exist
+	rt = params.args[0].clearSlashes().match(this.root);
+	if (rt) {
+	    params.args = rt.input.replace(this.root, '').split('/').slice(1);
+	    rt = params.args.length ? params.args.shift() : '';
+	    rt = this.routes[rt];
+	    if (rt) {
+		if (rt.login_req && !userId) location.href = login_request(this.currentURL);    // for this router calling currentURL is a previous URL
+		else {
+		    if (addEntry) { history.pushState(null, null, url); }
+		    rt.controller(params, rt);
+		}
+	    }
+	} //else location.href = url;
+    }
+}
+//==========================================================
 /*** Class: Form, performs form setup actions ***/
     /* constructor, usage: var form = new Form(...);
     event_handler - callback will be performed, when any input changing occured */
