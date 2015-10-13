@@ -204,7 +204,8 @@ $(function() {	// execute on document load
     tbheaders = [L._CROSS_, L._VERTICAL_, L._PLINT_, L._PAIR_];
     /*** Global inline templates ***/
     btnOkCancel = tmpl("btnOkCancelTmpl", {});
-    btnBack = tmpl("btnBackTmpl", {});
+    //btnBack = tmpl("btnBackTmpl", {});
+    btnBack = L._BTNBACK_;
     /***  Set routes. args: ( [ path(toLowerCase), [name=path, by default] ] )  ***/
     /***  templateId = name+Tmpl, controller = name+Ctrl  ***/
     $.each([['','Cross'],['Vertical'],['Chain'],['EditCross'],['EditVertical'],['EditPlint'],['EditPair'],['EditFound']], function () { Router.add(this); });
@@ -220,6 +221,7 @@ var $scope, userId, Admin, L, tbheaders, btnOkCancel, btnBack,
 
 document.onkeydown = function(e) { if (e.keyCode == 27) { history.back(); return false; } } // escape key code
 
+function db_delete() { if (confirm("A you sure?")) location.href = rootpath + 'cleardb'; }
 function get_url() { return decodeURI(location.pathname + location.search); }
 function login_request(next) { return rootpath + 'user/login?_next=' + (next || startpath); }
 // status: 401 - UNAUTHORIZED; 403 - FORBIDDEN; 404 - NOT FOUND

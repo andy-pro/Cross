@@ -6,6 +6,7 @@ def lexicon():
     _ADMIN_DB_ = T('Direct edit DB'),
     _BACK_ = T('Back'),
     _BACKUP_ = T('Backup DB'),
+    _BTNBACK_ = btnBack,
     _CANCEL_ = T('Cancel'),
     _CHAIN_ = T('Edit chain'),
     _CLEAR_DB_ = T('Clear DB'),
@@ -56,7 +57,7 @@ def lexicon():
     _WRAP_ = T('Wrap text'))
 
 def index():
-    return {'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.vertical_table.parent == r.id).select()}} for r in db(db.cross_table).select()}}
+    return {'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.verticals.parent == r.id).select()}} for r in db(db.crosses).select()}}
 
 def vertical():
     search = request.vars.search or False
@@ -66,14 +67,14 @@ def vertical():
         rows = search_plints(search)
         header = T('Found results for "%s"') % search if rows else '"%s" - %s' % (search, response.searchstatus)
     elif news:
-        rows = db(db.plint_table).select(orderby=~db.plint_table.modon, limitby=(0, 50))
+        rows = db(db.plints).select(orderby=~db.plints.modon, limitby=(0, 50))
         header = T('Last modified')
     else:
         vertical = Vertical(request.args(0, cast = int))
         title = vertical.title
         header = vertical.header
         cross = vertical.cross.title
-        rows = db(db.plint_table.parent == vertical.index).select(orderby=db.plint_table.id)
+        rows = db(db.plints.parent == vertical.index).select(orderby=db.plints.id)
     plints = []   #plints = {}
     for plint in rows:
         who = plint.modby
@@ -108,10 +109,10 @@ def vertical():
     return dict(header=header, plints=plints, users=users, vertical=title, cross=cross)
 
 def plints():
-    return dict(data=[(i.id,i.title,int(i.start1)) for i in db(db.plint_table.parent == request.args(0, cast = int)).select(*pfset1, orderby=db.plint_table.id)])
+    return dict(data=[(i.id,i.title,int(i.start1)) for i in db(db.plints.parent == request.args(0, cast = int)).select(*pfset1, orderby=db.plints.id)])
 
 def plintscd():    # add common data to response
-    return dict(data=[(i.id,i.title,int(i.start1),i.comdata) for i in db(db.plint_table.parent == request.args(0, cast = int)).select(*pfset1, orderby=db.plint_table.id)])
+    return dict(data=[(i.id,i.title,int(i.start1),i.comdata) for i in db(db.plints.parent == request.args(0, cast = int)).select(*pfset1, orderby=db.plints.id)])
 
 @auth.requires_membership('managers')
 def editcross():
@@ -186,11 +187,11 @@ def add_root(tr, plint):
 def search_plints(q, like=True):
     if q and test_query(q):
         if like:
-            queries = [db.plint_table[field].contains(q, case_sensitive=True) for field in pairtitles]
+            queries = [db.plints[field].contains(q, case_sensitive=True) for field in pairtitles]
         else:
-            queries = [db.plint_table[field] == q for field in pairtitles]
+            queries = [db.plints[field] == q for field in pairtitles]
         query = reduce(lambda a, b: (a | b), queries)
-        result = db(query).select(orderby=db.plint_table.root)  # sort by crosses
+        result = db(query).select(orderby=db.plints.root)  # sort by crosses
         response.searchstatus = 'OK' if result else T('not found!')
         return result
     else:
@@ -243,7 +244,7 @@ def update():
     if formname == 'editcross':
         # saveData from Edit Cross Controller
         if vars.new:
-            idx = db.cross_table.update_or_insert(title=vars.title)
+            idx = db.crosses.update_or_insert(title=vars.title)
             vars.delete = bool(idx)
             if idx: result['location'] = 'editcross/'+str(idx)
         else:

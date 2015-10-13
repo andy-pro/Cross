@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
-import cStringIO
-import csv
 
 def import_from_txt1(f):
+    """
+    convert txt file to cStringIO file in csv format
+    """
+    import cStringIO
+    import csv
+
     readstring = lambda f: f.readline().strip()
     cyr_to_lat = lambda s: s # s.replace('БМ', 'BM').replace('БКТ', 'BKT').replace('М', 'M').replace('К', 'K').replace('Р', 'P')
     table_header = lambda table, fset: writer.writerows([['TABLE ' + table], ['%s.%s' % (table, f) for f in fset]])
@@ -15,14 +19,14 @@ def import_from_txt1(f):
     csvfile = cStringIO.StringIO()
     writer = csv.writer(csvfile)    # by default, delimeter=',' and quotechar='"'
 
-    table_header('cross_table', ('id', 'title'))
+    table_header(tables[0], ('id', 'title'))
     crosses = []
     for i in xrange(int(f.readline())):
         writer.writerow([i+1, readstring(f)])   # cross_index, cross_title
         crosses.append([i+1, int(readstring(f))])  # cross_index, vertical count in cross
     table_footer()
 
-    table_header('vertical_table', ('id', 'parent', 'title'))
+    table_header(tables[1], ('id', 'parent', 'title'))
     verticals = []
     x = 1
     for cross in crosses:
@@ -32,7 +36,7 @@ def import_from_txt1(f):
             x += 1
     table_footer()
 
-    table_header('plint_table', ('id','root','parent')+plintfields+tuple(sum(pairfields,[])))
+    table_header(tables[2], ('id','root','parent')+plintfields+tuple(sum(pairfields,[])))
     plints = []
     for vertical in verticals:
         for i in xrange(vertical[2]):   # vertical[1] is a plint_count

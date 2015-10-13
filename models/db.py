@@ -3,7 +3,7 @@
 startpath = '/Cross/default/index/'
 ## if SSL/HTTPS is properly configured and you want all HTTP requests to
 ## be redirected to HTTPS, uncomment the line below:
-# request.requires_https()
+#request.requires_https()
 
 ## app configuration made easy. Look inside private/appconfig.ini
 from gluon.contrib.appconfig import AppConfig
@@ -12,6 +12,7 @@ from gluon.contrib.appconfig import AppConfig
 myconf = AppConfig()
 
 db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['all'], migrate_enabled=False)
+#db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['all'])
 
 ## by default give a view/generic.extension to all actions from localhost
 ## none otherwise. a pattern can be 'controller/function.extension'
@@ -46,8 +47,9 @@ auth.settings.registration_requires_approval = False
 auth.settings.reset_password_requires_verification = True
 
 #========= define tables ================================
-db.define_table('cross_table', Field('title', length=40))
-db.define_table('vertical_table', Field('parent', db.cross_table), Field('title', length=40))
+tables = 'crosses', 'verticals', 'plints'
+db.define_table('crosses', Field('title', length=40))
+db.define_table('verticals', Field('parent', db.crosses), Field('title', length=40))
 selfields = []
 pairfields = []     # this list contain [pid1, pmodon1, pmodby1], [pid2, pmodon2, pmodby2], ...
 pairtitles = []
@@ -60,9 +62,9 @@ for i in xrange(1, 11):
     selfields.append(Field(fnames[1], 'date', default=request.now.date()))
     selfields.append(Field(fnames[2], db.auth_user, default=auth.user))
 plintfields = ('title','start1','comdata','modon','modby')
-db.define_table('plint_table',
-                Field('root', db.cross_table),
-                Field('parent', db.vertical_table),
+db.define_table('plints',
+                Field('root', db.crosses),
+                Field('parent', db.verticals),
                 Field(plintfields[0], length=40, default=''),  # title
                 Field(plintfields[1], 'boolean', default=True),  # start1
                 Field(plintfields[2], length=40, default=''),  # comdata
@@ -70,7 +72,7 @@ db.define_table('plint_table',
                 Field(plintfields[4], db.auth_user, default=auth.user),  # modby
                 *selfields)
 pairtitles.append(plintfields[2])    # this list contain pid1, pid2,..., pid10, comdata
-pfset1 = [db.plint_table.id, db.plint_table.title, db.plint_table.start1, db.plint_table.comdata]
+pfset1 = [db.plints.id, db.plints.title, db.plints.start1, db.plints.comdata]
 
 ## after defining tables, uncomment below to enable auditing
 # auth.enable_record_versioning(db)
@@ -92,6 +94,7 @@ get_whenwho = lambda: dict(modon=request.now.date(), modby=user_id)
 is_admin = auth.has_membership('administrators')
 if is_admin: response.headers['Admin'] = True
 response.headers['User-Id'] = user_id
+btnBack = XML('<button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="%s (Esc)">&times;</button>' % T("Back"))
 
 if not request.ajax:
     response.logo = A(B('CROSS'), XML('&trade;&nbsp;'), _class="navbar-brand",_href=URL('default', 'index'), _id="cross-logo", _ajax="1")
@@ -116,30 +119,31 @@ if not request.ajax:
                 LI(A(I(_class="glyphicon glyphicon-plus"), ' ', T('Merge DB'), _href=URL('default', 'restore', vars={'mode':'csv', 'merge':'true'}))), hr,
                 LI(A(I(_class="glyphicon glyphicon-import"), ' ', T('Import DB'), _href=URL('default', 'restore'))),
                 LI(A(I(_class="glyphicon glyphicon-warning-sign"), ' ', T('Direct edit DB'), _href=URL('appadmin', 'index'))), hr,
-                LI(A(I(_class="glyphicon glyphicon-remove"), ' ', T('Clear DB'), _href=URL('default', 'cleardb')))))
+                LI(A(I(_class="glyphicon glyphicon-remove"), ' ', T('Clear DB'), _href="javascript:db_delete()")), hr,
+                LI(A(I(_class="glyphicon glyphicon-cog"), ' RESTful API', _href=URL('default', 'api/patterns')))))
         response.toolsmenu = LI(A(T('Tools'), _href='#'), UL(toolsmenu, _class="dropdown-menu"), _class="dropdown")
 
 class Cross:
     def __init__(self, _index):
         self.index = _index
-        self.record = db.cross_table[_index]
+        self.record = db.crosses[_index]
         if not self.record: raise HTTP(404)
         _rec = self.record
         self.title = _rec.title
         self.header = T('Cross')+' '+self.title
 
     def update(self, vars):
-        db.cross_table[self.index] = {'title': vars.title}
+        db.crosses[self.index] = {'title': vars.title}
         vt = vars.verticaltitle
-        return db.vertical_table.update_or_insert(title=vt, parent=self.index) if vt else None  # return id of new record
+        return db.verticals.update_or_insert(title=vt, parent=self.index) if vt else None  # return id of new record
 
     def delete(self):
-        del db.cross_table[self.index]
+        del db.crosses[self.index]
 
 class Vertical:
     def __init__(self, _index):
         self.index = _index
-        self.record = db.vertical_table[_index]
+        self.record = db.verticals[_index]
         if not self.record: raise HTTP(404)
         _rec = self.record
         self.cross = Cross(_rec.parent.id)
@@ -147,19 +151,19 @@ class Vertical:
         self.header = self.cross.header + ', %s %s' % (T('Vertical'), self.title)
 
     def delete(self):
-        del db.vertical_table[self.index]
+        del db.verticals[self.index]
 
     def update(self, vars):
         mainchange = False
         if self.title != vars.title:
-            db.vertical_table[self.index] = {'title': vars.title}
+            db.verticals[self.index] = {'title': vars.title}
             mainchange = True
         cnt = int(vars.count)
         if cnt:
             try:
                 fp = int(vars.from_plint)
                 fv = int(vars.from_vert)
-                outplints = db((db.plint_table.parent == fv) & (db.plint_table.id >= fp)).select(limitby = (0, cnt))
+                outplints = db((db.plints.parent == fv) & (db.plints.id >= fp)).select(limitby = (0, cnt))
                 pc = len(outplints)
                 pi = 0
             except:
@@ -170,9 +174,9 @@ class Vertical:
                 si = str(idx)
                 idx += 1
                 pt = vars['title_'+si]  # plint title, add new or modify if it exist
-                xp = db((db.plint_table.title==pt) & (db.plint_table.parent==self.index)).select().first()
+                xp = db((db.plints.title==pt) & (db.plints.parent==self.index)).select().first()
                 if not xp:
-                    xp = db.plint_table.insert(root=self.cross.index, parent=self.index, title=pt)
+                    xp = db.plints.insert(root=self.cross.index, parent=self.index, title=pt)
                 #plint = Plint(xp.id)
                 maindata = dict(comdata=vars['comdata_'+si])
                 if vars['start1_'+si]:
@@ -192,7 +196,7 @@ class Vertical:
 class Plint:
     def __init__(self, _index):
         self.index = _index
-        self.record = db.plint_table[_index]   # type <class 'gluon.dal.objects.Row'>
+        self.record = db.plints[_index]
         if not self.record: raise HTTP(404)
         _rec = self.record
         self.vertical = Vertical(_rec.parent)
@@ -208,7 +212,7 @@ class Plint:
     get_pair_titles = lambda self: [self.record(pairtitles[i]) for i in xrange(10)]
 
     def delete(self):
-        del db.plint_table[self.index]
+        del db.plints[self.index]
 
     def update(self, vars):
         maindata = dict(title=vars.title, start1=bool(vars.start1), comdata=vars.comdata)
@@ -228,7 +232,7 @@ def plint_update(index, maindata, pairdata, merge=False, mergechar=''):
     merge - boolean, if True, new pair title merge with existing
     used by editpair, editfound, editplint (through Plint.update), editvertical (through Vertical.update)
     """
-    plint = db.plint_table[index]
+    plint = db.plints[index]
     whenwho = get_whenwho()
     mainchange = False
     if maindata:
@@ -250,7 +254,7 @@ def plint_update(index, maindata, pairdata, merge=False, mergechar=''):
                 maindata['pmodby' + sk] = whenwho['modby']
     if mainchange:
         maindata.update(whenwho)
-        db.plint_table[index] = maindata
+        db.plints[index] = maindata
     return mainchange
 
 class Pair:

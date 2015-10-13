@@ -193,7 +193,7 @@
 'Search': 'Поиск',
 'Semantic': 'Semantic',
 'Services': 'Services',
-'Session expired!': 'Session expired!',
+'Session expired!': 'Сессия завершена!',
 'Sign Up': 'Регистрация',
 'Size of cache:': 'Size of cache:',
 'state': 'состояние',

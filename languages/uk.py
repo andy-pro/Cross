@@ -208,6 +208,7 @@
 'Search': 'Пошук',
 'Semantic': 'Семантика',
 'Services': 'Сервіс',
+'Session expired!': 'Сессію закінчено!',
 'Sign Up': 'Реєстрація',
 'Size of cache:': 'Розмір кешу:',
 'state': 'стан',
