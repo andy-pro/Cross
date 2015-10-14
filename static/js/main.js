@@ -1,9 +1,10 @@
 /*** Global constants  ***/
 const mainpage = 'index';
-const rootpath = '/Cross/default/';
+const app = '/Cross/'
+const rootpath = app + 'default/';
 const startpath = rootpath + mainpage + '/';
-const staticpath = '/Cross/static/';
-const rootpathajax = '/Cross/ajax/';
+const staticpath = app + 'static/';
+const rootpathajax = app + 'ajax/';
 //const _DEBUG_ = true, _dbgstr1 = ' : value';
 const _DEBUG_ = false;
 const _mypre = '<pre class="mypre">%s</pre>';

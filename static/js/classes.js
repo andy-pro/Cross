@@ -18,7 +18,9 @@ var Router = {
 	this.currentURL = get_url(); // this is allow return to current page after login
 	var params = {vars: {}, args: url.split('?')}, rt;
 	if (params.args.length > 1) { $.each(params.args[1].split('&'), function(){ rt=this.split('='); params.vars[rt[0]]=rt[1]}); } // variables exist
-	rt = params.args[0].clearSlashes().match(this.root);
+	rt = params.args[0].clearSlashes();
+	if (rt == app.clearSlashes() || rt == rootpath.clearSlashes()) rt = this.root;
+	rt = rt.match(this.root);
 	if (rt) {
 	    params.args = rt.input.replace(this.root, '').split('/').slice(1);
 	    rt = params.args.length ? params.args.shift() : '';
