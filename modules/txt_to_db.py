@@ -61,3 +61,41 @@ def import_from_txt1(f):
     csvfile.seek(0)
     #for line in csvfile: print line,
     return csvfile
+
+def __auth_init():
+    import cStringIO
+    csvfile = cStringIO.StringIO()
+    print >> csvfile, '''TABLE auth_user
+auth_user.id,auth_user.first_name,auth_user.last_name,auth_user.email,auth_user.password,auth_user.registration_key,auth_user.reset_password_key,auth_user.registration_id
+1,Michael,Savitsky,savitsky@uksatse.aero,"pbkdf2(1000,20,sha512)$a8a4ffb78f687c56$d617bed6a07637acc58b3b18c579f8a6f52a845f",,,
+2,Maria,Rurak,rurak@uksatse.aero,"pbkdf2(1000,20,sha512)$84eb544840f8b5e9$cbb150f0de7ca33f0d4148c70f5c225eaa2cc92f",,,
+3,Андрей,Проценко,andy@uksatse.aero,"pbkdf2(1000,20,sha512)$b5c2140a2b672fdf$f261b6588628fdf596fe9e16d98aa2e6b8738f4b",,1441952416-841c7e75-c52a-4bb3-9f04-fb4902a59b61,
+4,Super,User,admin@gmail.com,"pbkdf2(1000,20,sha512)$88d760b35e1819ab$57457bde2e6f6ec9064ee053c556e1226cd3b23a",,,
+5,Гость,Бесправный,a1@gmail.com,"pbkdf2(1000,20,sha512)$92f108658a796895$ce5f26e94c3ff1c281796ead928d472ecde1ab42",,,
+
+
+TABLE auth_group
+auth_group.id,auth_group.role,auth_group.description
+1,users,Viewing records only
+2,managers,Viewing and editing records
+3,administrators,Backup and restore database
+
+
+TABLE auth_membership
+auth_membership.id,auth_membership.user_id,auth_membership.group_id
+1,1,1
+2,1,2
+3,2,1
+4,2,2
+5,3,1
+6,3,2
+7,3,3
+9,4,1
+10,4,2
+11,4,3
+
+
+END
+'''
+    csvfile.seek(0)
+    return csvfile

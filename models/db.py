@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 
 startpath = '/Cross/default/index/'
-## if SSL/HTTPS is properly configured and you want all HTTP requests to
-## be redirected to HTTPS, uncomment the line below:
-#request.requires_https()
+#request.requires_https() # all HTTP requests to be redirected to HTTPS, uncomment this line
 
-## app configuration made easy. Look inside private/appconfig.ini
-from gluon.contrib.appconfig import AppConfig
-## once in production, remove reload=True to gain full speed
-#myconf = AppConfig(reload=True)
+from gluon.contrib.appconfig import AppConfig # private/appconfig.ini
+#myconf = AppConfig(reload=True) # once in production, remove reload=True to gain full speed
 myconf = AppConfig()
 
 db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['all'], migrate_enabled=False)

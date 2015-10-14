@@ -86,11 +86,19 @@ def restore():
     response.view='default/user.html'
     return dict(form=form)
 
+# make this function non private for using: def auth_init():
+def __auth_init():
+    import txt_to_db
+    f = txt_to_db.__auth_init()
+    db.import_from_csv_file(f, restore = True)
+    session.flash = 'Auth tables initialized'
+    redirect(URL('default', 'index'))
+
 @auth.requires_membership('administrators')
 def cleardb():
     for table in reversed(tables): db[table].truncate()
     session.flash = T('Database cleared')
-    redirect(URL('index'))
+    redirect(URL('default', 'index'))
 
 def user():
     return dict(form=auth())
