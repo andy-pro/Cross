@@ -4,35 +4,77 @@ var Router = {
     routes: {},
     root: startpath.clearSlashes(),
     currentURL: '',
+
     add: function(args) {
-	var path = args[0].toLowerCase(), name = args[1] || args[0];
-	this.routes[path] = {
-	    ajaxurl: path || mainpage,
-	    templateId: name+'Tmpl',
-	    controller: window[name+'Ctrl'],
-	    login_req: path.indexOf('edit')==0
+	var title = args[1], opts = args[2] || {};
+	var lowtitle = title.toLowerCase();
+	var ctrl = opts.index ? '' : lowtitle;
+	var path = args[0].clearSlashes();
+	var route = path+':'+ctrl;
+	this.routes[route] = {
+	    ajaxurl: lowtitle,
+	    templateId: title+'Tmpl',
+	    controller: window[title+'Ctrl'],
+	    login_req: opts.login_req
+	}
+	if (opts.login_path) this.login_path = path+'/'+ctrl;
+	if (opts.shortcuts) {
+	    path = path.split('/');
+	    title = '';
+	    for(var i=0; i<path.length-1; i++) {
+		title += path[i] + '/';
+		this.routes[title.clearSlashes()+':'+ctrl] = this.routes[route];
+	    }
 	}
     },
+
     navigate: function(url, addEntry) {
 	//console.info(url)
 	this.currentURL = get_url(); // this is allow return to current page after login
 	var params = {vars: {}, args: url.split('?')}, rt;
-	if (params.args.length > 1) { $.each(params.args[1].split('&'), function(){ rt=this.split('='); params.vars[rt[0]]=rt[1]}); } // variables exist
+	if (params.args.length > 1) { $.each(params.args[1].split('&'), function() { rt=this.split('='); params.vars[rt[0]]=rt[1]}); } // variables exist
 	rt = params.args[0].clearSlashes();
-	if (rt == app.clearSlashes() || rt == rootpath.clearSlashes()) rt = this.root;
-	rt = rt.match(this.root);
-	if (rt) {
-	    params.args = rt.input.replace(this.root, '').split('/').slice(1);
-	    rt = params.args.length ? params.args.shift() : '';
-	    rt = this.routes[rt];
-	    if (rt) {
-		if (rt.login_req && !userId) location.href = login_request(this.currentURL);    // for this router calling currentURL is a previous URL
-		else {
+	//console.info(rt);
+	//$.each(this.routes, function() {
+	    ////
+	    //log(this);
+
+	//});
+
+	for(var i in this.routes) {
+	    var route = i.split(':');
+	    //var re = rt.exec(new RegExp("^"+route[0]));
+	    //var re = new RegExp("^"+route[0]+"(\.+)").exec(rt);
+	    //log(route[0]);
+	    var re = rt.match("^"+route[0]+"(\.*)");
+	    if (re) {
+		params.args = re[1].clearSlashes().split('/');
+		var ctrl = params.args.shift();
+		if (ctrl == route[1]) {
+		    //log(re); log('ctrl = '+ctrl); log('args = '+params.args); log(this.routes[i].templateId);
 		    if (addEntry) { history.pushState(null, null, url); }
-		    rt.controller(params, rt);
+		    route = this.routes[i];
+		    route.controller(params, route);
 		}
 	    }
-	} //else location.href = url;
+	}
+
+	//var pos = 0;
+	//for(var i=0; i<4; i++) {
+	    //pos = rt.indexOf('/', pos+1);
+	    //if (pos<0) { pos=rt.length; break; }
+	//}
+	//var route = this.routes[rt.substring(0, pos)];
+	//log(rt.substring(0, pos));
+	//console.info(route);
+	//if (route) {
+	    //params.args = rt.substr(pos+1).split('/');
+	    //if (route.login_req && !userId) location.href = login_request(this.currentURL);    // for this router calling currentURL is a previous URL
+	    //else {
+		//if (addEntry) { history.pushState(null, null, url); }
+		//route.controller(params, route);
+	    //}
+	//} //else location.href = url;
     }
 }
 //==========================================================

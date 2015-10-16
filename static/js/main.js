@@ -4,7 +4,7 @@ const app = '/Cross/'
 const rootpath = app + 'default/';
 const startpath = rootpath + mainpage + '/';
 const staticpath = app + 'static/';
-const rootpathajax = app + 'ajax/';
+const rootajax = app + 'ajax/';
 //const _DEBUG_ = true, _dbgstr1 = ' : value';
 const _DEBUG_ = false;
 const _mypre = '<pre class="mypre">%s</pre>';
@@ -82,7 +82,7 @@ function sLoad(ajaxurl, opts) {
     if (!$.isEmptyObject(opts.params.vars)) url += '?' + $.param(opts.params.vars);
 
     $.ajax({
-        url: rootpathajax + ajaxurl + ".json" + url,
+        url: rootajax + ajaxurl + ".json" + url,
         type: opts.type || 'GET',
         async: false,
         data: opts.data,
@@ -110,7 +110,7 @@ function aLoad(cache, callback, ajaxurl, args) {
         cache[ajaxurl] = {};
         cache[ajaxurl].targets = [];
         $.ajax({
-            url: rootpathajax + ajaxurl + ".json" + url,
+            url: rootajax + ajaxurl + ".json" + url,
             //async: false,
 	    beforeSend: function(){
 		ajaxstate.during = true;
@@ -209,10 +209,23 @@ $(function() {	// execute on document load
     btnBack = L._BTNBACK_;
     /***  Set routes. args: ( [ path(toLowerCase), [name=path, by default] ] )  ***/
     /***  templateId = name+Tmpl, controller = name+Ctrl  ***/
-    $.each([['','Cross'],['Vertical'],['Chain'],['EditCross'],['EditVertical'],['EditPlint'],['EditPair'],['EditFound']], function () { Router.add(this); });
+    //$.each([['','Cross'],['Vertical'],['Chain'],['EditCross'],['EditVertical'],['EditPlint'],['EditPair'],['EditFound']], function () { Router.add(this); });
+    $.each([
+	[startpath, 'Cross', {index:true, shortcuts:true}],
+	[startpath, 'Vertical'],
+	[startpath, 'Chain'],
+	[startpath, 'EditCross', {login_req:true}],
+	[startpath, 'EditVertical', {login_req:true}],
+	[startpath, 'EditPlint', {login_req:true}],
+	[startpath, 'EditPair', {login_req:true}],
+	[startpath, 'EditFound', {login_req:true}],
+	[rootpath, 'User', {login_path:true}]
+	], function () { Router.add(this); });
+    //console.info(Router);
     Router.navigate(get_url());	//************* START APPLICATION *********
-    $('body').on('click', 'a[ajax]', function(e){ e.preventDefault(); Router.navigate($(this).attr('href'), true); });
-    window.addEventListener("popstate", function(e) { e.preventDefault(); Router.navigate(get_url()); });
+    $('body').on('click', 'a[ajax]', {add:true}, ajax_nav);
+    $('body').on('click', 'a[href*="default\/user"]', {}, ajax_nav);
+    window.addEventListener("popstate", function(e) { e.data={url:get_url()}; ajax_nav(e) });
 });
 
 var $scope, userId, Admin, L, tbheaders, btnOkCancel, btnBack,
@@ -221,8 +234,12 @@ var $scope, userId, Admin, L, tbheaders, btnOkCancel, btnBack,
     mastersearch = $("#master-search");
 
 document.onkeydown = function(e) { if (e.keyCode == 27) { history.back(); return false; } } // escape key code
-
-function db_delete() { if (confirm("A you sure?")) location.href = rootpath + 'cleardb'; }
+function ajax_nav(e) {
+    //console.warn(e);
+    e.preventDefault();
+    Router.navigate(e.data.url || $(this).attr('href'), e.data.add);
+}
+function db_clear() { if (confirm("A you sure?")) location.href = rootpath + 'cleardb'; }
 function get_url() { return decodeURI(location.pathname + location.search); }
 function login_request(next) { return rootpath + 'user/login?_next=' + (next || startpath); }
 // status: 401 - UNAUTHORIZED; 403 - FORBIDDEN; 404 - NOT FOUND

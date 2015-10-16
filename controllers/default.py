@@ -101,7 +101,9 @@ def cleardb():
     redirect(URL('default', 'index'))
 
 def user():
-    return dict(form=auth())
+    response.view='default/index.html'
+    #return dict(form=auth())
+    return dict()
 
 @cache.action()
 def download():

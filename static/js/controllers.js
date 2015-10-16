@@ -1,3 +1,11 @@
+/*** User Controller ***/
+function UserCtrl(params, route) {
+//log('user')
+//log(params)
+    web2py_component(rootajax + route.ajaxurl, targetDIV)
+}
+/* end user controller */
+
 //======================================
 /*** Cross Controller ***/
 function CrossCtrl(params, route) {
@@ -399,7 +407,7 @@ function EditFoundCtrl(params, route) {
 	//log(searchvalue)
             if (searchvalue != oldvalue) {
 		oldvalue = searchvalue;
-                $.ajax(rootpathajax + "livesearch.json", {
+                $.ajax(rootajax + "livesearch.json", {
                     data: {search: searchvalue},
                     beforeSend: function(jqXHR){
                         while (reqs.length) reqs.pop().abort();

@@ -115,7 +115,7 @@ if not request.ajax:
                 LI(A(I(_class="glyphicon glyphicon-plus"), ' ', T('Merge DB'), _href=URL('default', 'restore', vars={'mode':'csv', 'merge':'true'}))), hr,
                 LI(A(I(_class="glyphicon glyphicon-import"), ' ', T('Import DB'), _href=URL('default', 'restore'))),
                 LI(A(I(_class="glyphicon glyphicon-warning-sign"), ' ', T('Direct edit DB'), _href=URL('appadmin', 'index'))), hr,
-                LI(A(I(_class="glyphicon glyphicon-remove"), ' ', T('Clear DB'), _href="javascript:db_delete()")), hr,
+                LI(A(I(_class="glyphicon glyphicon-remove"), ' ', T('Clear DB'), _href="javascript:db_clear()")), hr,
                 LI(A(I(_class="glyphicon glyphicon-cog"), ' RESTful API', _href=URL('default', 'api/patterns')))))
         response.toolsmenu = LI(A(T('Tools'), _href='#'), UL(toolsmenu, _class="dropdown-menu"), _class="dropdown")
 
