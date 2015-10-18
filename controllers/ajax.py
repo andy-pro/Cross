@@ -294,41 +294,34 @@ def update():
 
 
 def user():
+    action = request.args(0) if request.args(0) else 'login'
+    print action
+
     #next = URL(r=request,f='index')
     #return auth.change_password(onaccept=lambda form: response.headers['web2py-component-command'] = "document.location='%s'" % next)
     #return auth.change_password()
     #next = URL('default', 'index')
     #return auth.register(onaccept=lambda form:response.headers.update({'web2py-component-command':"document.location='%s'"%next}))
 
-    #<div id="web2py_user_form" class="col-md-6">
-            #<div >
-              #<div >
-
-
-
-    #request.env.http_web2py_component_element
-
-    #The latter is also accessible via:
-
-    #request.cid
-
-    next = "document.location='%s'" % request.env.http_web2py_component_location
-    print next
 
     #return DIV(DIV(DIV(T('Log In'), btnBack, _class="panel-heading"), DIV(auth.login(onaccept=lambda form:response.headers.update({'web2py-component-command':"document.location='%s'" % URL('default', 'index')})), _class="panel-body"), _class="panel panel-primary"), _class="col-md-6")
     #return FORM(INPUT(_type='file', _name='fn'), INPUT(_type='submit', _class='pull-right btn-primary'))
     #form = auth.login(onaccept=lambda form:response.headers.update({'web2py-component-command':"document.location='%s'" % next}))
-
-
-    #form = auth.login(onaccept=lambda: response.headers.update({'web2py-component-command': next}))
-    #form = auth['login'](onaccept=lambda: response.headers.update({'web2py-component-command': next}))
-    form = getattr(auth, 'login')(onaccept=lambda form: response.headers.update({'web2py-component-command': next}))
-
-
-    #form = auth.login(onaccept=lambda: response.headers['web2py-component-command'] = "document.location='%s'" % next)
-    #form = auth.login(onaccept=lambda: response.headers['web2py-component-command'] = next)
-    #form = auth.login(onaccept=__rd_next())
-    return DIV(DIV(DIV(T('Log In'), btnBack, _class="panel-heading"), DIV(form, _class="panel-body"), _class="panel panel-primary"), _class="col-md-6")
+    next = "document.location='%s'" % request.env.http_web2py_component_location
+    print next
+    if action == 'logout':
+        #auth.logout()
+        #return dict(form=auth())
+        auth.logout(next=URL("default", "index"))
+    else:
+        form = getattr(auth, action)(onaccept=lambda form: response.headers.update({'web2py-component-command': next}))
+        #form = auth.login(onaccept=lambda: response.headers['web2py-component-command'] = "document.location='%s'" % next)
+        #form = auth.login(onaccept=lambda: response.headers['web2py-component-command'] = next)
+        #form = auth.login(onaccept=__rd_next())
+        if action == 'login': title = T('Log In')
+        elif action == 'register': title = T('Sign Up')
+        else: title = T(action.replace('_',' ').title())
+        return DIV(DIV(DIV(title, btnBack, _class="panel-heading"), DIV(form, _class="panel-body"), _class="panel panel-primary"), _class="col-md-6")
 
 def __rd_next():
     next = request.env.http_web2py_component_location

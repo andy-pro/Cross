@@ -3,7 +3,7 @@
 var Router = {
     routes: {},
     root: startpath.clearSlashes(),
-    currentURL: '',
+    //currentURL: '',
 
     add: function(args) {
 	var title = args[1], opts = args[2] || {};
@@ -29,52 +29,44 @@ var Router = {
     },
 
     navigate: function(url, addEntry) {
+	//url = decodeURI(url);
+	url = decodeURIComponent(url);
 	//console.info(url)
-	this.currentURL = get_url(); // this is allow return to current page after login
-	var params = {vars: {}, args: url.split('?')}, rt;
-	if (params.args.length > 1) { $.each(params.args[1].split('&'), function() { rt=this.split('='); params.vars[rt[0]]=rt[1]}); } // variables exist
-	rt = params.args[0].clearSlashes();
-	//console.info(rt);
-	//$.each(this.routes, function() {
-	    ////
-	    //log(this);
-
-	//});
-
+	//this.currentURL = get_url(); // this is allow return to current page after login
+	var rt = url.indexOf('?');
+	var params = {vars:{}, path:(rt>=0 ? url.substr(0,rt) : url).clearSlashes(), query:''};
+	if (rt >= 0) {  // variables exist
+	    params.query = url.substr(rt+1);
+	    $.each(params.query.split('&'), function() { rt=this.indexOf('='); params.vars[this.substr(0,rt)]=this.substr(rt+1)});
+	}
+	//console.warn(params);
 	for(var i in this.routes) {
-	    var route = i.split(':');
-	    //var re = rt.exec(new RegExp("^"+route[0]));
-	    //var re = new RegExp("^"+route[0]+"(\.+)").exec(rt);
-	    //log(route[0]);
-	    var re = rt.match("^"+route[0]+"(\.*)");
+	    rt = i.split(':');
+	    var re = params.path.match("^"+rt[0]+"(\.*)");
 	    if (re) {
 		params.args = re[1].clearSlashes().split('/');
 		var ctrl = params.args.shift();
-		if (ctrl == route[1]) {
-		    //log(re); log('ctrl = '+ctrl); log('args = '+params.args); log(this.routes[i].templateId);
-		    if (addEntry) { history.pushState(null, null, url); }
-		    route = this.routes[i];
-		    route.controller(params, route);
+		if (ctrl == rt[1]) {
+		    rt = this.routes[i];
+		    if (rt.login_req && !userId) {
+			//location.href = login_request(this.currentURL);    // for this router calling currentURL is a previous URL
+			var lu = this.login_path + '/login?_next=' + url;
+			console.log(lu)
+			//this.navigate(this.login_path);
+			this.navigate(lu);
+			//function login_request(next) { return rootpath + 'user/login?_next=' + (next || startpath); }
+
+		    }
+		    else {
+			if (addEntry) { history.pushState(null, null, url); }
+			params.url = url;
+			//console.info(params);
+			rt.controller(params, rt);
+		    }
+		    break;
 		}
 	    }
 	}
-
-	//var pos = 0;
-	//for(var i=0; i<4; i++) {
-	    //pos = rt.indexOf('/', pos+1);
-	    //if (pos<0) { pos=rt.length; break; }
-	//}
-	//var route = this.routes[rt.substring(0, pos)];
-	//log(rt.substring(0, pos));
-	//console.info(route);
-	//if (route) {
-	    //params.args = rt.substr(pos+1).split('/');
-	    //if (route.login_req && !userId) location.href = login_request(this.currentURL);    // for this router calling currentURL is a previous URL
-	    //else {
-		//if (addEntry) { history.pushState(null, null, url); }
-		//route.controller(params, route);
-	    //}
-	//} //else location.href = url;
     }
 }
 //==========================================================
@@ -141,7 +133,7 @@ function Link(form, url, link) {
     tr.appendTo(form.chaintable);
     form.chaintable.css({color:'inherit'});   // make table visible
     this.stage = stages[0];
-    if (!this.cache.crosses) this.cache.crosses = sLoad('index', {unescape:true}).crosses;
+    if (!this.cache.crosses) this.cache.crosses = sLoad('cross', {unescape:true}).crosses;
     this.controls.crossEl.append($('<option>').text(L._NOT_CROSSED_).attr('value', 0));
     this.addOptFromObj(this.cache.crosses);
     this.setVertical();
@@ -202,7 +194,7 @@ Link.prototype.setPlint = function() {
                     }
                 }
             //----------end callback function---------------
-            aLoad(this.vertical, callback, this.url, [this.link.verticalId]);
+            aLoad(this.vertical, callback, this.url, {args:[this.link.verticalId]});
         }
     }
 }

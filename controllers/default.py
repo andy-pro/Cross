@@ -87,7 +87,8 @@ def restore():
     return dict(form=form)
 
 # make this function non private for using: def auth_init():
-def __auth_init():
+#def __auth_init():
+def auth_init():
     import txt_to_db
     f = txt_to_db.__auth_init()
     db.import_from_csv_file(f, restore = True)
@@ -102,8 +103,8 @@ def cleardb():
 
 def user():
     response.view='default/index.html'
-    #return dict(form=auth())
-    return dict()
+    return dict(form=auth())
+    #return dict()
 
 @cache.action()
 def download():

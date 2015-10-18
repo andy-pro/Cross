@@ -178,8 +178,8 @@ def csv():
 
 
 def import_csv(table, file):
-    table.import_from_csv_file(file)
-
+    table.import_from_csv_file(file, restore = True)
+    #table.import_from_csv_file(file)
 
 def select():
     import re
@@ -212,7 +212,7 @@ def select():
 
     if is_imap:
         step = 3
- 
+
     stop = start + step
 
     table = None

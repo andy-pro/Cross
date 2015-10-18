@@ -1,8 +1,13 @@
 /*** User Controller ***/
 function UserCtrl(params, route) {
-//log('user')
-//log(params)
-    web2py_component(rootajax + route.ajaxurl, targetDIV)
+    //log('is USERCtrl');
+    //console.log(params);
+    //if (params.args[0] == 'logout') {
+	//log('logout');
+	////location.href = '/Cross/default/user/logout?_next=/Cross/default/index';
+    //}
+    //else
+    web2py_component(get_ajax_url(route.ajaxurl, params, false), targetDIV)
 }
 /* end user controller */
 
@@ -407,7 +412,7 @@ function EditFoundCtrl(params, route) {
 	//log(searchvalue)
             if (searchvalue != oldvalue) {
 		oldvalue = searchvalue;
-                $.ajax(rootajax + "livesearch.json", {
+                $.ajax(get_ajax_url("livesearch"), {
                     data: {search: searchvalue},
                     beforeSend: function(jqXHR){
                         while (reqs.length) reqs.pop().abort();

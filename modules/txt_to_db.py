@@ -67,11 +67,13 @@ def __auth_init():
     csvfile = cStringIO.StringIO()
     print >> csvfile, '''TABLE auth_user
 auth_user.id,auth_user.first_name,auth_user.last_name,auth_user.email,auth_user.password,auth_user.registration_key,auth_user.reset_password_key,auth_user.registration_id
-1,Michael,Savitsky,savitsky@uksatse.aero,"pbkdf2(1000,20,sha512)$a8a4ffb78f687c56$d617bed6a07637acc58b3b18c579f8a6f52a845f",,,
-2,Maria,Rurak,rurak@uksatse.aero,"pbkdf2(1000,20,sha512)$84eb544840f8b5e9$cbb150f0de7ca33f0d4148c70f5c225eaa2cc92f",,,
-3,Андрей,Проценко,andy@uksatse.aero,"pbkdf2(1000,20,sha512)$b5c2140a2b672fdf$f261b6588628fdf596fe9e16d98aa2e6b8738f4b",,1441952416-841c7e75-c52a-4bb3-9f04-fb4902a59b61,
-4,Super,User,admin@gmail.com,"pbkdf2(1000,20,sha512)$88d760b35e1819ab$57457bde2e6f6ec9064ee053c556e1226cd3b23a",,,
-5,Гость,Бесправный,a1@gmail.com,"pbkdf2(1000,20,sha512)$92f108658a796895$ce5f26e94c3ff1c281796ead928d472ecde1ab42",,,
+1,Михаил,Савицкий,savitsky@uksatse.aero,"pbkdf2(1000,20,sha512)$ab7d02f116d714dd$2a2f048389d30db05274e221df73de35aa5d2fd9",,,
+2,Мария,Рурак,rurak@uksatse.aero,"pbkdf2(1000,20,sha512)$abe43b4d3fcb5e5e$3a51ed2ef55020ba4d31fdef79aedb676d34d690",,,
+3,Андрей,Проценко,andy@uksatse.aero,"pbkdf2(1000,20,sha512)$b8efb059b5f84448$fde8100b707268f99ecc9ee05f20116568f4f561",,,
+4,Тарас,Гейниш,taras@uksatse.aero,"pbkdf2(1000,20,sha512)$8f342fa3ad90a64f$8c7783685d48a311debe642a0e36e0fae713c947",,,
+5,Евгений,Киндрак,kindrak@uksatse.aero,"pbkdf2(1000,20,sha512)$8e77dcb4bfcea787$b598bb56624276e2b37a2866f7f9a943b2b773c1",,,
+6,Иван,Мочернюк,ivan@uksatse.aero,"pbkdf2(1000,20,sha512)$961483daab2b5dca$96670a2828238793b11612d61d914913d4b7a244",,,
+7,Иван,Побран,pobran@uksatse.aero,"pbkdf2(1000,20,sha512)$a3eda1f228332659$1dd0468f8b4916f77a8461da083cba81db6aca0b",,,
 
 
 TABLE auth_group
@@ -90,9 +92,14 @@ auth_membership.id,auth_membership.user_id,auth_membership.group_id
 5,3,1
 6,3,2
 7,3,3
-9,4,1
-10,4,2
-11,4,3
+8,4,1
+9,4,2
+10,5,1
+11,5,2
+12,6,1
+13,6,2
+14,7,1
+15,7,2
 
 
 END

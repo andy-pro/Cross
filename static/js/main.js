@@ -72,17 +72,22 @@ function saveData(data, formdata, event) {
     }
 }
 //======================================
+function get_ajax_url(ajaxurl, opts, json) {
+    if (json == undefined) json = true;
+    url = '';
+    if  (opts) {
+	for(var i in opts.args) url += '/' + opts.args[i];
+	if (!$.isEmptyObject(opts.vars)) url += '?' + $.param(opts.vars);
+    }
+    return rootajax + ajaxurl + (json ? ".json" :'') + url;
+}
+//======================================
 /*** Ajax sync Load  ***/
 function sLoad(ajaxurl, opts) {
     opts = opts || {};
-    opts.params = opts.params || {args:[], vars:{}};
-    //console.info(opts);
-    var out, url = '';
-    for(var i in opts.params.args) url += '/' + opts.params.args[i];
-    if (!$.isEmptyObject(opts.params.vars)) url += '?' + $.param(opts.params.vars);
-
+    var out;
     $.ajax({
-        url: rootajax + ajaxurl + ".json" + url,
+        url: get_ajax_url(ajaxurl, opts.params),
         type: opts.type || 'GET',
         async: false,
         data: opts.data,
@@ -102,27 +107,19 @@ function sLoad(ajaxurl, opts) {
 }
 //======================================
 /*** Ajax async Load  ***/
-function aLoad(cache, callback, ajaxurl, args) {
-    args = typeof args !== 'undefined' ? args : [];
-    var url = '';
-    for(var i in args) url = url + '/' + args[i];
+function aLoad(cache, callback, ajaxurl, opts) {
     if (!cache[ajaxurl]) {
         cache[ajaxurl] = {};
         cache[ajaxurl].targets = [];
         $.ajax({
-            url: rootajax + ajaxurl + ".json" + url,
-            //async: false,
+            url: get_ajax_url(ajaxurl, opts),
 	    beforeSend: function(){
 		ajaxstate.during = true;
-		ajaxstate.count++;//console.warn(ajaxstate.count);
+		ajaxstate.count++;
 	    },
-	    //error: function(){ console.error('error'); },
-	    //complete: function(xhr, status){ },
             success: function(data) {
 		ajaxstate.count--;
-		//console.log(this.url);
                 cache[ajaxurl].data = data.data;
-                //$.each(cache[ajaxurl].targets, function() { this() });
                 while (cache[ajaxurl].targets.length) cache[ajaxurl].targets.pop()();	// local callback stack
                 delete cache[ajaxurl].targets;
 		if (ajaxstate.count == 0) {
@@ -224,7 +221,10 @@ $(function() {	// execute on document load
     //console.info(Router);
     Router.navigate(get_url());	//************* START APPLICATION *********
     $('body').on('click', 'a[ajax]', {add:true}, ajax_nav);
-    $('body').on('click', 'a[href*="default\/user"]', {}, ajax_nav);
+    $('body').on('click', 'a[href*="default\/user"]', function(e){
+	e.data = {url:$(this).attr('href')};
+	if (e.data.url.indexOf('logout')==-1) ajax_nav(e);
+    });
     window.addEventListener("popstate", function(e) { e.data={url:get_url()}; ajax_nav(e) });
 });
 
@@ -234,13 +234,9 @@ var $scope, userId, Admin, L, tbheaders, btnOkCancel, btnBack,
     mastersearch = $("#master-search");
 
 document.onkeydown = function(e) { if (e.keyCode == 27) { history.back(); return false; } } // escape key code
-function ajax_nav(e) {
-    //console.warn(e);
-    e.preventDefault();
-    Router.navigate(e.data.url || $(this).attr('href'), e.data.add);
-}
+function ajax_nav(e) { e.preventDefault(); Router.navigate(e.data.url || $(this).attr('href'), e.data.add); }
 function db_clear() { if (confirm("A you sure?")) location.href = rootpath + 'cleardb'; }
-function get_url() { return decodeURI(location.pathname + location.search); }
+function get_url() { return location.pathname + location.search; }
 function login_request(next) { return rootpath + 'user/login?_next=' + (next || startpath); }
 // status: 401 - UNAUTHORIZED; 403 - FORBIDDEN; 404 - NOT FOUND
 function raise_error(s, txt) { location.href = (s==401) ? login_request() : rootpath + 'error/%s/%s'.format(s, txt || ''); }
@@ -273,52 +269,3 @@ function pairRow(pair, depth, colv) {
     }
     return row;
 }
-
-/*** Calculate executing time ***/
-    //t1=(new Date()).getTime();
-    //..............
-    //console.log('exec time: '+((new Date()).getTime()-t1));
-/*** replace content of JS element ***/
-    //var results = document.getElementById("results");
-    //results.innerHTML = tmpl("item_tmpl1", context);
-/*** append to JS element ***/
-    //var html1 = tmpl("item_tmpl2", context);
-    //results.insertAdjacentHTML('beforeend', html1);
-
-// multiline string example
-//var test =`
-//string text line 1
-//string text line 2
-//`;
-
-  //var cars = {
-    //'chevrolet aveo':{name: 'aveo', vendor:'chevrolet'},
-    //'renault logan':{name: 'logan', vendor:'renault'},
-    //'hyundai accent':{name: 'accent', vendor:'hyundai'},
-    //'zaz forza':{name:'forza', vendor:'zaz'}
-  //}
-  //console.log(cars);
-  //console.table(cars);
-
-  //var myVariable = 'test';
-  //var myVariable1 = 20;
-  //var myVariable2 = 1.5;
-  //var myObject = {qwerty:1,asdfgh:2};
-  //console.log(
-    //'My string variable is: "%s";\nMy int variable is:"%i"\nMy Float Variable is: "%f"\nMy Object is: "%o"',
-    //myVariable,
-    //myVariable1,
-    //myVariable2,
-    //myObject
- //);
-
-//console.log(cars);
-//console.table(cars);
-//console.info('info');
-//console.warn('warning');
-//console.error('error');
-
-//console.time("assignments");
-//for(var i=0; i<1000000; i++)
-  //var a = 1;
-//console.timeEnd("assignments");
