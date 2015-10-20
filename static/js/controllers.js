@@ -1,13 +1,7 @@
 /*** User Controller ***/
 function UserCtrl(params, route) {
-    //log('is USERCtrl');
-    //console.log(params);
-    //if (params.args[0] == 'logout') {
-	//log('logout');
-	////location.href = '/Cross/default/user/logout?_next=/Cross/default/index';
-    //}
-    //else
     web2py_component(get_ajax_url(route.ajaxurl, params, false), targetDIV)
+    document.title = L[params.args[0]];
 }
 /* end user controller */
 

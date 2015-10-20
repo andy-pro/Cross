@@ -3,7 +3,10 @@
 var Router = {
     routes: {},
     root: startpath.clearSlashes(),
+    login_path: '',
     //currentURL: '',
+
+    login_request: function(next) { return this.login_path + '/login?_next=' + (next || startpath); },
 
     add: function(args) {
 	var title = args[1], opts = args[2] || {};
@@ -28,35 +31,25 @@ var Router = {
 	}
     },
 
-    navigate: function(url, addEntry) {
-	//url = decodeURI(url);
+    navigate: function(url, addEntry, no_vars) {
 	url = decodeURIComponent(url);
 	//console.info(url)
-	//this.currentURL = get_url(); // this is allow return to current page after login
-	var rt = url.indexOf('?');
-	var params = {vars:{}, path:(rt>=0 ? url.substr(0,rt) : url).clearSlashes(), query:''};
-	if (rt >= 0) {  // variables exist
-	    params.query = url.substr(rt+1);
-	    $.each(params.query.split('&'), function() { rt=this.indexOf('='); params.vars[this.substr(0,rt)]=this.substr(rt+1)});
-	}
+	var parts = url.splitOnce('?');
+	var params = {vars:{}, path:parts[0].clearSlashes(), query:''};
 	//console.warn(params);
 	for(var i in this.routes) {
-	    rt = i.split(':');
+	    var rt = i.split(':');
 	    var re = params.path.match("^"+rt[0]+"(\.*)");
 	    if (re) {
 		params.args = re[1].clearSlashes().split('/');
 		var ctrl = params.args.shift();
 		if (ctrl == rt[1]) {
 		    rt = this.routes[i];
-		    if (rt.login_req && !userId) {
-			//location.href = login_request(this.currentURL);    // for this router calling currentURL is a previous URL
-			var lu = this.login_path + '/login?_next=' + url;
-			console.log(lu)
-			//this.navigate(this.login_path);
-			this.navigate(lu);
-			//function login_request(next) { return rootpath + 'user/login?_next=' + (next || startpath); }
-
+		    if (parts.length > 1 && !no_vars) {  // variables exist
+			params.query = parts[1];
+			$.each(params.query.split('&'), function() { re=this.splitOnce('='); params.vars[re[0]]=re[1]; });
 		    }
+		    if (rt.login_req && !userId) this.navigate(this.login_request(url));
 		    else {
 			if (addEntry) { history.pushState(null, null, url); }
 			params.url = url;

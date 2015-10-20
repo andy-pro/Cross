@@ -25,6 +25,10 @@ String.prototype.format = function() {
     while (/%s/.test(newStr)) newStr = newStr.replace("%s", arguments[i++]);
     return newStr;
 }
+String.prototype.splitOnce = function(dt) {
+  var pos = this.indexOf(dt);
+  return (pos >=0 ) ? [this.substr(0, pos), this.substr(pos+dt.length)] : [this];
+}
 // or use javascript embedded expression format: `string1${arg1}string2${arg2}string3`
 //======================================
 //---------- jQuery extension function ---------------
@@ -222,8 +226,8 @@ $(function() {	// execute on document load
     Router.navigate(get_url());	//************* START APPLICATION *********
     $('body').on('click', 'a[ajax]', {add:true}, ajax_nav);
     $('body').on('click', 'a[href*="default\/user"]', function(e){
-	e.data = {url:$(this).attr('href')};
-	if (e.data.url.indexOf('logout')==-1) ajax_nav(e);
+	e.data = {url:$(this).attr('href'), add:true, no_vars:true};
+	if (e.data.url.indexOf('logout')==-1) ajax_nav(e);  // all user function performed via ajax, bot not 'logout'
     });
     window.addEventListener("popstate", function(e) { e.data={url:get_url()}; ajax_nav(e) });
 });
@@ -234,12 +238,11 @@ var $scope, userId, Admin, L, tbheaders, btnOkCancel, btnBack,
     mastersearch = $("#master-search");
 
 document.onkeydown = function(e) { if (e.keyCode == 27) { history.back(); return false; } } // escape key code
-function ajax_nav(e) { e.preventDefault(); Router.navigate(e.data.url || $(this).attr('href'), e.data.add); }
+function ajax_nav(e) { e.preventDefault(); Router.navigate(e.data.url || $(this).attr('href'), e.data.add, e.data.no_vars); }
 function db_clear() { if (confirm("A you sure?")) location.href = rootpath + 'cleardb'; }
 function get_url() { return location.pathname + location.search; }
-function login_request(next) { return rootpath + 'user/login?_next=' + (next || startpath); }
 // status: 401 - UNAUTHORIZED; 403 - FORBIDDEN; 404 - NOT FOUND
-function raise_error(s, txt) { location.href = (s==401) ? login_request() : rootpath + 'error/%s/%s'.format(s, txt || ''); }
+function raise_error(s, txt) { location.href = (s==401) ? Router.login_request() : rootpath + 'error/%s/%s'.format(s, txt || ''); }
 function wrapToggle(checked) { $('table.vertical td').css({'white-space': checked ? 'pre-line' : 'nowrap'}); localStorage.wraptext = checked; }
 function editChain(checked) { localStorage.editchain = checked; }
 function CB_editChain() { return userId ? `<label><input id="editchain" type="checkbox" onclick="editChain(this.checked)">${L._CHAIN_}</label>` : ''; }

@@ -68,9 +68,9 @@
             {{='auth' in globals() and auth.navbar('Welcome',mode='dropdown') or ''}}
           </ul>
           {{=response.news}}
-          {{if response.menu:}}
-            {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}
-          {{pass}}
+          {{if response.menu:
+          =MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')
+          pass}}
           <form class="navbar-form navbar-right livesearch">
             <div class="col-lg-6">
               <div class="input-group">
@@ -87,14 +87,8 @@
     </nav>
     <br>
     <div class="container-fluid">
-
-      <div>
-<!--{{=LOAD('ajax','user',ajax=True, ajax_trap=True)}}-->
-      </div>
-
       <div id="crosshome">{{include}}</div>
     </div>
-
     <footer class="footer">
       <div class="container-fluid">
         <div class="pull-right">

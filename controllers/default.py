@@ -83,8 +83,9 @@ def restore():
             pass
         session.flash = msg
         redirect(URL('default', 'index'))
-    response.view='default/user.html'
-    return dict(form=form)
+    response.view='default/index.html'
+    response.form=PFORM(response.title, form)
+    return dict()
 
 # make this function non private for using: def auth_init():
 #def __auth_init():
@@ -103,8 +104,8 @@ def cleardb():
 
 def user():
     response.view='default/index.html'
-    return dict(form=auth())
-    #return dict()
+    print 'web2py user function'
+    return dict(form=auth()) if request.args(0) == 'logout' else dict()
 
 @cache.action()
 def download():

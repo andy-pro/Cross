@@ -54,7 +54,13 @@ def lexicon():
     _VERTICAL_ = T('Vertical'),
     _VERT_T_ = T('Vertical title'),
     _VIEW_VERT_ = T('View vertical'),
-    _WRAP_ = T('Wrap text'))
+    _WRAP_ = T('Wrap text'),
+    login = T('Log In'),
+    logout = T('Log Out'),
+    register = T('Sign Up'),
+    request_reset_password = T('Request reset password'),
+    profile = T('Profile'),
+    change_password = T('Change Password'))
 
 def cross():
     return {'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.verticals.parent == r.id).select()}} for r in db(db.crosses).select()}}
@@ -292,38 +298,24 @@ def update():
         result['location'] = startpath + result['location']
     return result
 
-
 def user():
     action = request.args(0) if request.args(0) else 'login'
-    print action
-
-    #next = URL(r=request,f='index')
-    #return auth.change_password(onaccept=lambda form: response.headers['web2py-component-command'] = "document.location='%s'" % next)
-    #return auth.change_password()
-    #next = URL('default', 'index')
-    #return auth.register(onaccept=lambda form:response.headers.update({'web2py-component-command':"document.location='%s'"%next}))
-
-
-    #return DIV(DIV(DIV(T('Log In'), btnBack, _class="panel-heading"), DIV(auth.login(onaccept=lambda form:response.headers.update({'web2py-component-command':"document.location='%s'" % URL('default', 'index')})), _class="panel-body"), _class="panel panel-primary"), _class="col-md-6")
-    #return FORM(INPUT(_type='file', _name='fn'), INPUT(_type='submit', _class='pull-right btn-primary'))
-    #form = auth.login(onaccept=lambda form:response.headers.update({'web2py-component-command':"document.location='%s'" % next}))
-    next = "document.location='%s'" % request.env.http_web2py_component_location
-    print next
-    if action == 'logout':
-        #auth.logout()
-        #return dict(form=auth())
-        auth.logout(next=URL("default", "index"))
-    else:
-        form = getattr(auth, action)(onaccept=lambda form: response.headers.update({'web2py-component-command': next}))
-        #form = auth.login(onaccept=lambda: response.headers['web2py-component-command'] = "document.location='%s'" % next)
-        #form = auth.login(onaccept=lambda: response.headers['web2py-component-command'] = next)
-        #form = auth.login(onaccept=__rd_next())
-        if action == 'login': title = T('Log In')
-        elif action == 'register': title = T('Sign Up')
-        else: title = T(action.replace('_',' ').title())
-        return DIV(DIV(DIV(title, btnBack, _class="panel-heading"), DIV(form, _class="panel-body"), _class="panel panel-primary"), _class="col-md-6")
-
-def __rd_next():
-    next = request.env.http_web2py_component_location
-    print next
-    response.headers['web2py-component-command'] = "document.location='%s'" % next
+    if action != 'logout':
+        _next = request.env.http_web2py_component_location
+        form = getattr(auth, action)(onaccept=lambda form: response.headers.update({'web2py-component-command': "document.location='%s'" % _next}))
+        title = ''
+        script = ''
+        if action == 'login':
+            title = T('Log In')
+            if not 'register' in auth.settings.actions_disabled:
+                form.add_button(T('Sign Up'), URL('default', 'user/register'), _class='btn btn-default')
+            if not 'request_reset_password' in auth.settings.actions_disabled:
+                form.add_button(T('Lost Password'), URL('default', 'user/request_reset_password'), _class='btn btn-default')
+        elif action == 'register':
+            title = T('Sign Up')
+            script = 'web2py_validate_entropy(jQuery("#auth_user_password"),100);'
+        elif action =='change_password':
+            script = 'web2py_validate_entropy(jQuery("#no_table_new_password"),100);'
+        if not title:
+            title = T(action.replace('_',' ').title())
+        return PFORM(title, form, script)

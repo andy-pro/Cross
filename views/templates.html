@@ -1,17 +1,17 @@
-﻿<script type="text/template" id="liveSearchTmpl">
+﻿<script type="text/html" id="liveSearchTmpl">
 <% for(var ci in search ) { %>
   <a><%=search[ci]%></a>
 <% } %>
 </script>
 
-<script type="text/template" id="btnOkCancelTmpl">
+<script type="text/html" id="btnOkCancelTmpl">
 <div class="pull-right">
 <input type="submit" class="btn btn-primary">
 <button class="btn btn-primary" onclick="history.back();return false;"><%=L._CANCEL_%></button>
 </div>
 </script>
 
-<script type="text/template" id="CrossTmpl">
+<script type="text/html" id="CrossTmpl">
 <%for(var ci in crosses ) {
 var verticals = crosses[ci]["verticals"]; %>
 <div class="col-md-4">
@@ -25,7 +25,7 @@ var verticals = crosses[ci]["verticals"]; %>
 <%}%>
 </script>
 
-<script type="text/template" id="VerticalTmpl">
+<script type="text/html" id="VerticalTmpl">
   <div class="panel panel-default">
     <div class="panel-heading"><%=header%><%=btnBack%>
       <%if (!news) {%>
@@ -34,7 +34,7 @@ var verticals = crosses[ci]["verticals"]; %>
           <% print(CB_editChain());
              if (Admin && verticalId) {%><a href="<%=rootpath%>backupvertical/<%=verticalId%>">Backup Vertical</a><%}%>
         </div>
-      <%}%>  
+      <%}%>
     </div>
     <table class="vertical table table-bordered table-striped"><tbody>
     <%  var mode = (news || !userId) ? 'chain' : 'editpair';
@@ -75,7 +75,7 @@ var verticals = crosses[ci]["verticals"]; %>
   </div>
 </script>
 
-<script type="text/template" id="ChainTmpl">
+<script type="text/html" id="ChainTmpl">
 <div class="col-md-8">
   <div class="panel panel-default">
     <div class="panel-heading"><label><%=chain.title%></label><%=btnBack%>
@@ -96,7 +96,7 @@ var verticals = crosses[ci]["verticals"]; %>
 </div>
 </script>
 
-<script type="text/template" id="EditCrossTmpl">
+<script type="text/html" id="EditCrossTmpl">
 <div class="col-md-6">
   <div class="panel panel-primary">
     <div class="panel-heading"><%=cross.header%><%=btnBack%></div>
@@ -124,7 +124,7 @@ var verticals = crosses[ci]["verticals"]; %>
 </div>
 </script>
 
-<script type="text/template" id="EditVerticalTmpl">
+<script type="text/html" id="EditVerticalTmpl">
 <div class="col-md-5">
   <div class="panel panel-primary">
     <div class="panel-heading"><% print(A_Vertical(vertical,"color-root"), btnBack);%></div>
@@ -202,7 +202,7 @@ var verticals = crosses[ci]["verticals"]; %>
 </div>
 </script>
 
-<script type="text/template" id="EditPlintTmpl">
+<script type="text/html" id="EditPlintTmpl">
 <div class="col-md-6">
   <div class="panel panel-primary">
     <div class="panel-heading"><% print(A_Vertical(plint,"color-root"), btnBack);%></div>
@@ -247,7 +247,7 @@ var verticals = crosses[ci]["verticals"]; %>
 </div>
 </script>
 
-<script type="text/template" id="EditPairTmpl">
+<script type="text/html" id="EditPairTmpl">
 <div class="col-md-6">
   <div class="panel panel-primary">
     <div class="panel-heading"><% print(A_Vertical(pair,"color-root"), btnBack);%></div>
@@ -269,7 +269,7 @@ var verticals = crosses[ci]["verticals"]; %>
 </div>
 </script>
 
-<script type="text/template" id="watchtableTmpl">
+<script type="text/html" id="watchtableTmpl">
 <div class="col-md-5">
   <div class="panel panel-default">
     <div class="panel-heading">Watch</div>
@@ -283,7 +283,7 @@ var verticals = crosses[ci]["verticals"]; %>
 </div>
 </script>
 
-<script type="text/template" id="EditFoundTmpl">
+<script type="text/html" id="EditFoundTmpl">
 <div class="col-md-7">
   <div class="panel panel-primary">
     <div class="panel-heading"><%=header%><%=btnBack%></div>
@@ -298,9 +298,9 @@ var verticals = crosses[ci]["verticals"]; %>
           <div class="col-md-8"><input type="text" name="replace" class="form-control" value="<%=search%>"></div>
         </div>
         <div class="form-group">
-            <div class="checkbox col-md-offset-2 col-md-8"><label>
-                  <input name="follow" type="checkbox" checked="checked"><%=L._FOLLOW_%>
-            </label></div>
+          <div class="checkbox col-md-offset-2 col-md-8"><label>
+            <input name="follow" type="checkbox" checked="checked"><%=L._FOLLOW_%>
+          </label></div>
         </div>
         <%=btnOkCancel%>
       </form>
