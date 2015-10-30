@@ -5,8 +5,8 @@ const rootpath = app + 'default/';
 const startpath = rootpath + mainpage + '/';
 const staticpath = app + 'static/';
 const rootajax = app + 'ajax/';
-//const _DEBUG_ = true, _dbgstr1 = ' : value';
-const _DEBUG_ = false;
+const _DEBUG_ = true, _dbgstr1 = ' : value';
+//const _DEBUG_ = false;
 const _mypre = '<pre class="mypre">%s</pre>';
 const $clrp = 'panel-primary', $clrs = 'panel-success', $clri = 'panel-info', $clrw = 'panel-warning', $clrd = 'panel-danger';
 const stages = ['cross','vertical','plint','pair'];
@@ -29,6 +29,12 @@ String.prototype.splitOnce = function(dt) {
   var pos = this.indexOf(dt);
   return (pos >=0 ) ? [this.substr(0, pos), this.substr(pos+dt.length)] : [this];
 }
+String.prototype.replace_set = function(set) {	// replace by regex rules in string
+    var newStr = this;
+    for(var i in set) newStr = newStr.replace(set[i][0], set[i][1]);
+    return newStr;
+};
+
 // or use javascript embedded expression format: `string1${arg1}string2${arg2}string3`
 //======================================
 //---------- jQuery extension function ---------------
@@ -51,56 +57,66 @@ $.fn.enumoptions = function (start) {
     }
 }
 //======================================
-function addFormKey(dest, src) {
-    dest.push({name:'user', value:userId});
-    $.each(['formname', 'formkey'], function(){dest.push({name:String(this), value:src[this]})});
-}
-//======================================
-/*** saveData - add formkey, ajax(POST) data toserver, flash status result; ***/
-// arg0 - data to be saved to server; arg1 - object, containing formname & formkey information
-function saveData(data, formdata, event) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (formdata.formkey && userId) {
-	addFormKey(data, formdata); // destination, source
-	data = sLoad('update', {data:data, type:'POST'});
+/*** postForm - add formkey, ajax(POST) formData to server, flash status result; ***/
+function postForm(form) {
+    //console.log(form);
+    var reply = {};
+    if ($scope.formkey && $userId) {	// if form security information exist and user is authorized
+	var formData = new FormData(form);
+	formData.append('user', $userId);
+	formData.append('formname', $scope.formname);
+	formData.append('formkey', $scope.formkey);
+	if ($scope.formData) for(var fd in $scope.formData) formData.append(fd, $scope.formData[fd]);
+
+        //var xhr = new XMLHttpRequest();
+        //xhr.open('POST', get_ajax_url('update'), false);    // false - ajax operation is synchronous, we must be sure db is updated
+	////xhr.onload = function() { reply = JSON.parse(xhr.responseText);	}
+	//xhr.onload = function(event) { if(event.target.status == 200) reply = JSON.parse(xhr.responseText); }
+	////xhr.onerror = function() { console.log('error');	}
+	//xhr.send(formData);
+
+	reply = sLoad('update', {data:formData, type:'POST'});
+
     } else {
-	data.details = 'Security error!';
-	data.status = false;
-	data.location = startpath;
+    	reply.details = 'Security error!';
+	reply.status = false;
+	reply.location = startpath;
     }
-    if (data) {
-	web2pyflash(data.details, data.status ? 'success' : 'danger');
-	if (data.location) Router.navigate(data.location, true);
+    if (reply) {
+	web2pyflash(reply.details, reply.status ? 'success' : 'danger');
+	if (reply.location) Router.navigate(reply.location, {add:true});
 	else history.back();
     }
+    return false;
 }
 //======================================
-function get_ajax_url(ajaxurl, opts, json) {
-    if (json == undefined) json = true;
-    url = '';
-    if  (opts) {
-	for(var i in opts.args) url += '/' + opts.args[i];
-	if (!$.isEmptyObject(opts.vars)) url += '?' + $.param(opts.vars);
-    }
-    return rootajax + ajaxurl + (json ? ".json" :'') + url;
+function get_ajax_url(ajaxurl, params) {
+    params = params || $request;
+    var url = '';
+    var json = params.json === false ? '' : '.json';
+    for(var i in params.args) url += '/' + params.args[i];
+    if (!$.isEmptyObject(params.vars)) url += '?' + $.param(params.vars);
+    return rootajax + ajaxurl + json + url;
 }
 //======================================
 /*** Ajax sync Load  ***/
-function sLoad(ajaxurl, opts) {
-    opts = opts || {};
+function sLoad(ajaxurl, params) {
+    params = params || {};
+    $.extend(params, $request);
     var out;
     $.ajax({
-        url: get_ajax_url(ajaxurl, opts.params),
-        type: opts.type || 'GET',
+        url: get_ajax_url(ajaxurl, params),
+        type: params.type || 'GET',
         async: false,
-        data: opts.data,
-	dataFilter: opts.unescape ? undefined : function(data) { return data.escapeHTML(); },
+        data: params.data,
+	processData: false,
+        contentType: false,
+	dataFilter: params.unescape ? undefined : function(data) { return data.escapeHTML(); },
         success: function(data, textStatus, jqXHR) {
 	    out=data;
 	    //console.info(out);
-	    userId=parseInt(jqXHR.getResponseHeader('User-Id'));  // userId = NaN or > 1
-	    Admin=Boolean(jqXHR.getResponseHeader('Admin'));
+	    $userId=parseInt(jqXHR.getResponseHeader('User-Id'));  // userId = NaN or > 1
+	    $Admin=Boolean(jqXHR.getResponseHeader('Admin'));
 	},
         error: function(jqXHR, txt, obj) {
 	    console.warn(jqXHR); console.warn(txt); console.warn(obj);
@@ -111,12 +127,12 @@ function sLoad(ajaxurl, opts) {
 }
 //======================================
 /*** Ajax async Load  ***/
-function aLoad(cache, callback, ajaxurl, opts) {
+function aLoad(cache, callback, ajaxurl, params) {
     if (!cache[ajaxurl]) {
         cache[ajaxurl] = {};
         cache[ajaxurl].targets = [];
         $.ajax({
-            url: get_ajax_url(ajaxurl, opts),
+            url: get_ajax_url(ajaxurl, params),
 	    beforeSend: function(){
 		ajaxstate.during = true;
 		ajaxstate.count++;
@@ -159,68 +175,32 @@ function aLoad(cache, callback, ajaxurl, opts) {
     }
     web2pynoflash = function() { flash.slideUp().html(''); }
 })();
-//======================================
-/*** Simple JavaScript Templating John Resig - http://ejohn.org/ - MIT Licensed ***/
-(function(){
-  var cache = {};
-  this.tmpl = function tmpl(str, data){
-    //log(cache);
-    // Figure out if we're getting a template, or if we need to
-    // load the template - and be sure to cache the result.
-    var fn = !/\W/.test(str) ?
-      cache[str] = cache[str] ||
-        tmpl(document.getElementById(str).innerHTML) :
-
-      // Generate a reusable function that will serve as a template
-      // generator (and which will be cached).
-      new Function("obj",
-        "var p=[],print=function(){p.push.apply(p,arguments);};" +
-
-        // Introduce the data as local variables using with(){}
-        "with(obj){p.push('" +
-
-        // Convert the template into pure JavaScript
-        str
-          .replace(/[\r\t\n]/g, " ")
-          .split("<%").join("\t")
-          .replace(/((^|%>)[^\t]*)'/g, "$1\r")
-          .replace(/\t=(.*?)%>/g, "',$1,'")
-          .split("\t").join("');")
-          .split("%>").join("p.push('")
-          .split("\r").join("\\'")
-      + "');}return p.join('');");
-
-    // Provide some basic currying to the user
-    return data ? fn( data ) : fn;
-  };
-})();
-function render(route, title, context) {
-    document.title = title.unescapeHTML();
-    targetEl.innerHTML = tmpl(route.templateId, context);
-}
-//======================================
+//===========================================================
+var $route, $request, $scope, $userId, $Admin, L, tbheaders, btnOkCancel, btnBack,
+    ajaxstate = {during:false, callback:[], count:0, cache:[]},
+    mastersearch = $("#master-search");
 //************* START APPLICATION *********
 $(function() {	// execute on document load
-
     L = sLoad('lexicon', {unescape:true});   // Global lexicon
     tbheaders = [L._CROSS_, L._VERTICAL_, L._PLINT_, L._PAIR_];
+    Resig.init(targetDIV);
+    Resig.add_pack(sLoad('templates', {unescape:true, json:false}));
     /*** Global inline templates ***/
-    btnOkCancel = tmpl("btnOkCancelTmpl", {});
-    //btnBack = tmpl("btnBackTmpl", {});
+    btnOkCancel = Resig._render("btnOkCancelTmpl");
     btnBack = L._BTNBACK_;
-    /***  Set routes. args: ( [ path(toLowerCase), [name=path, by default] ] )  ***/
-    /***  templateId = name+Tmpl, controller = name+Ctrl  ***/
-    //$.each([['','Cross'],['Vertical'],['Chain'],['EditCross'],['EditVertical'],['EditPlint'],['EditPair'],['EditFound']], function () { Router.add(this); });
+    /***  Add routes, templateId = name+Tmpl, controller = name+Ctrl  ***/
     $.each([
 	[startpath, 'Cross', {index:true, shortcuts:true}],
 	[startpath, 'Vertical'],
 	[startpath, 'Chain'],
+	[rootpath,  'Restore', {login_req:true}],
 	[startpath, 'EditCross', {login_req:true}],
 	[startpath, 'EditVertical', {login_req:true}],
 	[startpath, 'EditPlint', {login_req:true}],
 	[startpath, 'EditPair', {login_req:true}],
 	[startpath, 'EditFound', {login_req:true}],
-	[rootpath, 'User', {login_path:true}]
+	[rootpath,  'User', {login_path:true}],
+	[rootpath,  'Error']
 	], function () { Router.add(this); });
     //console.info(Router);
     Router.navigate(get_url());	//************* START APPLICATION *********
@@ -232,20 +212,16 @@ $(function() {	// execute on document load
     window.addEventListener("popstate", function(e) { e.data={url:get_url()}; ajax_nav(e) });
 });
 
-var $scope, userId, Admin, L, tbheaders, btnOkCancel, btnBack,
-    targetEl = document.getElementById(targetDIV),
-    ajaxstate = {during:false, callback:[], count:0, cache:[]},
-    mastersearch = $("#master-search");
-
 document.onkeydown = function(e) { if (e.keyCode == 27) { history.back(); return false; } } // escape key code
-function ajax_nav(e) { e.preventDefault(); Router.navigate(e.data.url || $(this).attr('href'), e.data.add, e.data.no_vars); }
+function ajax_nav(e) { e.preventDefault(); Router.navigate(e.data.url || $(this).attr('href'), e.data); }
 function db_clear() { if (confirm("A you sure?")) location.href = rootpath + 'cleardb'; }
 function get_url() { return location.pathname + location.search; }
 // status: 401 - UNAUTHORIZED; 403 - FORBIDDEN; 404 - NOT FOUND
-function raise_error(s, txt) { location.href = (s==401) ? Router.login_request() : rootpath + 'error/%s/%s'.format(s, txt || ''); }
+//function raise_error(s, txt) { location.href = (s==401) ? Router.login_request() : rootpath + 'error/%s/%s'.format(s, txt || ''); }
+function raise_error(s, txt) { Router.navigate((s==401) ? Router.login_request() : rootpath + 'error/%s/%s'.format(s, txt || '')); }
 function wrapToggle(checked) { $('table.vertical td').css({'white-space': checked ? 'pre-line' : 'nowrap'}); localStorage.wraptext = checked; }
 function editChain(checked) { localStorage.editchain = checked; }
-function CB_editChain() { return userId ? `<label><input id="editchain" type="checkbox" onclick="editChain(this.checked)">${L._CHAIN_}</label>` : ''; }
+function CB_editChain() { return $userId ? `<label><input id="editchain" type="checkbox" onclick="editChain(this.checked)">${L._CHAIN_}</label>` : ''; }
 function set_wraptext() { if (localStorage.wraptext == "true") { $("#wraptext").prop("checked", true); wrapToggle(true); } }
 function set_editchain() { if (localStorage.editchain == "true") $("#editchain").prop("checked", true); }
 

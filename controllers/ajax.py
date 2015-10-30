@@ -62,6 +62,10 @@ def lexicon():
     profile = T('Profile'),
     change_password = T('Change Password'))
 
+def templates():
+    response.view = 'templates.html'
+    return dict()
+
 def cross():
     return {'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.verticals.parent == r.id).select()}} for r in db(db.crosses).select()}}
 
@@ -159,6 +163,10 @@ def chain():
 def editfound():
     return add_formkey(vertical())
 
+@auth.requires_membership('administrators')
+def restore():
+    return add_formkey(dict())
+
 def add_formkey(data):
     s = request.function
     data.update(dict(formname=s, formkey=formUUID(s)))
@@ -248,23 +256,25 @@ def update():
 
     result = dict(status=True)
     if formname == 'editcross':
-        # saveData from Edit Cross Controller
+        # save formData from Edit Cross Controller
         if vars.new:
             idx = db.crosses.update_or_insert(title=vars.title)
             vars.delete = bool(idx)
             if idx: result['location'] = 'editcross/'+str(idx)
         else:
-            cross = Cross(vars.cross)
+            cross = Cross(request.args(0))
             if vars.delete:
                 cross.delete()
                 result['location'] = ''    # this will redirect to home page index/#
             else:
                 vt = cross.update(vars)
-                if vt: result['location'] = 'editvertical/' + str(vt)
                 vars.delete = bool(vt)
+                vt = str(vt)
+                if vt.isdigit() and int(vt) > 0:
+                    result['location'] = 'editvertical/' + vt
     elif formname == 'editvertical':
-        # saveData from Edit Vertical Controller
-        vertical = Vertical(vars.vertical)
+        # save formData from Edit Vertical Controller
+        vertical = Vertical(request.args(0))
         if vars.delete:
             vertical.delete()
             result['location'] = ''
@@ -272,13 +282,13 @@ def update():
             vars.delete = vertical.update(vars)
             result['location'] = 'vertical/' + str(vertical.index)
     elif formname == 'editplint':
-        plint = Plint(vars.plint)
+        plint = Plint(request.args(0))
         if vars.delete:
             plint.delete()
         else:
             vars.delete = plint.update(vars)
     elif formname == 'editpair' or formname == 'editfound':
-        # saveData from Edit Found Controller, Edit Pair Controller
+        # save formData from Edit Found Controller, Edit Pair Controller
         if vars.chain: title = vars.title  # one title for all pairs, it's a chain
         idx = 0
         while(vars['cross_'+str(idx)] and idx < 1000):
@@ -291,9 +301,21 @@ def update():
                     title = vars['title_'+si]
                 #print 'plint:%s pair:%s title:%s' % (index, pid, title)
                 vars.delete = plint_update(index, {}, {pid : title})
+    elif formname == 'restore':
+        try:
+            f = vars.upload.file
+            if vars.txt == 'true':
+                import txt_to_db
+                f = txt_to_db.import_from_txt1(f, get_tb_fields())
+            db.import_from_csv_file(f, restore = not bool(vars.merge))
+            msg = T('Database restored')
+        except:
+            msg = T('Error')
+            result['status'] = False
+        result['location'] = ''
     else:
         pass
-    result['details'] = T('Database update success!') if vars.delete else T('No changes')
+    result['details'] = msg if msg else T('Database update success!') if vars.delete else T('No changes')
     if result.has_key('location'):
         result['location'] = startpath + result['location']
     return result
@@ -302,7 +324,9 @@ def user():
     action = request.args(0) if request.args(0) else 'login'
     if action != 'logout':
         _next = request.env.http_web2py_component_location
-        form = getattr(auth, action)(onaccept=lambda form: response.headers.update({'web2py-component-command': "document.location='%s'" % _next}))
+        #form = getattr(auth, action)(onaccept=lambda form: response.headers.update({'web2py-component-command': "document.location='%s'" % _next}))
+        #form = getattr(auth, action)(onaccept=lambda form: response.headers.update())
+        form = getattr(auth, action)()
         title = ''
         script = ''
         if action == 'login':
@@ -319,3 +343,17 @@ def user():
         if not title:
             title = T(action.replace('_',' ').title())
         return PFORM(title, form, script)
+
+def error():
+    response.view='default/error.html'
+    codes = ('401','UNAUTHORIZED'), ('403','Access denied'), ('404','Not found'), ('500','Internal server error')
+    code = request.args(0) or ''
+    msg = request.args(1) or 'Unknown error'
+    res = dict(code=code, msg=msg)
+    for code, msg in codes:
+        if res['code']==code:
+            res['msg'] = msg
+    return res
+
+
+

@@ -43,6 +43,7 @@ auth.settings.registration_requires_approval = False
 auth.settings.reset_password_requires_verification = True
 
 #========= define tables ================================
+#print 'db.py exec'
 tables = 'crosses', 'verticals', 'plints'
 db.define_table('crosses', Field('title', length=40))
 db.define_table('verticals', Field('parent', db.crosses), Field('title', length=40))
@@ -70,6 +71,10 @@ db.define_table('plints',
 pairtitles.append(plintfields[2])    # this list contain pid1, pid2,..., pid10, comdata
 pfset1 = [db.plints.id, db.plints.title, db.plints.start1, db.plints.comdata]
 
+def get_tb_fields():
+    fields = (('id', 'title'), ('id', 'parent', 'title'), ('id','root','parent')+plintfields+tuple(sum(pairfields,[])))
+    return zip(tables, fields)
+
 ## after defining tables, uncomment below to enable auditing
 # auth.enable_record_versioning(db)
 
@@ -91,7 +96,7 @@ is_admin = auth.has_membership('administrators')
 if is_admin: response.headers['Admin'] = True
 response.headers['User-Id'] = user_id
 btnBack = XML('<button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="%s (Esc)">&times;</button>' % T("Back"))
-PFORM = lambda title, form, script='': DIV(DIV(DIV(title, btnBack, _class="panel-heading"), DIV(form, _class="panel-body"), _class="panel panel-primary"), SCRIPT('$("div.panel input:visible:first").focus();', script, _type='text/javascript'), _class="col-md-6")
+PFORM = lambda title, form, script='': DIV(DIV(DIV(title, btnBack, _class="panel-heading"), DIV(form, _class="panel-body"), _class="panel panel-info"), SCRIPT('$("div.panel input:visible:first").focus();', script, _type='text/javascript'), _class="container cont-mid")
 
 if not request.ajax:
     response.logo = A(B('CROSS'), XML('&trade;&nbsp;'), _class="navbar-brand",_href=URL('default', 'index'), _id="cross-logo", _ajax="1")
@@ -112,9 +117,11 @@ if not request.ajax:
             response.headers['Admin'] = True
             hr = LI(_class="divider")
             toolsmenu.append((hr, LI(A(I(_class="glyphicon glyphicon-upload"), ' ', T('Backup DB'), _href=URL('default', 'backup'))), hr,
-                LI(A(I(_class="glyphicon glyphicon-download"), ' ', T('Restore DB'), _href=URL('default', 'restore', vars={'mode':'csv'}))),
-                LI(A(I(_class="glyphicon glyphicon-plus"), ' ', T('Merge DB'), _href=URL('default', 'restore', vars={'mode':'csv', 'merge':'true'}))),
-                LI(A(I(_class="glyphicon glyphicon-import"), ' ', T('Import DB'), _href=URL('default', 'restore'))), hr,
+                LI(A(I(_class="glyphicon glyphicon-download"), ' ', T('Restore DB'), _href=URL('default', 'restore'), _ajax="1")),
+                LI(A(I(_class="glyphicon glyphicon-plus"), ' ', T('Merge DB'), _href=URL('default', 'restore', vars={'merge':'true'}), _ajax="1")),
+                LI(A(I(_class="glyphicon glyphicon-import"), ' ', T('Import DB'), _href=URL('default', 'restore', vars={'txt':'true'}), _ajax="1")), hr,
+                #LI(A('Test', _href=URL('default', 'test'))), hr,
+                #LI(A('Test', _href=URL('default', 'index/vertical'), _ajax="1")), hr,
                 LI(A(I(_class="glyphicon glyphicon-warning-sign"), ' ', T('Direct edit DB'), _href=URL('appadmin', 'index'))),
                 LI(A(I(_class="glyphicon glyphicon-remove"), ' ', T('Clear DB'), _href="javascript:db_clear()")), hr,
                 LI(A(I(_class="glyphicon glyphicon-cog"), ' RESTful API', _href=URL('default', 'api/patterns')))))
@@ -130,9 +137,13 @@ class Cross:
         self.header = T('Cross')+' '+self.title
 
     def update(self, vars):
-        db.crosses[self.index] = {'title': vars.title}
+        mainchange = False
+        if vars.title != self.title:
+            db.crosses[self.index] = {'title': vars.title}
+            mainchange = True
         vt = vars.verticaltitle
-        return db.verticals.update_or_insert(title=vt, parent=self.index) if vt else None  # return id of new record
+        vt = db.verticals.update_or_insert(title=vt, parent=self.index) if vt else None  # return id of new record
+        return vt or mainchange
 
     def delete(self):
         del db.crosses[self.index]

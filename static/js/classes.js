@@ -1,11 +1,43 @@
 //================================================
+/*** Simple JavaScript Templating John Resig - http://ejohn.org/ - MIT Licensed ***/
+/*** we must to build monument while alive :) ***/
+var Resig = {
+    cache: {},
+    render_set: [[/[\r\t\n]/g, " "],[/<%/g, "\t"],[/((^|%>)[^\t]*)'/g, "$1\r"],[/\t=(.*?)%>/g, "',$1,'"],[/\t/g, "');"],[/%>/g, "p.push('"],[/\r/g, "\\'"]],
+    min_set: [[/\n\s{2,}|\n/g,'']],	// set of rules for minimize templates
+    min_set_chars: ['=','<%','%>','(',')','{','}',','],	// around this chars remove spaces
+    init: function(t) {
+	var min_set = this.min_set;
+	this.target = document.getElementById(t);
+	$.each(this.min_set_chars, function() { min_set.push([new RegExp('\\s*\\'+this+'\\s*', "g"), this]); });  // minimization rules
+    },
+    add: function(id, str) {
+	this.cache[id] = new Function("obj",
+        "var p=[],print=function(){p.push.apply(p,arguments);};" +
+        "with(obj){p.push('" + str.replace_set(self.min_set).replace_set(this.render_set) + "');}return p.join('');");
+    },
+    add_pack: function(pack) {
+	//console.time("tmpl");
+	pack = $(pack).filter('script');
+	var self = this;
+	$.each(pack, function(){ self.add(this.id, this.text); });
+	//console.timeEnd("tmpl");
+	//console.info(this.cache.CrossTmpl);
+    },
+    render: function (title, data, id){    // render to element
+        document.title = title.unescapeHTML();
+	id = id || $route.templateId;
+        this.target.innerHTML = this._render(id, data);
+    },
+    append_render: function(id, data) { this.target.insertAdjacentHTML('beforeend', this._render(id, data)); },	// add rendering to element
+    _render: function (id, data) { return this.cache[id](data || {}); }    // render to string
+}
+//================================================
 /*** ========== Router ========== ***/
 var Router = {
     routes: {},
     root: startpath.clearSlashes(),
     login_path: '',
-    //currentURL: '',
-
     login_request: function(next) { return this.login_path + '/login?_next=' + (next || startpath); },
 
     add: function(args) {
@@ -31,30 +63,32 @@ var Router = {
 	}
     },
 
-    navigate: function(url, addEntry, no_vars) {
+    navigate: function(url, params) {
+	params = params || {};
 	url = decodeURIComponent(url);
 	//console.info(url)
 	var parts = url.splitOnce('?');
-	var params = {vars:{}, path:parts[0].clearSlashes(), query:''};
-	//console.warn(params);
+	var request = {vars:{}, path:parts[0].clearSlashes(), query:''};
+	//console.warn(request);
 	for(var i in this.routes) {
 	    var rt = i.split(':');
-	    var re = params.path.match("^"+rt[0]+"(\.*)");
+	    var re = request.path.match("^"+rt[0]+"(\.*)");
 	    if (re) {
-		params.args = re[1].clearSlashes().split('/');
-		var ctrl = params.args.shift();
+		request.args = re[1].clearSlashes().split('/');
+		var ctrl = request.args.shift();
 		if (ctrl == rt[1]) {
-		    rt = this.routes[i];
-		    if (parts.length > 1 && !no_vars) {  // variables exist
-			params.query = parts[1];
-			$.each(params.query.split('&'), function() { re=this.splitOnce('='); params.vars[re[0]]=re[1]; });
+		    $route = this.routes[i];
+		    if (parts.length > 1 && !params.no_vars) {  // variables exist
+			request.query = parts[1];
+			$.each(request.query.split('&'), function() { re=this.splitOnce('='); request.vars[re[0]]=re[1]; });
 		    }
-		    if (rt.login_req && !userId) this.navigate(this.login_request(url));
+		    if ($route.login_req && !$userId) this.navigate(this.login_request(url));
 		    else {
-			if (addEntry) { history.pushState(null, null, url); }
-			params.url = url;
-			//console.info(params);
-			rt.controller(params, rt);
+			if (params.add) { history.pushState(null, null, url); }
+			request.url = url;
+			$request = request;
+			//console.info($request);
+			$route.controller();
 		    }
 		    break;
 		}
@@ -65,8 +99,8 @@ var Router = {
 //==========================================================
 /*** Class: Form, performs form setup actions ***/
     /* constructor, usage: var form = new Form(...);
-    event_handler - callback will be performed, when any input changing occured */
-function Form(event_handler) {
+    hC - input change handler - callback, will be performed, when any input changing occured */
+function Form(hC) {
 
     this.panel = $('div.panel').filter(':first');
     this.form = this.panel.find('form');
@@ -74,13 +108,13 @@ function Form(event_handler) {
     this.cache = {};     // use own data cache for ajax request
     this.inputfirst = this.form.find("input:text:visible:first");
     this.inputfirst.focus();
-    this.event_handler = event_handler || undefined;
+    this.hC = hC;
     this.inputs = {};
-    this.inputstext = this.form.find('input[type!=checkbox][name]').on('input', {form:this}, $inputChange);
+    this.inputstext = this.form.find('input[type!=checkbox][name]').on('input', {form:this}, $inputChange); // .on('input change', ...
     this.inputscheckbox = this.form.find('input:checkbox[name]').on('change', {form:this}, $inputChange);
 }
 
-Form.prototype.init = function() {  // emulate run event_handler, fill all inputs fields
+Form.prototype.init = function() {  // emulate input change handler run, fill all inputs fields
      this.inputfirst.trigger('input');
 }
 
@@ -89,15 +123,13 @@ var $inputChange = function(event) {
     var form = event.data.form;    // retrieve object 'this'
     form.inputstext.each(function() { form.inputs[this.name] = this.value; });
     form.inputscheckbox.each(function() { form.inputs[this.name] = Number(this.checked); });
-    //console.log(form.inputs);
+    //console.info(form.inputs);
     if (El.hasClass('delete')) {
-	//console.log('del click');
 	var del = form.inputs.delete;
 	form.panel.removeClass(del ? $clrp : $clrd);
 	form.panel.addClass(del ? $clrd : $clrp);
     }
-    var f = form.event_handler;
-    if (typeof f == 'function') f(event, El);
+    if (typeof form.hC == 'function') form.hC(event, El);
     return false;
 }
 

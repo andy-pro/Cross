@@ -4,15 +4,8 @@ def index():
     return dict()
 
 def error():
-    response.view='default/error.html'
-    codes = ('403','Access denied'), ('404','Not found'), ('500','Internal server error')
-    code = request.args(0) or ''
-    msg = request.args(1) or 'Unknown error'
-    res = dict(code=code, msg=msg)
-    for code, msg in codes:
-        if res['code']==code:
-            res['msg'] = msg
-    return res
+    response.view='default/index.html'
+    return dict()
 
 #@auth.requires_login()
 @request.restful()
@@ -62,34 +55,20 @@ def backup():
     response.headers['Content-disposition'] = 'attachment; filename=dbcross-%s.csv' % request.now.date()
     return stream.getvalue()
 
+def test():
+    from gluon import contenttype
+    response.headers['Content-Type'] = contenttype.contenttype('.csv')
+    response.headers['Content-disposition'] = 'attachment; filename=dbcross-%s.csv' % request.now.date()
+    return 'hahahahahahaha'
+
 @auth.requires_membership('administrators')
 def restore():
-    import txt_to_db
-    response.title = T('Import DB')
-    form = FORM(INPUT(_type='file', _name='fn'),
-                INPUT(_type='submit', _class='pull-right btn-primary'))
-    if form.process().accepted:
-        try:
-            f = form.vars.fn.file
-            #print f.name
-            if f.name != None:  # is tmp file, txt
-                if request.vars.mode != 'csv': f = txt_to_db.import_from_txt1(f)
-                if f:
-                    db.import_from_csv_file(f, restore = not bool(request.vars.merge))
-                    msg = T('Database restored')
-            else:
-                msg = T('Error')
-        except Exception as msg:
-            pass
-        session.flash = msg
-        redirect(URL('default', 'index'))
     response.view='default/index.html'
-    response.form=PFORM(response.title, form)
     return dict()
 
 # make this function non private for using: def auth_init():
-#def __auth_init():
-def auth_init():
+def __auth_init():
+#def auth_init():
     import txt_to_db
     f = txt_to_db.__auth_init()
     db.import_from_csv_file(f, restore = True)
@@ -104,7 +83,6 @@ def cleardb():
 
 def user():
     response.view='default/index.html'
-    print 'web2py user function'
     return dict(form=auth()) if request.args(0) == 'logout' else dict()
 
 @cache.action()

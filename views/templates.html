@@ -12,7 +12,7 @@
 </script>
 
 <script type="text/html" id="CrossTmpl">
-<%for(var ci in crosses ) {
+<%for(var ci in crosses) {
 var verticals = crosses[ci]["verticals"]; %>
 <div class="col-md-4">
   <div class="panel panel-default">
@@ -32,16 +32,16 @@ var verticals = crosses[ci]["verticals"]; %>
         <div class="checkbox inmenu right">
           <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)"><%=L._WRAP_%></label>
           <% print(CB_editChain());
-             if (Admin && verticalId) {%><a href="<%=rootpath%>backupvertical/<%=verticalId%>">Backup Vertical</a><%}%>
+             if ($Admin && verticalId) {%><a href="<%=rootpath%>backupvertical/<%=verticalId%>">Backup Vertical</a><%}%>
         </div>
       <%}%>
     </div>
     <table class="vertical table table-bordered table-striped"><tbody>
-    <%  var mode = (news || !userId) ? 'chain' : 'editpair';
+    <%  var mode = (news || !$userId) ? 'chain' : 'editpair';
         for( var ci in plints) {
         var plint = plints[ci];
         var pairs=plint.pairs, start1=parseInt(plint.start1), when=plint.modon, who=users[plint.modby];
-        var _pattr = 'href="%seditplint/%s" title="Plint: %s\n%s\n%s\nCommon data: %s"'.format(startpath, plint.id, plint.title, when, who, plint.comdata);
+        var _pattr = ' href="%seditplint/%s" title="Plint: %s\n%s\n%s\nCommon data: %s"'.format(startpath, plint.id, plint.title, when, who, plint.comdata);
         %>
           <tr>
           <%if (search || news) { print(pairRow(plint, 2, true)); }%>
@@ -57,7 +57,7 @@ var verticals = crosses[ci]["verticals"]; %>
                 else {
                         var pidx = idx+1;
                         if (t) { _title = t+"\n"+pair[1]+"\n"+users[pair[2]];
-                                if (t.indexOf(search) >= 0) found = 'class="found"';
+                                if (t.indexOf(search) >= 0) found = ' class="found"';
                         }
                     }
                 var _href = '%s%s/%s/%s'.format(startpath, mode, plint.id, pidx);
@@ -96,12 +96,26 @@ var verticals = crosses[ci]["verticals"]; %>
 </div>
 </script>
 
+<script type="text/html" id="RestoreTmpl">
+  <div class="container cont-mid">
+    <div class="panel panel-warning">
+      <div class="panel-heading"><%=title%><%=btnBack%></div>
+      <div class="panel-body">
+        <form class="form-horizontal"><input type="file" id="upload" name="upload" required><br><%=btnOkCancel%></form>
+      </div>
+      <div class="panel-footer"><div class="myright">
+        <i><output id="prop">Select file</output></i>
+      </div></div>
+    </div>
+  </div>
+</script>
+
 <script type="text/html" id="EditCrossTmpl">
 <div class="col-md-6">
   <div class="panel panel-primary">
     <div class="panel-heading"><%=cross.header%><%=btnBack%></div>
     <div class="panel-body">
-      <form class="form-horizontal edit">
+      <form class="form-horizontal">
         <div class="form-group">
           <label class="col-md-3 control-label"><%=L._TITLE_%></label>
           <div class="col-md-8"><input type="text" name="title" class="form-control" value="<%=cross.title%>" required></div>
@@ -129,7 +143,7 @@ var verticals = crosses[ci]["verticals"]; %>
   <div class="panel panel-primary">
     <div class="panel-heading"><% print(A_Vertical(vertical,"color-root"), btnBack);%></div>
     <div class="panel-body">
-      <form class="form-horizontal edit">
+      <form class="form-horizontal">
         <div class="form-group">
           <label class="col-md-3 control-label"><%=L._TITLE_%></label>
           <div class="col-md-8">
@@ -208,7 +222,7 @@ var verticals = crosses[ci]["verticals"]; %>
     <div class="panel-heading"><% print(A_Vertical(plint,"color-root"), btnBack);%></div>
     <div class="panel-body">
       <p><i><%=plint.modinfo%></i></p>
-      <form class="form-horizontal edit">
+      <form class="form-horizontal">
         <div class="form-group">
           <label class="col-md-3 control-label"><%=L._TITLE_%></label>
           <div class="col-md-8"><input type="text" name="title" class="form-control" value="<%=plint.title%>" required></div>
@@ -253,7 +267,7 @@ var verticals = crosses[ci]["verticals"]; %>
     <div class="panel-heading"><% print(A_Vertical(pair,"color-root"), btnBack);%></div>
     <div class="panel-body">
       <p><i><%=pair.modinfo%></i></p>
-      <form class="form-horizontal edit">
+      <form class="form-horizontal">
         <div class="form-group">
           <label class="col-md-2 control-label"><%=L._TITLE_%></label>
           <div class="col-md-8"><input type="text" name="title" class="form-control" value="<%=pair.title%>"></div>
@@ -288,7 +302,7 @@ var verticals = crosses[ci]["verticals"]; %>
   <div class="panel panel-primary">
     <div class="panel-heading"><%=header%><%=btnBack%></div>
     <div class="panel-body">
-      <form class="form-horizontal edit">
+      <form class="form-horizontal">
         <div class="form-group">
           <label class="col-md-2 control-label"><%=L._FIND_%></label>
           <div class="col-md-8"><input type="text" name="find" class="form-control" value="<%=search%>"></div>
