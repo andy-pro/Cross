@@ -255,69 +255,70 @@ def update():
         return dict(status=False, details=msg if msg else T('Unexpected error!'))
 
     result = dict(status=True)
-    if formname == 'editcross':
-        # save formData from Edit Cross Controller
-        if vars.new:
-            idx = db.crosses.update_or_insert(title=vars.title)
-            vars.delete = bool(idx)
-            if idx: result['location'] = 'editcross/'+str(idx)
-        else:
-            cross = Cross(request.args(0))
-            if vars.delete:
-                cross.delete()
-                result['location'] = ''    # this will redirect to home page index/#
+    try:
+        if formname == 'editcross':
+            # save formData from Edit Cross Controller
+            if vars.new:
+                idx = db.crosses.update_or_insert(title=vars.title)
+                vars.delete = bool(idx)
+                if idx: result['location'] = 'editcross/'+str(idx)
             else:
-                vt = cross.update(vars)
-                vars.delete = bool(vt)
-                vt = str(vt)
-                if vt.isdigit() and int(vt) > 0:
-                    result['location'] = 'editvertical/' + vt
-    elif formname == 'editvertical':
-        # save formData from Edit Vertical Controller
-        vertical = Vertical(request.args(0))
-        if vars.delete:
-            vertical.delete()
-            result['location'] = ''
-        else:
-            vars.delete = vertical.update(vars)
-            result['location'] = 'vertical/' + str(vertical.index)
-    elif formname == 'editplint':
-        plint = Plint(request.args(0))
-        if vars.delete:
-            plint.delete()
-        else:
-            vars.delete = plint.update(vars)
-    elif formname == 'editpair' or formname == 'editfound':
-        # save formData from Edit Found Controller, Edit Pair Controller
-        if vars.chain: title = vars.title  # one title for all pairs, it's a chain
-        idx = 0
-        while(vars['cross_'+str(idx)] and idx < 1000):
-            si = str(idx)
-            idx += 1
-            index = vars['plint_'+si]
-            if (index):
-                pid = vars['pair_'+si]
-                if not vars.chain: # each pair has own title
-                    title = vars['title_'+si]
-                #print 'plint:%s pair:%s title:%s' % (index, pid, title)
-                vars.delete = plint_update(index, {}, {pid : title})
-    elif formname == 'restore':
-        try:
+                cross = Cross(request.args(0))
+                if vars.delete:
+                    cross.delete()
+                    result['location'] = ''    # this will redirect to home page index/#
+                else:
+                    vt = cross.update(vars)
+                    vars.delete = bool(vt)
+                    vt = str(vt)
+                    if vt.isdigit() and int(vt) > 0:
+                        result['location'] = 'editvertical/' + vt
+        elif formname == 'editvertical':
+            # save formData from Edit Vertical Controller
+            vertical = Vertical(request.args(0))
+            if vars.delete:
+                vertical.delete()
+                result['location'] = ''
+            else:
+                vars.delete = vertical.update(vars)
+                result['location'] = 'vertical/' + str(vertical.index)
+        elif formname == 'editplint':
+            plint = Plint(request.args(0))
+            if vars.delete:
+                plint.delete()
+            else:
+                vars.delete = plint.update(vars)
+        elif formname == 'editpair' or formname == 'editfound':
+            # save formData from Edit Found Controller, Edit Pair Controller
+            if vars.chain: title = vars.title  # one title for all pairs, it's a chain
+            idx = 0
+            while(vars['cross_'+str(idx)] and idx < 1000):
+                si = str(idx)
+                idx += 1
+                index = vars['plint_'+si]
+                if (index):
+                    pid = vars['pair_'+si]
+                    if not vars.chain: # each pair has own title
+                        title = vars['title_'+si]
+                    #print 'plint:%s pair:%s title:%s' % (index, pid, title)
+                    vars.delete = plint_update(index, {}, {pid : title})
+        elif formname == 'restore':
             f = vars.upload.file
             if vars.txt == 'true':
                 import txt_to_db
                 f = txt_to_db.import_from_txt1(f, get_tb_fields())
             db.import_from_csv_file(f, restore = not bool(vars.merge))
             msg = T('Database restored')
-        except:
-            msg = T('Error')
-            result['status'] = False
+            result['location'] = ''
+        else:
+            pass
+    except:
+        msg = T('Error')
+        result['status'] = False
         result['location'] = ''
-    else:
-        pass
     result['details'] = msg if msg else T('Database update success!') if vars.delete else T('No changes')
     if result.has_key('location'):
-        result['location'] = startpath + result['location']
+        result['location'] = start_path + result['location']
     return result
 
 def user():

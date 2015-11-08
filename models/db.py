@@ -1,19 +1,12 @@
 # -*- coding: utf-8 -*-
 
-startpath = '/Cross/default/index/'
+start_path = '/cross/default/index/';   # URL function give wrong result for ajax.json request!!! (add '.json')
 #request.requires_https() # all HTTP requests to be redirected to HTTPS, uncomment this line
 
 from gluon.contrib.appconfig import AppConfig # private/appconfig.ini
-#myconf = AppConfig(reload=True) # once in production, remove reload=True to gain full speed
 myconf = AppConfig()
-
 db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['all'], migrate_enabled=False)
-#db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['all'])
-
-## by default give a view/generic.extension to all actions from localhost
-## none otherwise. a pattern can be 'controller/function.extension'
-response.generic_patterns = ['*'] if request.is_local else ['*.json']
-## choose a style for forms
+response.generic_patterns = ['*'] if request.is_local else ['*.json']   # for *.json give generic view
 response.formstyle = myconf.take('forms.formstyle')  # or 'bootstrap3_stacked' or 'bootstrap2' or other
 response.form_label_separator = myconf.take('forms.separator')
 
@@ -99,7 +92,7 @@ btnBack = XML('<button type="button" class="close" aria-hidden="true" onclick="h
 PFORM = lambda title, form, script='': DIV(DIV(DIV(title, btnBack, _class="panel-heading"), DIV(form, _class="panel-body"), _class="panel panel-info"), SCRIPT('$("div.panel input:visible:first").focus();', script, _type='text/javascript'), _class="container cont-mid")
 
 if not request.ajax:
-    response.logo = A(B('CROSS'), XML('&trade;&nbsp;'), _class="navbar-brand",_href=URL('default', 'index'), _id="cross-logo", _ajax="1")
+    response.logo = A(B('CROSS'), XML('&trade;&nbsp;'), _class="navbar-brand",_href=URL('default', 'index'), _id="cross-logo", data={'spa':1})
     response.title = request.application.replace('_',' ').title()
     response.subtitle = ''
     ## read more at http://dev.w3.org/html5/markup/meta.name.html
@@ -109,19 +102,19 @@ if not request.ajax:
     response.meta.generator = 'Web2py Web Framework'
     ## your http://google.com/analytics id
     #response.google_analytics_id = None
-    response.news = UL(LI(A(T('News'), _href=URL('default', 'index/vertical', vars={'news':'true'}), _ajax="1")), _class="nav navbar-nav")
+    response.news = UL(LI(A(T('News'), _href=URL('default', 'index/vertical', vars={'news':'true'}), data={'spa':1})), _class="nav navbar-nav")
 
     if auth.has_membership('managers'):
-        toolsmenu = [LI(A(I(_class="glyphicon glyphicon-th-list"), ' ', T('New cross'), _href=URL('default', 'index/editcross', vars={'new':'true'}), _ajax="1"))]
+        toolsmenu = [LI(A(I(_class="glyphicon glyphicon-th-list"), ' ', T('New cross'), _href=URL('default', 'index/editcross', vars={'new':'true'}), data={'spa':1}))]
         if is_admin:
             response.headers['Admin'] = True
             hr = LI(_class="divider")
             toolsmenu.append((hr, LI(A(I(_class="glyphicon glyphicon-upload"), ' ', T('Backup DB'), _href=URL('default', 'backup'))), hr,
-                LI(A(I(_class="glyphicon glyphicon-download"), ' ', T('Restore DB'), _href=URL('default', 'restore'), _ajax="1")),
-                LI(A(I(_class="glyphicon glyphicon-plus"), ' ', T('Merge DB'), _href=URL('default', 'restore', vars={'merge':'true'}), _ajax="1")),
-                LI(A(I(_class="glyphicon glyphicon-import"), ' ', T('Import DB'), _href=URL('default', 'restore', vars={'txt':'true'}), _ajax="1")), hr,
+                LI(A(I(_class="glyphicon glyphicon-download"), ' ', T('Restore DB'), _href=URL('default', 'restore'), data={'spa':1})),
+                LI(A(I(_class="glyphicon glyphicon-plus"), ' ', T('Merge DB'), _href=URL('default', 'restore', vars={'merge':'true'}), data={'spa':1})),
+                LI(A(I(_class="glyphicon glyphicon-import"), ' ', T('Import DB'), _href=URL('default', 'restore', vars={'txt':'true'}), data={'spa':1})), hr,
                 #LI(A('Test', _href=URL('default', 'test'))), hr,
-                #LI(A('Test', _href=URL('default', 'index/vertical'), _ajax="1")), hr,
+                #LI(A('Test', _href=URL('default', 'index/vertical'), data={'spa':1})), hr,
                 LI(A(I(_class="glyphicon glyphicon-warning-sign"), ' ', T('Direct edit DB'), _href=URL('appadmin', 'index'))),
                 LI(A(I(_class="glyphicon glyphicon-remove"), ' ', T('Clear DB'), _href="javascript:db_clear()")), hr,
                 LI(A(I(_class="glyphicon glyphicon-cog"), ' RESTful API', _href=URL('default', 'api/patterns')))))

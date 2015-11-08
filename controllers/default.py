@@ -3,6 +3,15 @@
 def index():
     return dict()
 
+@auth.requires_membership('administrators')
+def restore():
+    response.view='default/index.html'
+    return dict()
+
+def user():
+    response.view='default/index.html'
+    return dict(form=auth()) if request.args(0) == 'logout' else dict()
+
 def error():
     response.view='default/index.html'
     return dict()
@@ -55,20 +64,9 @@ def backup():
     response.headers['Content-disposition'] = 'attachment; filename=dbcross-%s.csv' % request.now.date()
     return stream.getvalue()
 
-def test():
-    from gluon import contenttype
-    response.headers['Content-Type'] = contenttype.contenttype('.csv')
-    response.headers['Content-disposition'] = 'attachment; filename=dbcross-%s.csv' % request.now.date()
-    return 'hahahahahahaha'
-
-@auth.requires_membership('administrators')
-def restore():
-    response.view='default/index.html'
-    return dict()
-
-# make this function non private for using: def auth_init():
-def __auth_init():
+# fill db with user accounts, make this function non private for using: def auth_init():
 #def auth_init():
+def __auth_init():
     import txt_to_db
     f = txt_to_db.__auth_init()
     db.import_from_csv_file(f, restore = True)
@@ -80,10 +78,6 @@ def cleardb():
     for table in reversed(tables): db[table].truncate()
     session.flash = T('Database cleared')
     redirect(URL('default', 'index'))
-
-def user():
-    response.view='default/index.html'
-    return dict(form=auth()) if request.args(0) == 'logout' else dict()
 
 @cache.action()
 def download():

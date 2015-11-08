@@ -32,7 +32,7 @@ var verticals = crosses[ci]["verticals"]; %>
         <div class="checkbox inmenu right">
           <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)"><%=L._WRAP_%></label>
           <% print(CB_editChain());
-             if ($Admin && verticalId) {%><a href="<%=rootpath%>backupvertical/<%=verticalId%>">Backup Vertical</a><%}%>
+             if ($Admin && verticalId) {%><a href="<%=web2spa.root_path%>backupvertical/<%=verticalId%>">Backup Vertical</a><%}%>
         </div>
       <%}%>
     </div>
@@ -41,11 +41,11 @@ var verticals = crosses[ci]["verticals"]; %>
         for( var ci in plints) {
         var plint = plints[ci];
         var pairs=plint.pairs, start1=parseInt(plint.start1), when=plint.modon, who=users[plint.modby];
-        var _pattr = ' href="%seditplint/%s" title="Plint: %s\n%s\n%s\nCommon data: %s"'.format(startpath, plint.id, plint.title, when, who, plint.comdata);
+        var _pattr = ' href="%seditplint/%s" title="Plint: %s\n%s\n%s\nCommon data: %s"'.format(web2spa.start_path, plint.id, plint.title, when, who, plint.comdata);
         %>
           <tr>
           <%if (search || news) { print(pairRow(plint, 2, true)); }%>
-          <td class="colv1" style="border-right:2px solid #ddd;"><a <%=_pattr%> ajax="1"><%=plint.title%></a></td>
+          <td class="colv1" style="border-right:2px solid #ddd;"><a <%=_pattr%> data-spa="1"><%=plint.title%></a></td>
           <%for( var cj in pairs ) {
                 var idx = parseInt(cj);
                 var pair = pairs[idx];
@@ -60,14 +60,14 @@ var verticals = crosses[ci]["verticals"]; %>
                                 if (t.indexOf(search) >= 0) found = ' class="found"';
                         }
                     }
-                var _href = '%s%s/%s/%s'.format(startpath, mode, plint.id, pidx);
+                var _href = '%s%s/%s/%s'.format(web2spa.start_path, mode, plint.id, pidx);
             %>
-          <td <%=found%>><a href='<%=_href%>' title="<%=_title%>" ajax="1"><sup><%=idx+start1%></sup><%=t%></a></td>
+          <td <%=found%>><a href='<%=_href%>' title="<%=_title%>" data-spa="1"><sup><%=idx+start1%></sup><%=t%></a></td>
           <% }
           if (!news) {
             t = plint.comdata, found = "commondata";
             if (t && search && t.indexOf(search) >= 0) found += " cdfound"; %>
-            <td class="<%=found%>" style="border-left:2px solid #ddd;"><a <%=_pattr%> ajax="1"><%=t%></a></td>
+            <td class="<%=found%>" style="border-left:2px solid #ddd;"><a <%=_pattr%> data-spa="1"><%=t%></a></td>
           <% }; %>
         </tr>
       <% }; %>
@@ -101,7 +101,7 @@ var verticals = crosses[ci]["verticals"]; %>
     <div class="panel panel-warning">
       <div class="panel-heading"><%=title%><%=btnBack%></div>
       <div class="panel-body">
-        <form class="form-horizontal"><input type="file" id="upload" name="upload" required><br><%=btnOkCancel%></form>
+        <form class="form-horizontal" name="upload"><input type="file" id="upload" name="upload" required><br><%=btnOkCancel%></form>
       </div>
       <div class="panel-footer"><div class="myright">
         <i><output id="prop">Select file</output></i>
@@ -245,7 +245,7 @@ var verticals = crosses[ci]["verticals"]; %>
           <label class="col-md-3 control-label"><%=L._PAIR_T_%></label>
           <div class="col-md-8">
             <div class="pair-ol"><ol start="0"><% for(var i=0; i<10; i++) print("<li></li>"); %></ol></div>
-            <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairtitles"></textarea>
+            <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairtitles"><%=plint.pairtitles%></textarea>
           </div>
         </div>
         <div class="form-group">

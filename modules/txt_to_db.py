@@ -70,7 +70,7 @@ def __auth_init():
     print >> csvfile, '''TABLE auth_user
 auth_user.id,auth_user.first_name,auth_user.last_name,auth_user.email,auth_user.password,auth_user.registration_key,auth_user.reset_password_key,auth_user.registration_id
 1,Михаил,Савицкий,savitsky@uksatse.aero,"pbkdf2(1000,20,sha512)$ab7d02f116d714dd$2a2f048389d30db05274e221df73de35aa5d2fd9",,,
-2,Мария,Рурак,rurak@uksatse.aero,"pbkdf2(1000,20,sha512)$abe43b4d3fcb5e5e$3a51ed2ef55020ba4d31fdef79aedb676d34d690",,,
+2,Мария,Рурак,m.rurak@ukr.net,"pbkdf2(1000,20,sha512)$bfa3d63a49577dd3$eea273beefe59c90309221c56379fce03e641579",,,
 3,Андрей,Проценко,andy@uksatse.aero,"pbkdf2(1000,20,sha512)$b8efb059b5f84448$fde8100b707268f99ecc9ee05f20116568f4f561",,,
 4,Тарас,Гейниш,taras@uksatse.aero,"pbkdf2(1000,20,sha512)$8f342fa3ad90a64f$8c7783685d48a311debe642a0e36e0fae713c947",,,
 5,Евгений,Киндрак,kindrak@uksatse.aero,"pbkdf2(1000,20,sha512)$8e77dcb4bfcea787$b598bb56624276e2b37a2866f7f9a943b2b773c1",,,
