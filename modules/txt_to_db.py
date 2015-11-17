@@ -26,6 +26,7 @@ def import_from_txt1(fl, tb_fields):
         for i in xrange(readint()):
             writer.writerow([i+1, readstring()])   # cross_index, cross_title
             crosses.append([i+1, readint()])  # cross_index, vertical count in cross
+
     def fnv():
         x = 1
         for cross in crosses:
@@ -33,6 +34,7 @@ def import_from_txt1(fl, tb_fields):
                 writer.writerow([x, cross[0], readstring()])  # vertical_index, cross_index, vertical_title
                 verticals.append([cross[0], x, readint(), readstring()])   # cross_index, vertical_index, plint count in vertical, start 1
                 x += 1
+
     def fnp():
         for vertical in verticals:
             for i in xrange(vertical[2]):   # vertical[1] is a plint_count
@@ -41,14 +43,14 @@ def import_from_txt1(fl, tb_fields):
         for plint in plints:
             sp = []
             for i in xrange(10):
-                spx = [readstring(), datepair, 1]  # pid(pair_title), pmodon, pmodby
+                spx = [readstring(), datepair, 1, '', 0, 0]  # pid(pair_title), pmodon, pmodby=1, pdt='', pch=0, par=0
                 s1 = fl.readline()   # pair loop, not used
                 if i == 0: sp0 = spx
                 else: sp = sp + spx
             s1 = readstring()   # common data
             start1 = (readstring()=='0') ^ (plint[3]=='0')   # start inverse?
             sp = sp + sp0 if start1 else sp0 + sp
-            #                id   root    parent    title       start1    comdata modon  modby
+            #                id   cross   vertical    title       start1    comdata modon  modby
             writer.writerow([x, plint[0], plint[1], plint[2], str(start1), s1, dateplint, 1] + sp)
             x += 1
 
@@ -71,7 +73,7 @@ def __auth_init():
 auth_user.id,auth_user.first_name,auth_user.last_name,auth_user.email,auth_user.password,auth_user.registration_key,auth_user.reset_password_key,auth_user.registration_id
 1,Михаил,Савицкий,savitsky@uksatse.aero,"pbkdf2(1000,20,sha512)$ab7d02f116d714dd$2a2f048389d30db05274e221df73de35aa5d2fd9",,,
 2,Мария,Рурак,m.rurak@ukr.net,"pbkdf2(1000,20,sha512)$bfa3d63a49577dd3$eea273beefe59c90309221c56379fce03e641579",,,
-3,Андрей,Проценко,andy@uksatse.aero,"pbkdf2(1000,20,sha512)$b8efb059b5f84448$fde8100b707268f99ecc9ee05f20116568f4f561",,,
+3,Андрей,Проценко,andy.pro.1972@gmail.com,"pbkdf2(1000,20,sha512)$9c63288394bb888a$653f13a60a38f2481804ac384ccacdccf56b646c",,,
 4,Тарас,Гейниш,taras@uksatse.aero,"pbkdf2(1000,20,sha512)$8f342fa3ad90a64f$8c7783685d48a311debe642a0e36e0fae713c947",,,
 5,Евгений,Киндрак,kindrak@uksatse.aero,"pbkdf2(1000,20,sha512)$8e77dcb4bfcea787$b598bb56624276e2b37a2866f7f9a943b2b773c1",,,
 6,Иван,Мочернюк,ivan@uksatse.aero,"pbkdf2(1000,20,sha512)$961483daab2b5dca$96670a2828238793b11612d61d914913d4b7a244",,,

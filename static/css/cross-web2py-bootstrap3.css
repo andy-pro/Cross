@@ -1,4 +1,4 @@
-.ajaxanimation {
+div#gif {
     display:    none;
     position:   absolute;
     z-index:    2000;
@@ -11,8 +11,7 @@
                 50% 50%
                 no-repeat;
 }
-body.loading .ajaxanimation {display: block;}
-
+/*body.loading .ajaxanimation {display: block;}*/
 .cont-mid {
     max-width: 600px;
 }

@@ -15,6 +15,7 @@ def lexicon():
     _CROSS_ = T('Cross'),
     _DB_UPD_ = T('Database update success!'),
     _DEL_ = T('Delete'),
+    _DETAILS_ = T('Details'),
     _EDIT_CROSS_ = T('Edit cross'),
     _EDIT_PAIR_ = T('Edit pair'),
     _EDIT_PLINT_ = T('Edit plint'),
@@ -67,7 +68,7 @@ def templates():
     return dict()
 
 def cross():
-    return {'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.verticals.parent == r.id).select()}} for r in db(db.crosses).select()}}
+    return {'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.verticals.cross == r.id).select()}} for r in db(db.crosses).select()}}
 
 def vertical():
     search = request.vars.search or False
@@ -84,7 +85,7 @@ def vertical():
         title = vertical.title
         header = vertical.header
         cross = vertical.cross.title
-        rows = db(db.plints.parent == vertical.index).select(orderby=db.plints.id)
+        rows = db(db.plints.vertical == vertical.index).select(orderby=db.plints.id)
     plints = []   #plints = {}
     for plint in rows:
         who = plint.modby
@@ -110,7 +111,7 @@ def vertical():
             else:
                 who = plint(pairfields[i][2])
                 get_user_name(who)
-                td.append((pairtitle,when,who))
+                td.append((pairtitle,when,who,plint(pairfields[i][3])))
         if news:
              td.append((plint(pairtitles[idx]),idx))
         tr['pairs'] = td
@@ -119,15 +120,18 @@ def vertical():
     return dict(header=header, plints=plints, users=users, vertical=title, cross=cross)
 
 def plints():
-    return dict(data=[(i.id,i.title,int(i.start1)) for i in db(db.plints.parent == request.args(0, cast = int)).select(*pfset1, orderby=db.plints.id)])
+    return dict(data=[(i.id,i.title,int(i.start1)) for i in db(db.plints.vertical == request.args(0, cast = int)).select(*pfset1, orderby=db.plints.id)])
 
 def plintscd():    # add common data to response
-    return dict(data=[(i.id,i.title,int(i.start1),i.comdata) for i in db(db.plints.parent == request.args(0, cast = int)).select(*pfset1, orderby=db.plints.id)])
+    return dict(data=[(i.id,i.title,int(i.start1),i.comdata) for i in db(db.plints.vertical == request.args(0, cast = int)).select(*pfset1, orderby=db.plints.id)])
+
+def comdict(data):
+    return dict(header=data.header, address=data.address, modinfo=data.modified_info, title=data.title, vertical=data.vertical.title, verticalId=data.vertical.index)
 
 @auth.requires_membership('managers')
 def editcross():
     if request.vars.new:
-        result = dict(header=T('New cross'), new=True)
+        result = dict(header=T('New cross'))
     else:
         data = Cross(request.args(0, cast = int))
         result = dict(header=data.header, title=data.title)
@@ -138,26 +142,26 @@ def editvertical():
     request.edit_mode = True;
     return add_formkey(vertical())
 
-def comdict(data):
-    return dict(header=data.header, address=data.address, modinfo=data.modified_info, title=data.title, vertical=data.vertical.title, verticalId=data.vertical.index)
-
 @auth.requires_membership('managers')
 def editplint():
     data = Plint(request.args(0, cast = int))
     result = comdict(data)
-    result.update(dict(pairtitles=('\n'.join(data.get_pair_titles())).rstrip(), start1=data.start1, comdata=data.comdata))
+    result.update(dict(pairtitles=data.get_fieldstring('pid'),
+                       pairdetails=data.get_fieldstring('pdt'),
+                       start1=data.start1, comdata=data.comdata))
     return add_formkey(result)
 
 @auth.requires_membership('managers')
 def editpair():
     request.exclude = True
-    return chain()
+    return add_formkey(chain())
 
 def chain():
     data = Pair(request.args(0, cast = int), request.args(1, cast = int))
     result = comdict(data)
+    result['details'] = data.details
     result['chain'] = getchain(data.title, request.exclude, '%s_%s' % (data.index, data.pair)) if (request.args(2) and test_query(data.title) and request.args(2, cast=str) == 'chain') else []
-    return add_formkey(result)
+    return result
 
 @auth.requires_membership('managers')
 def editfound():
@@ -182,7 +186,7 @@ def getchain(q, exclude=False, pairId=''):
                     if pairId == '%s_%s' % (plint.id, i+1):
                         exclude = False
                         continue
-                tr = dict(plintId=plint.id, pairId=i+1, plint=plint.title, start1=int(plint.start1), comdata=plint.comdata)
+                tr = dict(plintId=plint.id, pairId=i+1, plint=plint.title, start1=int(plint.start1), comdata=plint.comdata, details=plint(pairfields[i][3]))
                 add_root(tr, plint)
                 pairs.append(tr)
     return pairs
@@ -193,10 +197,10 @@ def test_query(q):
     return len(uq) > 2
 
 def add_root(tr, plint):
-    tr['cross'] = plint.root.title
-    tr['crossId'] = plint.root
-    tr['vertical'] = plint.parent.title
-    tr['verticalId'] = plint.parent
+    tr['cross'] = plint.cross.title
+    tr['crossId'] = plint.cross
+    tr['vertical'] = plint.vertical.title
+    tr['verticalId'] = plint.vertical
 
 def search_plints(q, like=True):
     if q and test_query(q):
@@ -205,7 +209,7 @@ def search_plints(q, like=True):
         else:
             queries = [db.plints[field] == q for field in pairtitles]
         query = reduce(lambda a, b: (a | b), queries)
-        result = db(query).select(orderby=db.plints.root)  # sort by crosses
+        result = db(query).select(orderby=db.plints.cross)  # sort by crosses
         response.searchstatus = 'OK' if result else T('not found!')
         return result
     else:
@@ -294,14 +298,15 @@ def update():
             idx = 0
             while(vars['cross_'+str(idx)] and idx < 1000):
                 si = str(idx)
-                idx += 1
                 index = vars['plint_'+si]
-                if (index):
-                    pid = vars['pair_'+si]
-                    if not vars.chain: # each pair has own title
-                        title = vars['title_'+si]
-                    #print 'plint:%s pair:%s title:%s' % (index, pid, title)
-                    vars.delete = plint_update(index, {}, {pid : title})
+                if index:
+                    pi = vars['pair_'+si]   # pair index
+                    if not vars.chain: title = vars['title_'+si] # each pair has own title
+                    #print 'plint:%s pair:%s title:%s' % (index, pi, title)
+                    data = {'pid'+pi : title}
+                    if idx == 0: data['pdt'+pi] = vars.details
+                    vars.delete = plint_update(index, {}, data)
+                idx += 1
         elif formname == 'restore':
             f = vars.upload.file
             if vars.txt == 'true':

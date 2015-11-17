@@ -41,8 +41,8 @@ function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search, 
 	  }
 	return {title:news?L._NEWS_:$scope.header, data:{plints:$scope.plints, users:$scope.users, header:header, search:search, news:news, verticalId:verticalId}};
     });
-    set_wraptext();
-    set_editchain();
+    set_wrapText();
+    set_editMode();
 }
 /* end VerticalController */
 
@@ -51,7 +51,7 @@ function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search, 
 function ChainCtrl() {
     $request.args.push('chain')
     web2spa.load_and_render(function() { return {title:$scope.address, data:{chain:$scope}}; });
-    set_editchain();
+    set_editMode();
 }
 /* end ChainController */
 
@@ -65,12 +65,12 @@ function RestoreCtrl() {
 	    (file.lastModifiedDate ? file.lastModifiedDate.toLocaleDateString() : 'n/a');
     }
 
-    var file, title;
+    var file, title, ft = 'csv';
     if ($request.vars.merge) title = L._MERGE_DB_;
-    else if ($request.vars.txt) title = L._IMPORT_;
+    else if ($request.vars.txt) { title = L._IMPORT_; ft = 'txt'; }
     else title = L._RESTORE_;
 
-    web2spa.load_and_render(function() { return {title:title, data:{title:title}}; });
+    web2spa.load_and_render(function() { return {title:title, data:{title:title, hint:`Select ${ft} file`}}; });
     var form = new Form(function() { return file ? form.post(this) : false; }); // restore ctrl
     document.getElementById('upload').addEventListener('change', handleFileSelect, false);
 }
@@ -80,7 +80,7 @@ function RestoreCtrl() {
 /*** EditCrossController ***/
 function EditCrossCtrl() {
     web2spa.load_and_render(function() {
-	if ($scope.new) $scope.title = '';
+	if ($scope.new = $request.vars.new) $scope.title = '';
 	return {title:$scope.header, data:{cross:$scope}};
     });
     var form = new Form(function() { return form.post(this); });    // edit cross ctrl
@@ -199,12 +199,9 @@ function EditVerticalCtrl() {
     function viewChange() {
 	view_cd = vmEl.filter(':checked').val() == 'comdata';
 	wthead.empty();
-	$(_th_com_[0]).appendTo(wthead);
-	$(_th_com_[1]).appendTo(wthead);
-	if (view_cd) {
-	    $(_th_cdt_[0]).appendTo(wthead);
-	    $(_th_cdt_[1]).appendTo(wthead);
-	} else for(var i=0; i<10; i++) $('<th width="8%">').appendTo(wthead);
+	wthead.append(_th_com_);
+	if (view_cd) wthead.append(_th_cdt_);
+	else for(var i=0; i<10; i++) wthead.append('<th width="8%">');
 	form.init();
     }
 
@@ -224,8 +221,8 @@ function EditVerticalCtrl() {
 	return {title: $scope.header, data:{vertical:$scope}};
     });
 
-    const _th_com_ = ['<th width="14%">'+tbheaders[2]+'</th>', '<th width="6%">+/~</th>'];
-    const _th_cdt_ = ['<th width="40%">'+L._COMMON_DATA_+'</th>', '<th>'+L._REM_CD_+'</th>'];
+    const _th_com_ = '<th width="14%">'+tbheaders[2]+'</th><th width="6%">+/~</th>';
+    const _th_cdt_ = '<th width="40%">'+L._COMMON_DATA_+'</th><th>'+L._REM_CD_+'</th>';
 
     var view_cd, vertical,
 	wthead = $('#watchtable tr.info'),
@@ -264,16 +261,18 @@ function EditPlintCtrl() {
 	$('ol').attr('start', parseInt(form.inputs.start1));
     }
 
+    function viewChange() { $('textarea').css('display', function(i, v) { return v=='none' ? 'block' : 'none'; }); }
+
     web2spa.load_and_render(function() {
 	$scope.start1 = $scope.start1 ? "checked" : "";
 	return {title:$scope.address, data:{plint:$scope}};
     });
     //$('textarea').val($scope.pairtitles.unescapeHTML());   // insert multiline pairtitles by templating system gives loss first new line (\n), ;-( ?
     // now templates at first are compiled, so no problem; additionally, text unescaped by <textarea> singly
+    $('input[name=view]').on('change', viewChange);
     var form = new Form(function() { return form.post(this); }, plintChange); // edit plint ctrl
     var mergechar = form.inputstext.filter('[name=mergechar]')[0];
     form.init();
-
 }
 /* end EditPlintController */
 

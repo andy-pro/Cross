@@ -42,7 +42,7 @@ def backupvertical():
     stream=cStringIO.StringIO()
     vertical = Vertical(request.args(0, cast = int))
     print >> stream, 'TABLE plints'
-    db(db.plints.parent == vertical.index).select(orderby=db.plints.id).export_to_csv_file(stream)
+    db(db.plints.vertical == vertical.index).select(orderby=db.plints.id).export_to_csv_file(stream)
     print >> stream, '\n\nEND'
     response.headers['Content-Type'] = contenttype.contenttype('.csv')
     filename = 'cross-%s-vertical-%s-%s.csv' % (vertical.cross.title, vertical.title, request.now.date())

@@ -1,6 +1,6 @@
 /*** Single Page Application approach for web2py framework ***/
 var web2spa = {
-    init: function(settings, callback) {
+    init: function(settings, callback) {   // callback, perform after application load & init
 	/*** settings's keys:
 	    app: application name, e.g. 'welcome',
 	    mainctrl: default controller, 'default' by default,
@@ -13,7 +13,9 @@ var web2spa = {
 	    esc_back: enable history.back() when 'ESC' key pressed,
 	    routes: [ ['Route1', opts], ['Route2', opts], ... ], opts see in 'add_route'
 	***/
-	/*** Global objects: ***/
+	/*** Global vars & objects: ***/
+	//$scope - controller data
+	//$userId, $Admin - each ajax request set this vars
 	$route = {};	// {title, ajaxurl, templateId, controller, login_req, target, targetEl}
 	$request = {};	/*** keys:
 	    args:[], vars:{}, url, path, query, (path+&+query=url),
@@ -35,7 +37,8 @@ var web2spa = {
 	this.post_url = settings.post_url || 'update';	// form POST url request, e.g. 'update' become '/welcome/ajax/update/'
 	this.target = settings.target || 'target';
 	this.targetEl = document.getElementById(this.target);
-	this.body = $('body');
+	//this.body = $('body');
+	this.gif = $('div#gif');
 	this.$clrp = 'panel-primary';	// shortcuts for bootstrap panel color classes
 	this.$clrs = 'panel-success';
 	this.$clri = 'panel-info';
@@ -62,7 +65,7 @@ var web2spa = {
 	});
     },
 
-    ajax_nav: function(e)  { e.preventDefault(); web2spa.navigate(e.data.url || $(this).attr('href'), e.data); },
+    ajax_nav: function(e)  { e.preventDefault(); /*e.stopPropagation();*/ web2spa.navigate(e.data.url || $(this).attr('href'), e.data); /*return false;*/ },
 
     get_url: function() { return location.pathname + location.search; },
 
@@ -86,7 +89,7 @@ var web2spa = {
 	ajaxurl = ajaxurl || $route.ajaxurl;
 	params = params || {};
 	$.extend(params, $request);
-	if (params.animate) this.body.addClass('loading');
+	//if (params.animate) this.body.addClass('loading');
 	var out, self = this;
 	$.ajax({
 	    url: this.get_ajax_url(ajaxurl, params),
@@ -96,10 +99,11 @@ var web2spa = {
 	    processData: false,
 	    contentType: false,
 	    dataFilter: params.unescape ? undefined : function(data) { return data.escapeHTML(); },
+	    beforeSend: function() { if (params.animate) self.gif.show(); },
 	    success: function(data, textStatus, jqXHR) {
 		out=data;
 		//console.info(out);
-		$userId=parseInt(jqXHR.getResponseHeader('User-Id'));  // userId = NaN or > 1
+		$userId=parseInt(jqXHR.getResponseHeader('User-Id'));  // userId = NaN or > 0
 		$Admin=Boolean(jqXHR.getResponseHeader('Admin'));   // if user has membership 'administrator'
 	    },
 	    error: function(jqXHR, txt, obj) {
@@ -107,7 +111,7 @@ var web2spa = {
 		self.raise_error(jqXHR.status, txt);
 		out = false;
 	    },
-	    complete: function() { self.body.removeClass('loading'); }
+	    complete: function() { /*self.body.removeClass('loading');*/ self.gif.hide(); }
 	});
 	return out;
     },
@@ -189,7 +193,7 @@ var web2spa = {
 			//console.info($request);
 			$route.controller();
 		    }
-		    break;
+		    break; // if route found
 		}
 	    }
 	}
@@ -198,14 +202,15 @@ var web2spa = {
 
     /*** Simple JavaScript Templating John Resig ================= http://ejohn.org/ - MIT Licensed ***/
     /*** we must to build monument him, while he alive :) ***/
+    // prefer use "" in templates, be careful with included quotes!
     cache: {},
     render_set: [[/[\r\t\n]/g, " "],[/<%/g, "\t"],[/((^|%>)[^\t]*)'/g, "$1\r"],[/\t=(.*?)%>/g, "',$1,'"],[/\t/g, "');"],[/%>/g, "p.push('"],[/\r/g, "\\'"]],
     min_set: [[/<!--[\s\S]*?-->/g,'']/*remove comments*/,[/\s*([=;<>(){}\[\]&|])\s*/g,'$1'],[/\s*(<%|%>)\s*/g,'$1']/*whitespaces*/],
     add: function(id, str) {
-	this.cache[id] = new Function("obj",
-        "var p=[],print=function(){p.push.apply(p,arguments);};" +
-        "with(obj){p.push('" + str.replace_set(this.min_set).replace_set(this.render_set) + "');}return p.join('');");
-	//console.log(str.replace_set(this.min_set));
+	str = str.replace_set(this.min_set).replace_set(this.render_set);
+	//str = str.replace_set(this.min_set).replace(/[\r\t\n]/g, " ").split("<%").join("\t").replace(/((^|%>)[^\t]*)'/g, "$1\r").replace(/\t=(.*?)%>/g, "',$1,'").split("\t").join("');").split("%>").join("p.push('").split("\r").join("\\'");
+	//console.log(str);
+	this.cache[id] = new Function("obj", "var p=[],print=function(){p.push.apply(p,arguments);};" + "with(obj){p.push('" + str + "');}return p.join('');");
     },
     add_pack: function(pack) {
 	//console.time("tmpl");
@@ -333,17 +338,16 @@ function log(msg) { console.log(msg); }
 String.prototype.escapeHTML = function() { return this.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\\"/g,'&quot;'); }
 String.prototype.unescapeHTML = function() { return this.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"'); }
 String.prototype.clearSlashes = function() { return this.replace(/\/$/, '').replace(/^\//, ''); }
-String.prototype.format = function() {
+String.prototype.format = function() {	// or use javascript embedded expression format: `string1${arg1}string2${arg2}string3`
     var newStr = this, i = 0;
     while (/%s/.test(newStr)) newStr = newStr.replace("%s", arguments[i++]);
     return newStr;
 }
-// or use javascript embedded expression format: `string1${arg1}string2${arg2}string3`
 String.prototype.splitOnce = function(dt) {
   var pos = this.indexOf(dt);
   return (pos >=0 ) ? [this.substr(0, pos), this.substr(pos+dt.length)] : [this];
 }
-String.prototype.replace_set = function(set) {	// replace by regex rules in string
+String.prototype.replace_set = function(set) {	// replace by array of regex rules
     var newStr = this;
     for(var i in set) newStr = newStr.replace(set[i][0], set[i][1]);
     return newStr;

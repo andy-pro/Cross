@@ -1,6 +1,6 @@
 /*** Global constants  ***/
-const _DEBUG_ = true, _dbgstr1 = ' : value';
-//const _DEBUG_ = false;
+//const _DEBUG_ = true, _dbgstr1 = ' : value';
+const _DEBUG_ = false;
 const _mypre = '<pre class="mypre">%s</pre>';
 const stages = ['cross','vertical','plint','pair'];
 
@@ -32,13 +32,29 @@ web2spa.init(
 );
 
 function db_clear() { if (confirm("A you sure?")) location.href = web2spa.root_path + 'cleardb'; }
-function CB_editChain() { return $userId ? `<label><input id="editchain" type="checkbox" onclick="editChain(this.checked)">${L._CHAIN_}</label>` : ''; }
+function str_editMode() { return $userId ? `<label><input id="editmode" type="checkbox" onclick="editMode(this.checked)">${L._EDITOR_}</label><label><input id="editchain" type="checkbox" onclick="editChain(this.checked)">${L._CHAIN_}</label>` : ''; }
+function editMode(checked) {
+    localStorage.editmode = checked;
+    $('#editchain').prop('disabled', !checked);
+    var ctrl = checked ? 'editpair' : 'chain';
+    $.each($scope.a, function() { this[2].href = this[0] + ctrl +this[1]; });
+}
 function editChain(checked) { localStorage.editchain = checked; }
+function set_editMode() {
+    var b = localStorage.editmode == 'true', ai;
+    $scope.a = [];
+    $('#editmode').prop('checked', b);
+    $('#editchain').prop('checked', localStorage.editchain == 'true');
+    $.each($('a[data-pair]'), function(i) {
+	ai = this.attributes.href.value.split('ctrl');
+	if (ai.length ==2) $scope.a[i] = ai.concat([this]);
+    });
+    editMode(b);
+}
 function wrapToggle(checked) { $('table.vertical td').css({'white-space': checked ? 'pre-line' : 'nowrap'}); localStorage.wraptext = checked; }
-function set_wraptext() { if (localStorage.wraptext == "true") { $("#wraptext").prop("checked", true); wrapToggle(true); } }
-function set_editchain() { if (localStorage.editchain == "true") $("#editchain").prop("checked", true); }
+function set_wrapText() { if (localStorage.wraptext == "true") { $("#wraptext").prop("checked", true); wrapToggle(true); } }
 
-function A_Cross(o) { return `<a href="${web2spa.start_path}editcross/${o.crossId}" title="${L._EDIT_CROSS_} ${o.cross}" data-spa="1">${o.cross}</a>` }
+function A_Cross(o) { return `<a href="${web2spa.start_path}editcross/${o.crossId}" title="${L._EDIT_CROSS_} ${o.cross}" data-spa="1">${o.cross}</a>`; }
 
 function A_Vertical(o, _class) {
     _class = _class ? `class="${_class}"` : '';

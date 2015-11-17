@@ -31,17 +31,18 @@ var verticals = crosses[ci]["verticals"]; %>
       <%if (!news) {%>
         <div class="checkbox inmenu right">
           <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)"><%=L._WRAP_%></label>
-          <% print(CB_editChain());
+          <% if ($userId) print(str_editMode());
              if ($Admin && verticalId) {%><a href="<%=web2spa.root_path%>backupvertical/<%=verticalId%>">Backup Vertical</a><%}%>
         </div>
       <%}%>
     </div>
     <table class="vertical table table-bordered table-striped"><tbody>
-    <%  var mode = (news || !$userId) ? 'chain' : 'editpair';
+    <%  var mode = (news || !$userId) ? 'chain' : 'ctrl';
+        var pidx, pdtx;
         for( var ci in plints) {
         var plint = plints[ci];
         var pairs=plint.pairs, start1=parseInt(plint.start1), when=plint.modon, who=users[plint.modby];
-        var _pattr = ' href="%seditplint/%s" title="Plint: %s\n%s\n%s\nCommon data: %s"'.format(web2spa.start_path, plint.id, plint.title, when, who, plint.comdata);
+        var _pattr = ' href="%seditplint/%s" title="%s\n%s\n%s\n%s"'.format(web2spa.start_path, plint.id, plint.title, plint.comdata, when, who);
         %>
           <tr>
           <%if (search || news) { print(pairRow(plint, 2, true)); }%>
@@ -49,20 +50,22 @@ var verticals = crosses[ci]["verticals"]; %>
           <%for( var cj in pairs ) {
                 var idx = parseInt(cj);
                 var pair = pairs[idx];
-                var t = pair[0], found = '', _title = "";
+                var t = pair[0], found = "", _title = "";
                 if (news) {
-                    var pidx = pair[1]+1;
+                    pidx = pair[1]+1;
                     t = '%s, %s, %s %s, "%s"'.format(when, who, L._PAIR_, pair[1]+start1, t);
                 }
                 else {
-                        var pidx = idx+1;
-                        if (t) { _title = t+"\n"+pair[1]+"\n"+users[pair[2]];
-                                if (t.indexOf(search) >= 0) found = ' class="found"';
+                        pidx = idx+1;
+                        if (t) { 
+                            pdtx = pair[3] ? pair[3]+"\n" : "";
+                            _title = t+"\n"+pdtx+pair[1]+"\n"+users[pair[2]];
+                            if (t.indexOf(search) >= 0) found = ' class="found"';
                         }
                     }
-                var _href = '%s%s/%s/%s'.format(web2spa.start_path, mode, plint.id, pidx);
+                var _href = "%s%s/%s/%s".format(web2spa.start_path, mode, plint.id, pidx);
             %>
-          <td <%=found%>><a href='<%=_href%>' title="<%=_title%>" data-spa="1"><sup><%=idx+start1%></sup><%=t%></a></td>
+          <td <%=found%>><a href="<%=_href%>" title="<%=_title%>" data-spa="1" data-pair="1"><sup><%=idx+start1%></sup><%=t%></a></td>
           <% }
           if (!news) {
             t = plint.comdata, found = "commondata";
@@ -76,19 +79,21 @@ var verticals = crosses[ci]["verticals"]; %>
 </script>
 
 <script type="text/html" id="ChainTmpl">
-<div class="col-md-8">
+<div class="col-md-9">
   <div class="panel panel-default">
     <div class="panel-heading"><label><%=chain.title%></label><%=btnBack%>
-        <div class="checkbox inmenu right"><% print(CB_editChain()); %></div>
     </div>
     <div class="panel-body">
       <p><i><%=chain.modinfo%></i></p>
     </div>
     <table class="table table-bordered table-condensed" style="display:normal">
-        <tr class="info"><% for( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %><td><%=L._COMMON_DATA_%></td></tr>
+        <tr class="info">
+          <% for( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %>
+          <td><%=L._DETAILS_%></td><td><%=L._COMMON_DATA_%></td>
+        </tr>
         <% for( var ci in chain.chain ) {
             var link = chain.chain[ci];
-            print(`<tr>${pairRow(link)}<td>${link.comdata}</td></tr>`);
+            print(`<tr>${pairRow(link)}<td>${link.details}</td><td>${link.comdata}</td></tr>`);
             } %>
     </table>
     <div class="panel-footer"><div class="myright"><%=L._FOUND_%><%=chain.chain.length%></div></div>
@@ -104,7 +109,7 @@ var verticals = crosses[ci]["verticals"]; %>
         <form class="form-horizontal" name="upload"><input type="file" id="upload" name="upload" required><br><%=btnOkCancel%></form>
       </div>
       <div class="panel-footer"><div class="myright">
-        <i><output id="prop">Select file</output></i>
+        <i><output id="prop"><%=hint%></output></i>
       </div></div>
     </div>
   </div>
@@ -242,10 +247,17 @@ var verticals = crosses[ci]["verticals"]; %>
           <div class="col-md-8"><input type="text" name="comdata" class="form-control" value="<%=plint.comdata%>"></div>
         </div>
         <div class="form-group">
+        <div class="radio inmenu right">
+          <label class="inmenu"><input type="radio" name="view" value="titles" checked><%=L._PAIR_T_%></label>
+          <label><input type="radio" name="view" value="details"><%=L._DETAILS_%></label>
+        </div>
+        </div>
+        <div class="form-group">
           <label class="col-md-3 control-label"><%=L._PAIR_T_%></label>
           <div class="col-md-8">
             <div class="pair-ol"><ol start="0"><% for(var i=0; i<10; i++) print("<li></li>"); %></ol></div>
             <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairtitles"><%=plint.pairtitles%></textarea>
+            <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairdetails" style="display:none;"><%=plint.pairdetails%></textarea>
           </div>
         </div>
         <div class="form-group">
@@ -271,6 +283,10 @@ var verticals = crosses[ci]["verticals"]; %>
         <div class="form-group">
           <label class="col-md-2 control-label"><%=L._TITLE_%></label>
           <div class="col-md-8"><input type="text" name="title" class="form-control" value="<%=pair.title%>"></div>
+        </div>
+        <div class="form-group">
+          <label class="col-md-2 control-label"><%=L._DETAILS_%></label>
+          <div class="col-md-8"><input type="text" name="details" class="form-control" value="<%=pair.details%>"></div>
         </div>
         <button type="button" class="btn btn-sm btn-success pull-right" title="<%=L._ADD_LINK_%>" onclick="addLink()">+</button>
         <table id="chaintable">
