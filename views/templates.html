@@ -42,11 +42,11 @@ var verticals = crosses[ci]["verticals"]; %>
         for( var ci in plints) {
         var plint = plints[ci];
         var pairs=plint.pairs, start1=parseInt(plint.start1), when=plint.modon, who=users[plint.modby];
-        var _pattr = ' href="%seditplint/%s" title="%s\n%s\n%s\n%s"'.format(web2spa.start_path, plint.id, plint.title, plint.comdata, when, who);
+        var _pattr = ' class="web2spa" href="%seditplint/%s" title="%s\n%s\n%s\n%s"'.format(web2spa.start_path, plint.id, plint.title, plint.comdata, when, who);
         %>
           <tr>
           <%if (search || news) { print(pairRow(plint, 2, true)); }%>
-          <td class="colv1" style="border-right:2px solid #ddd;"><a <%=_pattr%> data-spa="1"><%=plint.title%></a></td>
+          <td class="colv1" style="border-right:2px solid #ddd;"><a <%=_pattr%>><%=plint.title%></a></td>
           <%for( var cj in pairs ) {
                 var idx = parseInt(cj);
                 var pair = pairs[idx];
@@ -57,7 +57,7 @@ var verticals = crosses[ci]["verticals"]; %>
                 }
                 else {
                         pidx = idx+1;
-                        if (t) { 
+                        if (t) {
                             pdtx = pair[3] ? pair[3]+"\n" : "";
                             _title = t+"\n"+pdtx+pair[1]+"\n"+users[pair[2]];
                             if (t.indexOf(search) >= 0) found = ' class="found"';
@@ -65,12 +65,12 @@ var verticals = crosses[ci]["verticals"]; %>
                     }
                 var _href = "%s%s/%s/%s".format(web2spa.start_path, mode, plint.id, pidx);
             %>
-          <td <%=found%>><a href="<%=_href%>" title="<%=_title%>" data-spa="1" data-pair="1"><sup><%=idx+start1%></sup><%=t%></a></td>
+          <td <%=found%>><a class="web2spa" href="<%=_href%>" title="<%=_title%>" data-pair="1"><sup><%=idx+start1%></sup><%=t%></a></td>
           <% }
           if (!news) {
             t = plint.comdata, found = "commondata";
             if (t && search && t.indexOf(search) >= 0) found += " cdfound"; %>
-            <td class="<%=found%>" style="border-left:2px solid #ddd;"><a <%=_pattr%> data-spa="1"><%=t%></a></td>
+            <td class="<%=found%>" style="border-left:2px solid #ddd;"><a class="web2spa" <%=_pattr%>><%=t%></a></td>
           <% }; %>
         </tr>
       <% }; %>
@@ -88,7 +88,7 @@ var verticals = crosses[ci]["verticals"]; %>
     </div>
     <table class="table table-bordered table-condensed" style="display:normal">
         <tr class="info">
-          <% for( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %>
+          <% for( var ci in tbheaders ) print("<td>"+tbheaders[ci]+"</td>"); %>
           <td><%=L._DETAILS_%></td><td><%=L._COMMON_DATA_%></td>
         </tr>
         <% for( var ci in chain.chain ) {
@@ -104,7 +104,7 @@ var verticals = crosses[ci]["verticals"]; %>
 <script type="text/html" id="RestoreTmpl">
   <div class="container cont-mid">
     <div class="panel panel-warning">
-      <div class="panel-heading"><%=title%><%=btnBack%></div>
+      <div class="panel-heading"><% print(title, btnBack); %></div>
       <div class="panel-body">
         <form class="form-horizontal" name="upload"><input type="file" id="upload" name="upload" required><br><%=btnOkCancel%></form>
       </div>
@@ -256,8 +256,8 @@ var verticals = crosses[ci]["verticals"]; %>
           <label class="col-md-3 control-label"><%=L._PAIR_T_%></label>
           <div class="col-md-8">
             <div class="pair-ol"><ol start="0"><% for(var i=0; i<10; i++) print("<li></li>"); %></ol></div>
-            <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairtitles"><%=plint.pairtitles%></textarea>
-            <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairdetails" style="display:none;"><%=plint.pairdetails%></textarea>
+            <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairtitles"></textarea>
+            <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairdetails" style="display:none;"></textarea>
           </div>
         </div>
         <div class="form-group">

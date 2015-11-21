@@ -8,7 +8,7 @@ function ErrorCtrl() {
 //======================================
 /*** UserController ***/
 function UserCtrl() {
-    document.title = L[$request.args[0]];
+    document.title = L[$request.args[0]];   // login, logout, profile, change_password, register, request_reset_password
     $request.json = false;
     web2py_component(web2spa.get_ajax_url($route.ajaxurl), $route.target);	// as $.load, but provide form submit
 }
@@ -37,7 +37,7 @@ function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search, 
 		href = `${web2spa.start_path}editfound?search=${search}`;
 		_title = '';
 	    }
-	    header = `<a href="${href}" title="${_title}" data-spa="1">${header}</a>`;
+	    header = `<a class="web2spa" href="${href}" title="${_title}">${header}</a>`;
 	  }
 	return {title:news?L._NEWS_:$scope.header, data:{plints:$scope.plints, users:$scope.users, header:header, search:search, news:news, verticalId:verticalId}};
     });
@@ -261,14 +261,15 @@ function EditPlintCtrl() {
 	$('ol').attr('start', parseInt(form.inputs.start1));
     }
 
-    function viewChange() { $('textarea').css('display', function(i, v) { return v=='none' ? 'block' : 'none'; }); }
+    function viewChange() { ta.css('display', function(i, v) { return v=='none' ? 'block' : 'none'; }); }
 
     web2spa.load_and_render(function() {
 	$scope.start1 = $scope.start1 ? "checked" : "";
 	return {title:$scope.address, data:{plint:$scope}};
     });
-    //$('textarea').val($scope.pairtitles.unescapeHTML());   // insert multiline pairtitles by templating system gives loss first new line (\n), ;-( ?
-    // now templates at first are compiled, so no problem; additionally, text unescaped by <textarea> singly
+    var ta = $('textarea');
+    ta[0].value = $scope.pairtitles.unescapeHTML();   // innerHTML used in templating system gives loss first empty line (\n), :-( ?
+    ta[1].value = $scope.pairdetails.unescapeHTML();
     $('input[name=view]').on('change', viewChange);
     var form = new Form(function() { return form.post(this); }, plintChange); // edit plint ctrl
     var mergechar = form.inputstext.filter('[name=mergechar]')[0];

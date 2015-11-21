@@ -5,8 +5,8 @@ start_path = '/cross/default/index/';   # URL function give wrong result for aja
 
 from gluon.contrib.appconfig import AppConfig # private/appconfig.ini
 myconf = AppConfig()
-#db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['all'], migrate_enabled=False)
-db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['common'], migrate_enabled=True)
+db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['common'], migrate_enabled=False)
+#db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['common'], migrate_enabled=True)
 response.generic_patterns = ['*'] if request.is_local else ['*.json']   # for *.json give generic view
 response.formstyle = myconf.take('forms.formstyle')  # or 'bootstrap3_stacked' or 'bootstrap2' or other
 response.form_label_separator = myconf.take('forms.separator')
@@ -96,35 +96,36 @@ if is_admin: response.headers['Admin'] = True
 response.headers['User-Id'] = user_id
 btnBack = XML('<button type="button" class="close" aria-hidden="true" onclick="history.back();return false;" title="%s (Esc)">&times;</button>' % T("Back"))
 PFORM = lambda title, form, script='': DIV(DIV(DIV(title, btnBack, _class="panel-heading"), DIV(form, _class="panel-body"), _class="panel panel-info"), SCRIPT('$("div.panel input:visible:first").focus();', script, _type='text/javascript'), _class="container cont-mid")
+itext = lambda c, t: I(_class='glyphicon glyphicon-'+c) + ' ' + t
 
 if not request.ajax:
-    response.logo = A(B('CROSS'), XML('&trade;&nbsp;'), _class="navbar-brand",_href=URL('default', 'index'), _id="cross-logo", data={'spa':1})
     response.title = request.application.replace('_',' ').title()
     response.subtitle = ''
     ## read more at http://dev.w3.org/html5/markup/meta.name.html
     response.meta.author = 'Andrey Protsenko <andy.pro.1972@gmail.com>'
     response.meta.description = 'Cross management application'
-    response.meta.keywords = 'web2py, python, framework, javascript, ajax, jquery, andy-pro, single page application'
+    response.meta.keywords = 'web2py, web2spa, single page application, python, framework, javascript, ajax, jquery, andy-pro'
     response.meta.generator = 'Web2py Web Framework'
-    ## your http://google.com/analytics id
-    #response.google_analytics_id = None
-    response.news = UL(LI(A(T('News'), _href=URL('default', 'index/vertical', vars={'news':'true'}), data={'spa':1})), _class="nav navbar-nav")
+    response.crossmenu = [
+        ('', False, A(B('CROSS'), XML('&trade;&nbsp;'), _class='navbar-brand web2spa',_href=URL('default', 'index'))),
+        ('', False, A(T('News'), _class="nav navbar-nav web2spa", _href=URL('default', 'index/vertical', vars={'news':'true'})))
+    ]
 
     if auth.has_membership('managers'):
-        toolsmenu = [LI(A(I(_class="glyphicon glyphicon-th-list"), ' ', T('New cross'), _href=URL('default', 'index/editcross', vars={'new':'true'}), data={'spa':1}))]
+        toolsmenu = [('', False, A(itext('th-list', T('New cross')), _class='web2spa', _href=URL('default', 'index/editcross', vars={'new':'true'})))]
         if is_admin:
             response.headers['Admin'] = True
             hr = LI(_class="divider")
-            toolsmenu.append((hr, LI(A(I(_class="glyphicon glyphicon-upload"), ' ', T('Backup DB'), _href=URL('default', 'backup'))), hr,
-                LI(A(I(_class="glyphicon glyphicon-download"), ' ', T('Restore DB'), _href=URL('default', 'restore'), data={'spa':1})),
-                LI(A(I(_class="glyphicon glyphicon-plus"), ' ', T('Merge DB'), _href=URL('default', 'restore', vars={'merge':'true'}), data={'spa':1})),
-                LI(A(I(_class="glyphicon glyphicon-import"), ' ', T('Import DB'), _href=URL('default', 'restore', vars={'txt':'true'}), data={'spa':1})), hr,
-                #LI(A('Test', _href=URL('default', 'test'))), hr,
-                #LI(A('Test', _href=URL('default', 'index/vertical'), data={'spa':1})), hr,
-                LI(A(I(_class="glyphicon glyphicon-warning-sign"), ' ', T('Direct edit DB'), _href=URL('appadmin', 'index'))),
-                LI(A(I(_class="glyphicon glyphicon-remove"), ' ', T('Clear DB'), _href="javascript:db_clear()")), hr,
-                LI(A(I(_class="glyphicon glyphicon-cog"), ' RESTful API', _href=URL('default', 'api/patterns')))))
-        response.toolsmenu = LI(A(T('Tools'), _href='#'), UL(toolsmenu, _class="dropdown-menu"), _class="dropdown")
+            toolsmenu += [hr, (itext('upload', T('Backup DB')), False, URL('default', 'backup')), hr,
+                ('', False, A(itext('download', T('Restore DB')), _class='web2spa', _href=URL('default', 'restore'))),
+                ('', False, A(itext('plus', T('Merge DB')), _class='web2spa', _href=URL('default', 'restore', vars={'merge':'true'}))),
+                ('', False, A(itext('import', T('Import DB')), _class='web2spa', _href=URL('default', 'restore', vars={'txt':'true'}))), hr,
+                #('Test', False, URL('default', 'test')), hr,
+                #('', False, A('Test', _class='web2spa', _href=URL('default', 'index/vertical'))), hr,
+                (itext('warning-sign', T('Direct edit DB')), False, URL('appadmin', 'index')),
+                (itext('remove', T('Clear DB')), False, 'javascript:db_clear()'), hr,
+                (itext('cog', 'RESTful API'), False, URL('default', 'api/patterns'))]
+        response.toolsmenu = [(T('Tools'), False, '#', toolsmenu)]
 
 class Cross:
     def __init__(self, _index):
@@ -190,7 +191,7 @@ class Vertical:
                     maindata['start1'] = vars['start1_'+si]
                 pairdata = {}
                 for pj in xrange(1, 11):
-                    pairdata[pj] = vars['pid_%s_%i' % (si, pj)] or ''
+                    pairdata['pid%i'%pj] = vars['pid_%s_%i' % (si, pj)] or ''
                 if plint_update(xp.id, maindata, pairdata):
                     changed = True
                 if pc and pi < pc and vars['rcomdata_'+si]:

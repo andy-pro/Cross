@@ -155,6 +155,7 @@
 'No changes': 'Без змін',
 'No databases in this application': 'Даний додаток не використовує базу даних',
 'Not crossed': 'Вільно',
+'not found!': 'не знайдено!',
 'now': 'зараз',
 'Numeration start 1': 'Нумерація з 1',
 'Object or table name': "Об'єкт або назва таблиці",

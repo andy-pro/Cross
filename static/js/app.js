@@ -12,7 +12,7 @@ web2spa.init(
     templates: 'templates', // templates url: 'cross/views/templates.html'
     esc_back: true, // enable history.back() when 'ESC' key pressed
     routes: [
-	['Cross', {index:true, shortcuts:true}],    // urls: 'cross/default/index/cross', 'cross/default/index', 'cross/default', 'cross'; JS controller: CrossCtrl; template: CrossTmpl, index=true means: path is empty, but controller is a string
+	['Cross', {index:true, shortcuts:true}],    // urls: 'cross/default/index', 'cross/default', 'cross'; JS controller: CrossCtrl; template: CrossTmpl, index=true means: path is empty, but controller is a string
 	['Vertical'],	// url: 'cross/default/index/vertical'; JS controller: VerticalCtrl; template: VerticalTmpl
 	['Chain'],  // and so on ...
 	['EditCross', {login_req:true}],    // will be redirect to login path, if not authorized
@@ -54,19 +54,19 @@ function set_editMode() {
 function wrapToggle(checked) { $('table.vertical td').css({'white-space': checked ? 'pre-line' : 'nowrap'}); localStorage.wraptext = checked; }
 function set_wrapText() { if (localStorage.wraptext == "true") { $("#wraptext").prop("checked", true); wrapToggle(true); } }
 
-function A_Cross(o) { return `<a href="${web2spa.start_path}editcross/${o.crossId}" title="${L._EDIT_CROSS_} ${o.cross}" data-spa="1">${o.cross}</a>`; }
+function A_Cross(o) { return `<a class="web2spa" href="${web2spa.start_path}editcross/${o.crossId}" title="${L._EDIT_CROSS_} ${o.cross}">${o.cross}</a>`; }
 
-function A_Vertical(o, _class) {
-    _class = _class ? `class="${_class}"` : '';
-    return `<a ${_class} href="${web2spa.start_path}vertical/${o.verticalId}" title="${L._VIEW_VERT_} ${o.vertical}" data-spa="1">${o.header || o.vertical}</a>`; }
+function A_Vertical(o, _class='') {
+    //_class = _class ? `class="${_class}"` : '';
+    return `<a class="web2spa ${_class}" href="${web2spa.start_path}vertical/${o.verticalId}" title="${L._VIEW_VERT_} ${o.vertical}">${o.header || o.vertical}</a>`; }
 
 function A_Plint(o) {
     var start1 = o.pairId+o.start1-1;
-    return `<sup>${o.start1}</sup><a href="${web2spa.start_path}editplint/${o.plintId}" title="${L._EDIT_PLINT_} ${o.plint}" data-spa="1">${o.plint}</a>`; }
+    return `<sup>${o.start1}</sup><a class="web2spa" href="${web2spa.start_path}editplint/${o.plintId}" title="${L._EDIT_PLINT_} ${o.plint}">${o.plint}</a>`; }
 
 function A_Pair(o) {
     var start1 = o.pairId+o.start1-1;
-    return `<a href="${web2spa.start_path}editpair/${o.plintId}/${o.pairId}" title="${L._EDIT_PAIR_} ${start1}" data-spa="1">${L._PAIR_} ${start1}</a>`; }
+    return `<a class="web2spa" href="${web2spa.start_path}editpair/${o.plintId}/${o.pairId}" title="${L._EDIT_PAIR_} ${start1}">${L._PAIR_} ${start1}</a>`; }
 
 function pairRow(pair, depth, colv) {
     depth = typeof depth !== 'undefined' ? depth : 4;
