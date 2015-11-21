@@ -108,7 +108,7 @@ if not request.ajax:
     response.meta.generator = 'Web2py Web Framework'
     response.crossmenu = [
         ('', False, A(B('CROSS'), XML('&trade;&nbsp;'), _class='navbar-brand web2spa',_href=URL('default', 'index'))),
-        ('', False, A(T('News'), _class="nav navbar-nav web2spa", _href=URL('default', 'index/vertical', vars={'news':'true'})))
+        ('', False, A(T('News'), _class="nav navbar-nav web2spa", _href=URL('default', 'index/news')))
     ]
 
     if auth.has_membership('managers'):

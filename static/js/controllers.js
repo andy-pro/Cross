@@ -16,35 +16,32 @@ function UserCtrl() {
 
 //======================================
 /*** CrossController ***/
-function CrossCtrl() { web2spa.load_and_render(function() { return {data:{crosses:$scope.crosses}};}); }
+function CrossCtrl() { web2spa.load_and_render(function() { return {data:{crosses:$scope.crosses}}; }); }
 /* end CrossController */
 
 //======================================
 /*** VerticalController ***/
-function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search, #/vertical?news=true
+function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search
     web2spa.load_and_render(function() {
-	var search = $request.vars.search, news = $request.vars.news, verticalId = false;
-	var header = search || '';
-	mastersearch.val(header.unescapeHTML());
-	header = $scope.header;
-	if (!news) {
-	    var href, _title;
-	    if ($request.args[0]) {
-		verticalId = $request.args[0];
-		href = `${web2spa.start_path}editvertical/${verticalId}`;
-		_title = `${L._EDIT_VERT_} ${$scope.vertical}`;
-	    } else {
-		href = `${web2spa.start_path}editfound?search=${search}`;
-		_title = '';
-	    }
-	    header = `<a class="web2spa" href="${href}" title="${_title}">${header}</a>`;
-	  }
-	return {title:news?L._NEWS_:$scope.header, data:{plints:$scope.plints, users:$scope.users, header:header, search:search, news:news, verticalId:verticalId}};
+	var search = $request.vars.search, vId = false, _title='', href;
+	mastersearch.val((search || '').unescapeHTML());
+	if ($request.args[0]) { // for certain vertical view
+	    vId = $request.args[0];
+	    href = `${web2spa.start_path}editvertical/${vId}`;
+	    _title = `${L._EDIT_VERT_} ${$scope.vertical}`;
+	} else href = `${web2spa.start_path}editfound?search=${search}`;    // for search results view
+	$scope.header = `<a class="web2spa" href="${href}" title="${_title}">${$scope.header}</a>`;
+	return {title:$scope.header, data:D_Vertical(search, false, vId)};
     });
     set_wrapText();
     set_editMode();
 }
 /* end VerticalController */
+
+//======================================
+/*** NewsController ***/
+function NewsCtrl() { web2spa.load_and_render(function() { return {title:L._NEWS_, data:D_Vertical(false, true, false)}; }); }
+/* end NewsController */
 
 //======================================
 /*** ChainController ***/

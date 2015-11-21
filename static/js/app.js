@@ -14,7 +14,8 @@ web2spa.init(
     routes: [
 	['Cross', {index:true, shortcuts:true}],    // urls: 'cross/default/index', 'cross/default', 'cross'; JS controller: CrossCtrl; template: CrossTmpl, index=true means: path is empty, but controller is a string
 	['Vertical'],	// url: 'cross/default/index/vertical'; JS controller: VerticalCtrl; template: VerticalTmpl
-	['Chain'],  // and so on ...
+	['News', {template:'Vertical'}],
+	['Chain'],
 	['EditCross', {login_req:true}],    // will be redirect to login path, if not authorized
 	['EditVertical', {login_req:true}],
 	['EditPlint', {login_req:true}],
@@ -76,4 +77,8 @@ function pairRow(pair, depth, colv) {
 	row += cell+tds[i](pair)+'</td>';
     }
     return row;
+}
+
+function D_Vertical(search, news, vId) {
+    return {plints:$scope.plints, users:$scope.users, header:$scope.header, search:search, news:news, vId:vId};
 }

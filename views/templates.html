@@ -32,7 +32,7 @@ var verticals = crosses[ci]["verticals"]; %>
         <div class="checkbox inmenu right">
           <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)"><%=L._WRAP_%></label>
           <% if ($userId) print(str_editMode());
-             if ($Admin && verticalId) {%><a href="<%=web2spa.root_path%>backupvertical/<%=verticalId%>">Backup Vertical</a><%}%>
+             if ($Admin && vId) {%><a href="<%=web2spa.root_path%>backupvertical/<%=vId%>">Backup Vertical</a><%}%>
         </div>
       <%}%>
     </div>

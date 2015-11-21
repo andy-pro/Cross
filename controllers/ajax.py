@@ -70,9 +70,13 @@ def templates():
 def cross():
     return {'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.verticals.cross == r.id).select()}} for r in db(db.crosses).select()}}
 
+def news():
+    request.vars.news = True;
+    return vertical()
+
 def vertical():
     search = request.vars.search or False
-    news = bool(request.vars.news)
+    news = request.vars.news or False
     title = cross = ''
     if search:
         rows = search_plints(search)
