@@ -1,3 +1,6 @@
+select.main {
+    background: #fdf;
+}
 div#gif {
     display:    none;
     position:   absolute;
@@ -48,8 +51,15 @@ div.table-container{
 .checkbox label, .radio label{
     color: #337ab7;
 }
-.inmenu label{ padding-right: 20px; }
-/*div.checkbox.inmenu, div.radio.inmenu{*/
+.nav input[type=checkbox] {
+    margin-left: -20px;
+    position: absolute;
+}
+.inmenu label{
+    padding-left: 15px;
+    padding-right: 20px;
+    cursor: pointer;
+}
 .inmenu{
     padding-right: 50px;
     margin: 0!important;
@@ -258,6 +268,7 @@ select.autocomplete {
 body {
     padding-top: 50px;
     margin-bottom: 60px;
+    background: #eaeaea url('bg.png');
 }
 header {
     -webkit-box-shadow: 0 0 8px 2px #000;

@@ -126,6 +126,9 @@ def vertical():
 def plints():
     return dict(data=[(i.id,i.title,int(i.start1)) for i in db(db.plints.vertical == request.args(0, cast = int)).select(*pfset1, orderby=db.plints.id)])
 
+def plintspid():    # add pair titles to response
+    return dict(data=[(i.id,i.title,int(i.start1),get_pids(i)) for i in db(db.plints.vertical == request.args(0, cast = int)).select(*pfset2, orderby=db.plints.id)])
+
 def plintscd():    # add common data to response
     return dict(data=[(i.id,i.title,int(i.start1),i.comdata) for i in db(db.plints.vertical == request.args(0, cast = int)).select(*pfset1, orderby=db.plints.id)])
 
@@ -150,21 +153,41 @@ def editvertical():
 def editplint():
     data = Plint(request.args(0, cast = int))
     result = comdict(data)
-    result.update(dict(pairtitles=data.get_fieldstring('pid'),
-                       pairdetails=data.get_fieldstring('pdt'),
+    #result.update(dict(pairtitles=data.get_fieldstring('pid'),
+                       #pairdetails=data.get_fieldstring('pdt'),
+    result.update(dict(pairtitles=get_pids(data.record),
+                       pairdetails=get_pdts(data.record),
                        start1=data.start1, comdata=data.comdata))
     return add_formkey(result)
 
 @auth.requires_membership('managers')
 def editpair():
-    request.exclude = True
-    return add_formkey(chain())
+    return add_formkey(__getchain())
 
 def chain():
+    request.vars.chain = True
+    return __getchain()
+
+def __getchain():
     data = Pair(request.args(0, cast = int), request.args(1, cast = int))
     result = comdict(data)
     result['details'] = data.details
-    result['chain'] = getchain(data.title, request.exclude, '%s_%s' % (data.index, data.pair)) if (request.args(2) and test_query(data.title) and request.args(2, cast=str) == 'chain') else []
+    q = data.title
+    pairId = '%s_%s' % (data.index, data.pair)
+    rows = search_plints(q, False) if (request.vars.chain and test_query(q)) else [data.record]
+    pairs = []
+    check = True
+    for plint in rows:
+        for i in xrange(10):
+            if plint(pairtitles[i]) == q:
+                tr = dict(plintId=plint.id, pairId=i+1, plint=plint.title, start1=int(plint.start1), comdata=plint.comdata, details=plint(pairfields[i][3]))
+                if check:
+                    if pairId == '%s_%s' % (plint.id, i+1):
+                        check = False
+                        tr['main'] = True
+                add_root(tr, plint)
+                pairs.append(tr)
+    result['chain'] = pairs
     return result
 
 @auth.requires_membership('managers')
@@ -179,21 +202,6 @@ def add_formkey(data):
     s = request.function
     data.update(dict(formname=s, formkey=formUUID(s)))
     return data
-
-def getchain(q, exclude=False, pairId=''):
-    rows = search_plints(q, False)
-    pairs = []
-    for plint in rows:
-        for i in xrange(10):
-            if plint(pairtitles[i]) == q:
-                if exclude:
-                    if pairId == '%s_%s' % (plint.id, i+1):
-                        exclude = False
-                        continue
-                tr = dict(plintId=plint.id, pairId=i+1, plint=plint.title, start1=int(plint.start1), comdata=plint.comdata, details=plint(pairfields[i][3]))
-                add_root(tr, plint)
-                pairs.append(tr)
-    return pairs
 
 def test_query(q):
     try: uq = unicode(q, 'utf-8')
@@ -239,6 +247,19 @@ def formUUID(formname):
     session[keyname] = list(session.get(keyname, []))[-9:] + [formkey]
     return formkey
 
+def json_to_utf(input):
+    def byteify(input):
+        if isinstance(input, dict):
+            return {byteify(key):byteify(value) for key,value in input.iteritems()}
+        elif isinstance(input, list):
+            return [byteify(element) for element in input]
+        elif isinstance(input, unicode):
+            return input.encode('utf-8')
+        else:
+            return input
+    import json
+    return byteify(json.loads(input))
+
 @auth.requires_membership('managers')
 def update():
     vars = request.vars
@@ -263,12 +284,13 @@ def update():
         return dict(status=False, details=msg if msg else T('Unexpected error!'))
 
     result = dict(status=True)
+    changed = False
     try:
         if formname == 'editcross':
             # save formData from Edit Cross Controller
             if vars.new:
                 idx = db.crosses.update_or_insert(title=vars.title)
-                vars.delete = bool(idx)
+                changed = bool(idx)
                 if idx: result['location'] = 'editcross/'+str(idx)
             else:
                 cross = Cross(request.args(0))
@@ -277,7 +299,7 @@ def update():
                     result['location'] = ''    # this will redirect to home page index/#
                 else:
                     vt = cross.update(vars)
-                    vars.delete = bool(vt)
+                    changed = bool(vt)
                     vt = str(vt)
                     if vt.isdigit() and int(vt) > 0:
                         result['location'] = 'editvertical/' + vt
@@ -288,29 +310,18 @@ def update():
                 vertical.delete()
                 result['location'] = ''
             else:
-                vars.delete = vertical.update(vars)
+                changed = vertical.update(vars)
                 result['location'] = 'vertical/' + str(vertical.index)
         elif formname == 'editplint':
             plint = Plint(request.args(0))
             if vars.delete:
                 plint.delete()
             else:
-                vars.delete = plint.update(vars)
+                changed = plint.update(vars)
         elif formname == 'editpair' or formname == 'editfound':
-            # save formData from Edit Found Controller, Edit Pair Controller
-            if vars.chain: title = vars.title  # one title for all pairs, it's a chain
-            idx = 0
-            while(vars['cross_'+str(idx)] and idx < 1000):
-                si = str(idx)
-                index = vars['plint_'+si]
-                if index:
-                    pi = vars['pair_'+si]   # pair index
-                    if not vars.chain: title = vars['title_'+si] # each pair has own title
-                    #print 'plint:%s pair:%s title:%s' % (index, pi, title)
-                    data = {'pid'+pi : title}
-                    if idx == 0: data['pdt'+pi] = vars.details
-                    vars.delete = plint_update(index, {}, data)
-                idx += 1
+            plints = json_to_utf(vars.plints)
+            for i in plints:
+                changed = plint_update(i, {}, plints[i])
         elif formname == 'restore':
             f = vars.upload.file
             if vars.txt == 'true':
@@ -325,7 +336,7 @@ def update():
         msg = T('Error')
         result['status'] = False
         result['location'] = ''
-    result['details'] = msg if msg else T('Database update success!') if vars.delete else T('No changes')
+    result['details'] = msg if msg else T('Database update success!') if changed else T('No changes')
     if result.has_key('location'):
         result['location'] = start_path + result['location']
     return result

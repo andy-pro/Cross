@@ -22,6 +22,7 @@ function CrossCtrl() { web2spa.load_and_render(function() { return {data:{crosse
 //======================================
 /*** VerticalController ***/
 function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search
+
     web2spa.load_and_render(function() {
 	var search = $request.vars.search, vId = false, _title='', href;
 	mastersearch.val((search || '').unescapeHTML());
@@ -30,25 +31,40 @@ function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search
 	    href = `${web2spa.start_path}editvertical/${vId}`;
 	    _title = `${L._EDIT_VERT_} ${$scope.vertical}`;
 	} else href = `${web2spa.start_path}editfound?search=${search}`;    // for search results view
-	$scope.header = `<a class="web2spa" href="${href}" title="${_title}">${$scope.header}</a>`;
-	return {title:$scope.header, data:D_Vertical(search, false, vId)};
+	var header = `<a class="web2spa" href="${href}" title="${_title}">${$scope.header}</a>`;
+	return {title:$scope.header, data:D_Vertical(header, search, false, vId)};
     });
-    set_wrapText();
-    set_editMode();
+
+    function set_href() {
+	$.each($scope.a, function() {
+	    var edit = app.editMode.value, chain = app.chainMode.value; // shortcuts
+	    // compose href for <a>: replace 'ctrl' with 'editpair' or 'chain', add var 'chain'
+	    this[2].href = this[0] + (edit?'editpair':'chain') + this[1] + (edit&&chain?'?chain=true':'');
+	});
+    }
+
+    app.wrapMode.init(function(value) { $('table.vertical td').css({'white-space': value ? 'pre-line' : 'nowrap'}); }, true);
+
+    $scope.a = [];  // array for store splitting href: part1, part2, jQuery <a> elements
+    $('a[data-pair]').each(function(i) { $scope.a[i] = this.attributes.href.value.split('ctrl').concat([this]); });
+
+    app.editMode.init(set_href);  // set change editMode handler
+    app.chainMode.init(set_href, true);  // set change chainMode handler and starting once
 }
 /* end VerticalController */
 
 //======================================
 /*** NewsController ***/
-function NewsCtrl() { web2spa.load_and_render(function() { return {title:L._NEWS_, data:D_Vertical(false, true, false)}; }); }
+function NewsCtrl() { web2spa.load_and_render(function() { return {title:L._NEWS_, data:D_Vertical($scope.header, false, true, false)}; }); }
 /* end NewsController */
 
 //======================================
 /*** ChainController ***/
 function ChainCtrl() {
-    $request.args.push('chain')
     web2spa.load_and_render(function() { return {title:$scope.address, data:{chain:$scope}}; });
-    set_editMode();
+    $scope.a = $('a[data-pair]');  // store set of jQuery <a> elements
+    $scope.a.each(function() { $(this).data('href', this.attributes.href.value); });
+    app.chainMode.init(function(value) { $scope.a.each(function(){ this.href = $(this).data('href')+(value?'?chain=true':''); }); }, true);
 }
 /* end ChainController */
 
@@ -226,7 +242,7 @@ function EditVerticalCtrl() {
 	vmEl = $('input[name=view]').on('change', viewChange),
 	taEl = $('textarea').on('input', verticalChange);
 
-    var form = new Form(verticalSubmit, verticalChange);    // edit vertical ctrl
+    var form = new Form(verticalSubmit, {hC:verticalChange});    // edit vertical ctrl
     form.onLinkChange = verticalChange;
     form.chaindepth = 3;
     form.chaindata = [];
@@ -252,7 +268,7 @@ function EditVerticalCtrl() {
 /*** EditPlintController ***/
 function EditPlintCtrl() {
 
-    plintChange = function() {
+    function plintChange() {
 	if (form.inputs.delete) return;
 	mergechar.disabled = !form.inputs.merge;
 	$('ol').attr('start', parseInt(form.inputs.start1));
@@ -268,7 +284,7 @@ function EditPlintCtrl() {
     ta[0].value = $scope.pairtitles.unescapeHTML();   // innerHTML used in templating system gives loss first empty line (\n), :-( ?
     ta[1].value = $scope.pairdetails.unescapeHTML();
     $('input[name=view]').on('change', viewChange);
-    var form = new Form(function() { return form.post(this); }, plintChange); // edit plint ctrl
+    var form = new Form(function() { return form.post(this); }, {hC:plintChange}); // edit plint ctrl
     var mergechar = form.inputstext.filter('[name=mergechar]')[0];
     form.init();
 }
@@ -278,8 +294,7 @@ function EditPlintCtrl() {
 /*** EditPairController ***/
 function EditPairCtrl() {
 
-//~~~~~~~~~~~~for debug~~~~~~~~~~~~~~
-    refreshWatch = function() {
+    function refreshWatch() {	//~~~~~~~~~~~~for debug~~~~~~~~~~~~~~
         $("table#watchtable tr").remove(".refreshing");
         $.each(form.chaindata, function(i, link) {
             var tr = $('<tr>', {class:"refreshing"});
@@ -288,35 +303,58 @@ function EditPairCtrl() {
             tr.appendTo(watchtable);   // id of element, without declare variable!!!
         });
 	//console.log(form);
-    }
-//~~~~~~~~~~~~end for debug~~~~~~~~~~~~~~
+    }	//~~~~~~~~~~~~end for debug~~~~~~~~~~~~~~
 
-    addLink = function() {
-        form.chaindata.push(new Link(form, 'plints'));
-        //~~~~~~$$$$$$$$$$$$$$$$$~~~~~~~~~~~~~
-        if (_DEBUG_) refreshWatch();
-        //~~~~~~$$$$$$$$$$$$$$$$$~~~~~~~~~~~~~
+    function editpairSubmit() {	// submit edit pair ctrl
+	var title = this.title.value, details = this.details.value;
+	$.each(form.chaindata, function() {
+	    row = this.link.plintId;
+	    if (row > 0) {  // pearl off rows with "Not crossed"
+		if (!plints[row]) plints[row]= {};
+		plints[row]['pid'+this.link.pairId] = title;
+		if (this.link.main) plints[row]['pdt'+this.link.pairId] = details;
+	    }
+	});
+	//console.log(plints);
+	$scope.formData.plints = JSON.stringify(plints);
+	return form.post();
     }
 
-    if (localStorage.editchain == 'true') $request.args.push('chain');
-    web2spa.load_and_render(function() { return {title:$scope.address, data:{pair:$scope}}; });
-    var form = new Form(function() {	// edit pair ctrl
-	$scope.formData = {'cross_0':0, 'plint_0':$request.args[0], 'pair_0':$request.args[1], 'chain':true};
-	return form.post(this);
-    });
-    form.chaindepth = 4;
-    form.chaindata = [ {link:{crossId: 0, verticalId: 0, plintId: $request.args[0], pairId: $request.args[1]}} ] // native link
-    if ($scope.chain) $.each($scope.chain, function() { form.chaindata.push(new Link(form, 'plints', this)); });
-    //console.log(form);
-
-    //~~~DEBUG~~~$$$$$$$$$$$$$$$$$~~~~~~
-    //debugger;
-    if (_DEBUG_) {
-        web2spa.render({id:'watchtableTmpl', append:true});
-        refreshWatch();
-	form.onLinkChange = refreshWatch;
+    function editpairRender() {	// submit edit pair rendering
+	web2spa.load_and_render(function() { return {title:$scope.address, data:{pair:$scope, chain:$request.vars.chain}}; });
+	form = new Form(editpairSubmit);
+	$('#addLink').click(function addLink() {
+	    form.chaindata.push(new Link(form, 'plints'));
+	    if (_DEBUG_) refreshWatch();
+	});
+	$scope.formData = {};
+	$scope.formData.plints = {};
+	plints = $scope.formData.plints; // shortcut
+	form.chaindepth = 4;
+	form.chaindata = []
+	if ($scope.chain) $.each($scope.chain, function() {
+	    row = this.plintId;
+	    if (!plints[row]) plints[row] = {};
+	    plints[row]['pid'+this.pairId] = '';
+	    if (this.main) plints[row]['pdt'+this.pairId] = ''; // native link
+	    row = $request.vars.chain ? new Link(form, 'plints', this) : {link:this}; // plintspid
+	    form.chaindata.push(row);
+	});
+	//console.log('form:', form, ' plints:', plints);
+	//debugger;
+	if (_DEBUG_) {	//~~~~~~~~~~~~for debug~~~~~~~~~~~~~~
+	    web2spa.render({id:'watchtableTmpl', append:true});
+	    refreshWatch();
+	    form.onLinkChange = refreshWatch;
+	}	//~~~~~~~~~~~~for debug~~~~~~~~~~~~~~
     }
-    //~~~DEBUG~~~$$$$$$$$$$$$$$$$$~~~~~~
+
+    var form, plints, row;
+    app.chainMode.init(function(value) {
+	$request.vars.chain = value;
+	editpairRender();
+    }, true);
+
 }
 /* end edit pair controller */
 
@@ -332,6 +370,9 @@ function EditFoundCtrl() {
 	    pair = fdata[ci];
 	    pair.cell.innerHTML = _mypre.format(pair.title.replace(ftext, out));
 	    pair._title = pair.title.replace(ftext, rtext);
+	    row = pair.plintId;
+	    if (!plints[row]) plints[row] = {};
+	    plints[row]['pid'+pair.pairId] = pair._title.unescapeHTML();
 	}
     }
 
@@ -348,6 +389,8 @@ function EditFoundCtrl() {
 				plintId: plint.id,
 				plint: plint.title,
 				title: pair[0],
+				details: pair[3],
+				comdata: plint.comdata,
 				pairId: idx+1,    // idx in range 0-9, pid in range 1-10
 				start1: start1});
 	    });
@@ -355,30 +398,24 @@ function EditFoundCtrl() {
 	return {title:$scope.header, data:{search:$request.vars.search, header:$scope.header, count:fdata.length}};
     }
 
-    function foundSubmit() {
-	$scope.formData = {};
-        $.each(fdata, function(idx, link) {
-            $scope.formData['cross_'+idx] = 0;    // impotant!, inform 'def ajax_update():' about record existence
-            $scope.formData['plint_'+idx] = link.plintId;
-            $scope.formData['pair_' +idx] = link.pairId;
-            $scope.formData['title_'+idx] = link._title.unescapeHTML();
-        });
-	return form.post();
-    }
+    function foundSubmit() { $scope.formData.plints = JSON.stringify(plints); return form.post(); }
 
     var fdata = [];
     web2spa.load_and_render(plints_to_pairs);
-    var form = new Form(foundSubmit, refreshFoundTable);    // edit found ctrl
+    var form = new Form(foundSubmit, {hC:refreshFoundTable});    // edit found ctrl
     var inputs = form.inputs;
-
+    $scope.formData = {};
+    $scope.formData.plints = {};
+    var plints = $scope.formData.plints; // shortcut
     var pair, row;
     for(var ci in fdata) {
 	pair = fdata[ci];
 	row = foundtable.insertRow();
 	row.insertAdjacentHTML('beforeend', pairRow(pair));
 	pair.cell = row.insertCell();
+	row.insertCell().innerHTML = pair.details;
+	row.insertCell().innerHTML = pair.comdata;
     }
-
     form.init();
 }
 /* end edit found controller */
@@ -460,6 +497,7 @@ function EditFoundCtrl() {
 function Link(form, url, link) {
 
     if (typeof link === 'undefined') { link = {}; $.each(stages, function() { link[this+'Id'] = 0; }); }
+    this.form = form;
     this.index = form.chaindata.length;
     this.link = link;
     //this.depth = form.chaindepth ? form.chaindepth : 1;
@@ -468,11 +506,12 @@ function Link(form, url, link) {
     this.url = url;
     this.controls = {};
     this.titles = {};
-    var tr = $('<tr>');
+    var tr = $('<tr>'), td, sel, selclass = 'form-control' + (link.main ? ' main' : ''), self = this;
     for(var i = 0; i < this.depth; i++) {
-        var td = $('<td>');
-        var sel = $('<select>', {class:"form-control", name:stages[i]+"_"+this.index}).prop('disabled', true).data('stage', stages[i]).appendTo(td);
-        sel.on('change', {this:this, form:form}, $selectChange);
+        td = $('<td>');
+        sel = $('<select>', {class:selclass}).prop('disabled', true).data('stage', stages[i]).appendTo(td);
+        //sel.on('change', {this:this, form:form}, $selectChange);
+        sel.on('change', function() { self.selectChange($(this)); });
         td.appendTo(tr);
         this.controls[stages[i]+'El'] = sel;
         }
@@ -483,6 +522,16 @@ function Link(form, url, link) {
     this.controls.crossEl.append($('<option>').text(L._NOT_CROSSED_).attr('value', 0));
     this.addOptFromObj(this.cache.crosses);
     this.setVertical();
+}
+
+Link.prototype.selectChange = function(El) {
+console.log(El);
+    var stage = El.data('stage');
+    this.link[stage+'Id'] = El.val();        // !!! write select option to Link here !!!
+    if (stage != 'pair') this[stage+'Change']();  // prototype function name, execute crossChange, verticalChange or plintChange
+    var f = this.form.onLinkChange;
+    if (typeof f == 'function') { ajaxstate.during ? ajaxstate.callback.push(f) : f(); }
+    return false;
 }
 
 Link.prototype.setVertical = function() {
@@ -510,12 +559,12 @@ Link.prototype.setPlint = function() {
             this.vertical = this.verticals[idx]; // shortcut
             this.titles.vertical = this.vertical.title;
 
-            var self = this;    // spike, pointer to object for ajax callback
+            var self = this;
             //----------callback function---------------
                 var callback = function(){
                     self.plints = self.vertical[self.url].data; // shortcut, [url] - content of cache defined by urls, specific of "aLoad"
-                    //console.log(plints)
-                    if (self.plints.length) {
+                    //console.log(self.titles.vertical, ':', self.link.verticalId, ', ajaxcount:', ajaxstate.count, ', plints:', self.plints, self)
+                    if (self.plints && self.plints.length) {
                         var El = self.controls.plintEl;
                         if (_DEBUG_) $.each(self.plints, function() {El.append($('<option>').text(this[1]+' : '+this[0]).attr('value', this[0]));});
                             else $.each(self.plints, function() {El.append($('<option>').text(this[1]).attr('value', this[0]));});
@@ -609,23 +658,6 @@ Link.prototype.addOptFromObj = function(data) {
     this.setselect();
 }
 /*** End Class: Link ***/
-//======================================
-
-var $selectChange = function(event) {
-    var obj = event.data.this;    // retrieve object 'this'
-    //console.log(event)
-    var El = $(this);
-    var stage = El.data('stage');
-    obj.link[stage+'Id'] = El.val();        // !!! write select option to Link here !!!
-    //obj.names[stage] = El.children(':selected').text();
-    if (stage != 'pair') obj[stage+'Change']();  // prototype function name, execute crossChange, verticalChange or plintChange
-    var f = event.data.form.onLinkChange;
-    if (typeof f == 'function') {
-        if (ajaxstate.during) ajaxstate.callback.push(function() {f(event, El)});
-        else f(event, El);
-    }
-    return false;
-}
 
 //===========================================================
 /*** Ajax async Load  ***/

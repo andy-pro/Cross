@@ -41,6 +41,7 @@
       var ajax_error_500 = '{{=T.M('An error occured, please [[reload %s]] the page') % URL(args=request.args, vars=request.get_vars) }}'
     //--></script>
     <script src="{{=URL('static','js/jquery.js')}}"></script>
+    <script src="{{=URL('static','js/jquery-ui.min.js')}}"></script>
     <script src="{{=URL('static','js/web2py.js')}}"></script>
     <script src="{{=URL('web2spa','static','js/web2spa.js')}}"></script>
     {{
@@ -74,7 +75,6 @@
             {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}
           {{pass}}
           <form class="navbar-form navbar-right livesearch">
-            <div class="col-lg-6">
               <div class="input-group">
                 <input type="search" id="master-search" class="form-control" placeholder="{{=T('Search')}}" value="" autocomplete="off"/>
                 <span class="input-group-btn">
@@ -82,7 +82,6 @@
                 </span>
               </div>
               <div id="ajaxlivesearch"></div>
-            </div>
           </form>
         </div>
       </div>

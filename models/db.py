@@ -47,11 +47,14 @@ selfields = []
 pairfields = []     # this list contain [pid1,pmodon1,pmodby1,pdt1,pch1,par1], [pid2,pmodon2,pmodby2,pdt2,pch2,par2], ...
 pairtitles = []
 pfset1 = ('pid','pmodon','pmodby','pdt','pch','par')    # must be 3 symbols
+pfset2 = []
 for i in xrange(1, 11):
     fnames = [name+`i` for name in pfset1]
     pairfields.append(fnames)
     pairtitles.append(fnames[0])
-    selfields.append(Field(fnames[0], length=80, default=''))   # pid, pair title
+    plintfields = Field(fnames[0], length=80, default='')   # pid, pair title
+    pfset2.append(plintfields)
+    selfields.append(plintfields)
     selfields.append(Field(fnames[1], 'date', default=request.now.date()))   # pmodon, modify date
     selfields.append(Field(fnames[2], db.auth_user, default=auth.user))   # pmodby, modify author
     selfields.append(Field(fnames[3], length=80, default=''))   # pdt, pair details
@@ -69,10 +72,14 @@ db.define_table('plints',
                 *selfields)
 pairtitles.append(plintfields[2])    # this list contain pid1, pid2,..., pid10, comdata
 pfset1 = [db.plints.id, db.plints.title, db.plints.start1, db.plints.comdata]
+pfset2 = pfset1 + pfset2
 
 def get_tb_fields():
     fields = (('id','title'), ('id','cross','title'), ('id','cross','vertical')+plintfields+tuple(sum(pairfields,[])))
     return zip(tables, fields)
+
+get_pids = lambda rec: '\n'.join(rec(pairtitles[i]) or '' for i in xrange(10))
+get_pdts = lambda rec: '\n'.join(rec(pairfields[i][3]) or '' for i in xrange(10))
 
 ## after defining tables, uncomment below to enable auditing
 # auth.enable_record_versioning(db)
@@ -108,7 +115,8 @@ if not request.ajax:
     response.meta.generator = 'Web2py Web Framework'
     response.crossmenu = [
         ('', False, A(B('CROSS'), XML('&trade;&nbsp;'), _class='navbar-brand web2spa',_href=URL('default', 'index'))),
-        ('', False, A(T('News'), _class="nav navbar-nav web2spa", _href=URL('default', 'index/news')))
+        ('', False, A(B(T('News')), _class="nav navbar-nav web2spa", _href=URL('default', 'index/news'))),
+        ('', False, A(LABEL(INPUT(_type='checkbox', _id='chainMode'), T('Edit chain')), _class='inmenu'))
     ]
 
     if auth.has_membership('managers'):
@@ -123,7 +131,7 @@ if not request.ajax:
                 #('Test', False, URL('default', 'test')), hr,
                 #('', False, A('Test', _class='web2spa', _href=URL('default', 'index/vertical'))), hr,
                 (itext('warning-sign', T('Direct edit DB')), False, URL('appadmin', 'index')),
-                (itext('remove', T('Clear DB')), False, 'javascript:db_clear()'), hr,
+                (itext('remove', T('Clear DB')), False, 'javascript:app.db_clear()'), hr,
                 (itext('cog', 'RESTful API'), False, URL('default', 'api/patterns'))]
         response.toolsmenu = [(T('Tools'), False, '#', toolsmenu)]
 
@@ -256,12 +264,13 @@ def plint_update(index, maindata, pairdata, merge=False, mergechar=''):
     if pairdata:
         keys = pairdata.keys()
         for key in keys:
-            sk = str(key[3:])   # pfset1 = ('pid','pmodon','pmodby','pdt','pch','par')    # must be 3 symbols
-            #pairkey = 'pid' + sk
             if merge and (key.find('pid')==0 or key.find('pdt')==0): pairdata[key] = (plint(key) + mergechar + pairdata[key]).strip()
+            s1=plint(key)
+            s2=pairdata[key]
             if plint(key) != pairdata[key]:
                 changed = True
                 maindata[key] = pairdata[key]
+                sk = str(key[3:])   # pfset1 = ('pid','pmodon','pmodby','pdt','pch','par')    # must be 3 symbols
                 maindata['pmodon' + sk] = whenwho['modon']
                 maindata['pmodby' + sk] = whenwho['modby']
     if changed:
@@ -275,6 +284,7 @@ class Pair:
         if _pair>10 or _pair<1: raise HTTP(404)
         self.plint = Plint(_plint)
         _rec = self.plint.record
+        self.record = _rec
         self.index = _rec.id
         self.pair = _pair
         self.vertical = self.plint.vertical

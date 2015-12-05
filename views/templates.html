@@ -30,7 +30,7 @@ var verticals = crosses[ci]["verticals"]; %>
     <div class="panel-heading"><%=header%><%=btnBack%>
       <%if (!news) {%>
         <div class="checkbox inmenu right">
-          <label><input id="wraptext" type="checkbox" onclick="wrapToggle(this.checked)"><%=L._WRAP_%></label>
+          <label><input id="wrapMode" type="checkbox"><%=L._WRAP_%></label>
           <% if ($userId) print(str_editMode());
              if ($Admin && vId) {%><a href="<%=web2spa.root_path%>backupvertical/<%=vId%>">Backup Vertical</a><%}%>
         </div>
@@ -288,10 +288,12 @@ var verticals = crosses[ci]["verticals"]; %>
           <label class="col-md-2 control-label"><%=L._DETAILS_%></label>
           <div class="col-md-8"><input type="text" name="details" class="form-control" value="<%=pair.details%>"></div>
         </div>
-        <button type="button" class="btn btn-sm btn-success pull-right" title="<%=L._ADD_LINK_%>" onclick="addLink()">+</button>
-        <table id="chaintable">
-          <tr><% for( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %> </tr>
-        </table>
+        <%if (chain) {%>
+          <button id="addLink" type="button" class="btn btn-sm btn-success pull-right" title="<%=L._ADD_LINK_%>">+</button>
+          <table id="chaintable">
+            <tr><% for( var ci in tbheaders ) { print("<td>"+tbheaders[ci]+"</td>") } %> </tr>
+          </table>
+        <%}%>
         <%=btnOkCancel%>
       </form>
     </div>
@@ -314,7 +316,7 @@ var verticals = crosses[ci]["verticals"]; %>
 </script>
 
 <script type="text/html" id="EditFoundTmpl">
-<div class="col-md-7">
+<div class="col-md-10">
   <div class="panel panel-primary">
     <div class="panel-heading"><%=header%><%=btnBack%></div>
     <div class="panel-body">
@@ -337,11 +339,13 @@ var verticals = crosses[ci]["verticals"]; %>
     </div>
     <table class="table table-bordered table-condensed" id="foundtable">
       <tr class="info">
-      <th width="15%"><%=tbheaders[0]%></th>
-      <th width="12%"><%=tbheaders[1]%></th>
-      <th width="10%"><%=tbheaders[2]%></th>
-      <th width="12%"><%=tbheaders[3]%></th>
-      <th><%=L._TITLE_%></th>
+      <td width="15%"><%=tbheaders[0]%></td>
+      <td width="12%"><%=tbheaders[1]%></td>
+      <td width="10%"><%=tbheaders[2]%></td>
+      <td width="12%"><%=tbheaders[3]%></td>
+      <td><%=L._TITLE_%></td>
+      <td><%=L._DETAILS_%></td>
+      <td><%=L._COMMON_DATA_%></td>
       </tr>
     </table>
     <div class="panel-footer"><div class="myright"><%=L._FOUND_%><%=count%></div></div>
