@@ -46,12 +46,14 @@ db.define_table('verticals', Field('cross', db.crosses), Field('title', length=4
 selfields = []
 pairfields = []     # this list contain [pid1,pmodon1,pmodby1,pdt1,pch1,par1], [pid2,pmodon2,pmodby2,pdt2,pch2,par2], ...
 pairtitles = []
-pfset1 = ('pid','pmodon','pmodby','pdt','pch','par')    # must be 3 symbols
+pdtset = []
+pfset1 = ('pid','pmodon','pmodby','pdt','pch','par','clr')    # must be 3 symbols
 pfset2 = []
 for i in xrange(1, 11):
     fnames = [name+`i` for name in pfset1]
     pairfields.append(fnames)
     pairtitles.append(fnames[0])
+    pdtset.append(fnames[3])
     plintfields = Field(fnames[0], length=80, default='')   # pid, pair title
     pfset2.append(plintfields)
     selfields.append(plintfields)
@@ -59,7 +61,8 @@ for i in xrange(1, 11):
     selfields.append(Field(fnames[2], db.auth_user, default=auth.user))   # pmodby, modify author
     selfields.append(Field(fnames[3], length=80, default=''))   # pdt, pair details
     selfields.append(Field(fnames[4], 'integer', default=0))   # pch, position in chain
-    selfields.append(Field(fnames[5], 'integer', default=0))   # par, position in parallel chain
+    selfields.append(Field(fnames[5], 'boolean', default=False))   # par, parallel presence
+    selfields.append(Field(fnames[6], 'integer', default=0))   # clr, pair color, default is #fff, white
 plintfields = ('title','start1','comdata','modon','modby')
 db.define_table('plints',
                 Field('cross', db.crosses),
@@ -73,6 +76,7 @@ db.define_table('plints',
 pairtitles.append(plintfields[2])    # this list contain pid1, pid2,..., pid10, comdata
 pfset1 = [db.plints.id, db.plints.title, db.plints.start1, db.plints.comdata]
 pfset2 = pfset1 + pfset2
+pdtset = pairtitles + pdtset
 
 def get_tb_fields():
     fields = (('id','title'), ('id','cross','title'), ('id','cross','vertical')+plintfields+tuple(sum(pairfields,[])))
@@ -108,7 +112,6 @@ itext = lambda c, t: I(_class='glyphicon glyphicon-'+c) + ' ' + t
 if not request.ajax:
     response.title = request.application.replace('_',' ').title()
     response.subtitle = ''
-    ## read more at http://dev.w3.org/html5/markup/meta.name.html
     response.meta.author = 'Andrey Protsenko <andy.pro.1972@gmail.com>'
     response.meta.description = 'Cross management application'
     response.meta.keywords = 'web2py, web2spa, single page application, python, framework, javascript, ajax, jquery, andy-pro'
@@ -248,9 +251,8 @@ def plint_update(index, maindata, pairdata, merge=False, mergechar=''):
     """
     index - record id
     maindata - dict, possible keys: title, start1, comdata
-    pairdata - dict, possible keys: pid1-10:title; pdet1-10:details; pch1-10, ppch1-10:position in main and parallel chains
+    pairdata - dict, possible keys: pid1-10:title; pdt1-10:details; pch1-10:position in chain; par1-10:parallel existence; clr1-10:pair color
     merge - boolean, if True, new pair title merge with existing
-    used by editpair, editfound, editplint (through Plint.update), editvertical (through Vertical.update)
     """
     plint = db.plints[index]
     whenwho = get_whenwho()
@@ -264,20 +266,19 @@ def plint_update(index, maindata, pairdata, merge=False, mergechar=''):
     if pairdata:
         keys = pairdata.keys()
         for key in keys:
-            if merge and (key.find('pid')==0 or key.find('pdt')==0): pairdata[key] = (plint(key) + mergechar + pairdata[key]).strip()
-            s1=plint(key)
-            s2=pairdata[key]
-            if plint(key) != pairdata[key]:
+            s1=plint(key)   # old value
+            s2=pairdata[key]    # new value
+            if merge and (key[:3]=='pid' or key[:3]=='pdt'): s2 = (s1 + mergechar + s2).strip()
+            if s1 != s2:
                 changed = True
-                maindata[key] = pairdata[key]
-                sk = str(key[3:])   # pfset1 = ('pid','pmodon','pmodby','pdt','pch','par')    # must be 3 symbols
+                maindata[key] = s2
+                sk = str(key[3:])   # 'pid','pdt','pch','par','clr'  must be 3 symbols
                 maindata['pmodon' + sk] = whenwho['modon']
                 maindata['pmodby' + sk] = whenwho['modby']
     if changed:
         maindata.update(whenwho)
         db.plints[index] = maindata
     return changed
-
 
 class Pair:
     def __init__(self, _plint, _pair):

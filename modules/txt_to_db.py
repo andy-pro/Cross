@@ -43,7 +43,7 @@ def import_from_txt1(fl, tb_fields):
         for plint in plints:
             sp = []
             for i in xrange(10):
-                spx = [readstring(), datepair, 1, '', 0, 0]  # pid(pair_title), pmodon, pmodby=1, pdt='', pch=0, par=0
+                spx = [readstring(), datepair, 1, '', 0, False, 0]  # pid(pair_title), pmodon, pmodby=1, pdt='', pch=0, par=False, clr=0
                 s1 = fl.readline()   # pair loop, not used
                 if i == 0: sp0 = spx
                 else: sp = sp + spx

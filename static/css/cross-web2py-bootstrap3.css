@@ -1,6 +1,11 @@
-select.main {
-    background: #fdf;
+.tdbtn {
+    background-color: inherit;
+    /*color: inherit;*/
+    color: red;
+    border: none;
+    cursor: normal!important;
 }
+
 div#gif {
     display:    none;
     position:   absolute;
@@ -18,22 +23,23 @@ div#gif {
 .cont-mid {
     max-width: 600px;
 }
+div.pair-li {
+    overflow: hidden;
+}
 div.pair-ol {
+    float: left;
     background: #eee;
-    position: absolute;
     line-height: 16px;
     width: 42px;
-    height: 99%;
+    height: 190px;
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
-    margin: 1px;
+    border: 1px solid #ccc;
     padding-top: 6px;
 }
-textarea.pair-titles {
+textarea.pair-data {
     line-height: 16px;
-    width: 100%;
     resize: none;
-    padding-left: 50px;
     font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
 }
 pre.mypre {
@@ -65,7 +71,7 @@ div.table-container{
     margin: 0!important;
 }
 .myright { text-align: right; }
-#ajaxlivesearch{
+#livesearchout{
     display: none;
     background: #ffc;
     margin: 4px 0px;
@@ -83,12 +89,12 @@ div.table-container{
     border-radius: 4px;
     box-shadow: 7px 7px 10px rgba(0, 0, 0, 0.2);
 }
-#ajaxlivesearch a{
+#livesearchout a{
     cursor: pointer;
     display: block;
     color:#666666;
 }
-#ajaxlivesearch a:hover{
+#livesearchout a:hover{
     display: block;
     color: #FFF;
     text-decoration: none;
@@ -122,9 +128,9 @@ table#chaintable {
     table-layout: fixed;
     width: 100%;
     margin: 15px 0px;
-    color: #fff;
 }
-table#chaintable td { padding: 3px 3px; }
+#chainbody td { padding: 3px 3px; }
+#chainbody tr { cursor: move; }
 
 /** vertical table css rules **/
 table.vertical { table-layout: fixed; }

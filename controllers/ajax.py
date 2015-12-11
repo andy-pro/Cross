@@ -79,7 +79,8 @@ def vertical():
     news = request.vars.news or False
     title = cross = ''
     if search:
-        rows = search_plints(search)
+        #rows = search_plints(search)
+        rows = search_plints(search, pfset=pdtset)
         header = T('Found results for "%s"') % search if rows else '"%s" - %s' % (search, response.searchstatus)
     elif news:
         rows = db(db.plints).select(orderby=~db.plints.modon, limitby=(0, 50))
@@ -172,22 +173,33 @@ def __getchain():
     data = Pair(request.args(0, cast = int), request.args(1, cast = int))
     result = comdict(data)
     result['details'] = data.details
-    q = data.title
-    pairId = '%s_%s' % (data.index, data.pair)
-    rows = search_plints(q, False) if (request.vars.chain and test_query(q)) else [data.record]
-    pairs = []
-    check = True
-    for plint in rows:
-        for i in xrange(10):
-            if plint(pairtitles[i]) == q:
-                tr = dict(plintId=plint.id, pairId=i+1, plint=plint.title, start1=int(plint.start1), comdata=plint.comdata, details=plint(pairfields[i][3]))
-                if check:
-                    if pairId == '%s_%s' % (plint.id, i+1):
-                        check = False
-                        tr['main'] = True
-                add_root(tr, plint)
-                pairs.append(tr)
-    result['chain'] = pairs
+    if request.vars.chain:
+        q = data.title
+        linkId = '%s_%s' % (data.index, data.pair)
+        #=======================
+        def __addlink(plint, i):
+            tr = dict(plintId=plint.id, pairId=i+1, plint=plint.title, start1=int(plint.start1), comdata=plint.comdata,
+                      pdt=plint(pairfields[i][3]),
+                      pch=plint(pairfields[i][4]),
+                      par=int(plint(pairfields[i][5])),
+                      clr=plint(pairfields[i][6])
+            )
+            if linkId == '%s_%s' % (plint.id, i+1):
+                tr['edited'] = True
+            add_root(tr, plint)
+            pairs.append(tr)
+        #=======================
+        pairs = []
+        if test_query(q):
+            rows = search_plints(q, like=False)  # exact matching
+            for plint in rows:
+                for i in xrange(10):
+                    if plint(pairtitles[i]) == q:
+                        __addlink(plint, i)
+            pairs.sort(key = lambda tr: tr['pch'])
+        else:
+            __addlink(data.record, data.pair-1)
+        result['chain'] = pairs
     return result
 
 @auth.requires_membership('managers')
@@ -214,12 +226,12 @@ def add_root(tr, plint):
     tr['vertical'] = plint.vertical.title
     tr['verticalId'] = plint.vertical
 
-def search_plints(q, like=True):
+def search_plints(q, like=True, pfset=pairtitles):
     if q and test_query(q):
         if like:
-            queries = [db.plints[field].contains(q, case_sensitive=True) for field in pairtitles]
+            queries = [db.plints[field].contains(q, case_sensitive=True) for field in pfset]
         else:
-            queries = [db.plints[field] == q for field in pairtitles]
+            queries = [db.plints[field] == q for field in pfset]
         query = reduce(lambda a, b: (a | b), queries)
         result = db(query).select(orderby=db.plints.cross)  # sort by crosses
         response.searchstatus = 'OK' if result else T('not found!')
@@ -230,10 +242,10 @@ def search_plints(q, like=True):
 
 def livesearch():
     q = request.vars.search
-    plints = search_plints(q)
+    plints = search_plints(q, pfset=pdtset) # search in pair details also
     items = []
     for plint in plints:
-        for field in pairtitles:
+        for field in pdtset:
             word = plint[field]
             if q in word and word not in items:
                 items.append(word)

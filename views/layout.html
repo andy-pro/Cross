@@ -74,14 +74,14 @@
           {{if response.menu:}}
             {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}
           {{pass}}
-          <form class="navbar-form navbar-right livesearch">
+          <form id="livesearch" class="navbar-form navbar-right">
               <div class="input-group">
                 <input type="search" id="master-search" class="form-control" placeholder="{{=T('Search')}}" value="" autocomplete="off"/>
                 <span class="input-group-btn">
                   <button type="none" class="btn btn-inverse"><span class="glyphicon glyphicon-search"></span></button>
                 </span>
               </div>
-              <div id="ajaxlivesearch"></div>
+              <div id="livesearchout"></div>
           </form>
         </div>
       </div>
@@ -103,6 +103,7 @@
     <script src="{{=URL('static','js/web2py-bootstrap3.js')}}"></script>
     <script src="{{=URL('static','js/app.js')}}"></script>
     <script src="{{=URL('static','js/controllers.js')}}"></script>
+    <script src="{{=URL('static','js/chain.js')}}"></script>
 
   </body>
 </html>

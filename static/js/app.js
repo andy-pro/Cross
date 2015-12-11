@@ -1,8 +1,7 @@
 /*** Global constants  ***/
-//const _DEBUG_ = true, _dbgstr1 = ' : value';
+//const _DEBUG_ = true;
 const _DEBUG_ = false;
 const _mypre = '<pre class="mypre">%s</pre>';
-const stages = ['cross','vertical','plint','pair'];
 
 app = {name: 'cross'};
 
@@ -32,18 +31,15 @@ web2spa.init({	// application settings, !!! important: urls or url's parts witho
 	L = web2spa.lexicon;   // global shortcut to lexicon
 	tbheaders = [L._CROSS_, L._VERTICAL_, L._PLINT_, L._PAIR_];
 	btnOkCancel = web2spa._render({id:'btnOkCancelTmpl'}), btnBack = L._BTNBACK_;	// helpers, inline templates for common buttons
-
 	app.chainMode = new CheckBox('chainMode');
 	app.editMode = new CheckBox('editMode');
 	app.wrapMode = new CheckBox('wrapMode');
-
 	app.db_clear = function() { if (confirm("A you sure?")) location.href = web2spa.root_path + 'cleardb'; }
     },
     beforeNavigate: function() { app.chainMode.reset_handler(); }
 });
 
-function str_editMode() { return `<label><input id="editMode" type="checkbox">${L._EDITOR_}</label>`; }
-
+/* stage hyperlink helpers */
 function A_Cross(o) { return `<a class="web2spa" href="${web2spa.start_path}editcross/${o.crossId}" title="${L._EDIT_CROSS_} ${o.cross}">${o.cross}</a>`; }
 
 function A_Vertical(o, _class='') {
@@ -67,6 +63,34 @@ function pairRow(pair, depth, colv) {
     }
     return row;
 }
+/* stage hyperlink helpers */
+
+/* toggle helpers for pair href */
+function toggle_wrap() {
+    app.wrapMode.init(function(value) { $('table.vertical td').css('white-space', value ? 'pre-line' : 'nowrap'); }, true);
+}
+
+function toggle_chain() {
+    $scope.a = $('a[data-pair]');  // set for store of jQuery <a> elements
+    $scope.a.each(function() { $(this).data('href', this.attributes.href.value); });	// store original href to custom data property
+    app.chainMode.init(function(value) { $scope.a.each(function(){ this.href = $(this).data('href')+(value?'?chain=true':''); }); }, true);
+}
+
+function toggle_ctrl() {
+    function cmp_href()	{   // compose href for <a>: replace 'ctrl' with 'editpair' or 'chain', add/remove var 'chain'
+	$.each($scope.a, function() {
+	    var em = app.editMode.value, cm = app.chainMode.value; // shortcuts
+	    this[2].href = this[0] + (em?'editpair':'chain') + this[1] + (em&&cm?'?chain=true':'');
+	});
+    }
+    $scope.a = [];  // array for store splitting href: part1, part2, jQuery <a> elements
+    $('a[data-pair]').each(function(i) { $scope.a[i] = this.attributes.href.value.split('\/ctrl\/').concat([this]); });
+    app.editMode.init(cmp_href);  // set 'change editMode handler'
+    app.chainMode.init(cmp_href, true);  // set 'change chainMode handler' and starting once
+}
+/* toggle helpers for pair href */
+
+function str_editMode() { return `<label><input id="editMode" type="checkbox">${L._EDITOR_}</label>`; }
 
 function D_Vertical(header, search, news, vId) {
     return {plints:$scope.plints, users:$scope.users, header:header, search:search, news:news, vId:vId};
