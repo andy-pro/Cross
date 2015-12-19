@@ -1,6 +1,6 @@
 /*** Global constants  ***/
-//const _DEBUG_ = true;
 const _DEBUG_ = false;
+//const _DEBUG_ = true;
 const _mypre = '<pre class="mypre">%s</pre>';
 
 app = {name: 'cross'};
@@ -30,13 +30,20 @@ web2spa.init({	// application settings, !!! important: urls or url's parts witho
     beforeStart: function () {   /* callback, perform after app load & init, but before start, application setup */
 	L = web2spa.lexicon;   // global shortcut to lexicon
 	tbheaders = [L._CROSS_, L._VERTICAL_, L._PLINT_, L._PAIR_];
-	btnOkCancel = web2spa._render({id:'btnOkCancelTmpl'}), btnBack = L._BTNBACK_;	// helpers, inline templates for common buttons
+	L._BTNOKCNSL_ = web2spa._render({id:'btnOkCancelTmpl'});    // helpers, inline templates for common buttons
+	L.i_ok = '<i class="glyphicon glyphicon-ok">';
+	L.i_par = '<i class="glyphicon glyphicon-random">';
 	app.chainMode = new CheckBox('chainMode');
 	app.editMode = new CheckBox('editMode');
 	app.wrapMode = new CheckBox('wrapMode');
 	app.db_clear = function() { if (confirm("A you sure?")) location.href = web2spa.root_path + 'cleardb'; }
+	if (_DEBUG_) web2spa.targetEl.before('<div id="debuglog" class="well"></div>');
     },
-    beforeNavigate: function() { app.chainMode.reset_handler(); }
+    //beforeNavigate: function() { app.chainMode.reset_handler(); console.log(lengthOf($.cache)); console.dir($.cache); }
+    beforeNavigate: function() { app.chainMode.reset_handler(); },
+    afterNavigate: function() {
+	if (_DEBUG_) { $("#debuglog").text('Size of jQuery cache: '+Object.keys( $.cache ).length); console.dir($.cache); }
+    }
 });
 
 /* stage hyperlink helpers */

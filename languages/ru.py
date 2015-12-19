@@ -52,7 +52,7 @@
 'Database update success!': 'Database update success!',
 'db': 'БД',
 'DB Model': 'DB Model',
-'Delete': 'Удалить',
+'Delete ': 'Удалить ',
 'Delete:': 'Delete:',
 'Demo': 'Demo',
 'Deployment Recipes': 'Deployment Recipes',

@@ -16,13 +16,12 @@ function UserCtrl() {
 
 //======================================
 /*** CrossController ***/
-function CrossCtrl() { web2spa.load_and_render(function() { return {data:{crosses:$scope.crosses}}; }); }
+function CrossCtrl() { web2spa.load_and_render(function() { return {data:{crosses:$scope.data}}; }); }
 /* end CrossController */
 
 //======================================
 /*** VerticalController ***/
 function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search
-
     web2spa.load_and_render(function() {
 	var search = $request.vars.search, vId = false, _title='', href;
 	mastersearch.val((search || '').unescapeHTML());
@@ -34,15 +33,18 @@ function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search
 	var header = `<a class="web2spa" href="${href}" title="${_title}">${$scope.header}</a>`;
 	return {title:$scope.header, data:D_Vertical(header, search, false, vId)};
     });
-
     toggle_wrap();
-    toggle_ctrl();
+    if ($userId) toggle_ctrl();
+    //toggle_ctrl();
 }
 /* end VerticalController */
 
 //======================================
 /*** NewsController ***/
-function NewsCtrl() { web2spa.load_and_render(function() { return {title:L._NEWS_, data:D_Vertical($scope.header, false, true, false)}; }); }
+function NewsCtrl() {
+    web2spa.load_and_render(function() { return {title:L._NEWS_, data:D_Vertical($scope.header, false, true, false)}; });
+    toggle_chain();
+}
 /* end NewsController */
 
 //======================================
@@ -87,116 +89,107 @@ function EditCrossCtrl() {
 
 //======================================
 /*** EditVerticalController ***/
+
+/* specific String helpers */
+String.prototype.getCounter = function(re, i) {
+    return this.replace(re, function(s,m) { return String(+m+i).frontZero(m.length); });
+}
+String.prototype.getComData = function(p1, p2, i) {
+    return $.trim(this.getCounter(/%(\d+)/g, i)/*counters*/.replace(/%A/g, p1)/*actual common data*/.replace(/%M/g, p2))/*plint name*/;
+}
+/* end specific String helpers */
+
 function EditVerticalCtrl() {
 
-    verticalChange = function() {
+    const oldset = ["warning", "~", L._OLDPL_], newset = ["new", "+", L._NEWPL_];
+
+    function verticalChange() {
+        //console.time('editvertical');
 	//console.info(inputs);
-	$("table#watchtable tr").remove(".refreshing");
-	vertical = {};
-	if (inputs.delete) return;
-	$('#verttitle').text(inputs.title);
-
-	var plintmask = inputs.plintmask;
-	if (!plintmask) return;
-
-	var cnt = inputs.count;
-	if (isNaN(cnt) || cnt=='' || cnt>100 || cnt<0) $('div.numeric').addClass('has-error');
+	vertical = {plints:[], rplints:[]};
+	var data = {rows:[]};
+	if (inputs.delete) vertical.delete = 'on';
 	else {
-	    var titles = chaindata.titles;
-	    var re, res = /%(\d+)/.exec(plintmask);
-	    if (res) re = Number(res[1]);
-	    var comdata = inputs.cdmask.replace(/%1/g, titles.cross||'').replace(/%2/g, titles.vertical||'');
-	    var rcomdata = inputs.cdmask.replace(/%1/g, $scope.cross).replace(/%2/g, $scope.vertical).unescapeHTML();
-
-	    $('div.numeric').removeClass('has-error');
-	    var si = titles.plintindex;
-	    var ta_pts = taEl.val().split('\n');
-	    var ta_add = ta_pts && /%1/.test(inputs.pairmask);
-	    for(var i=0; i<cnt; i++) {
-		var tr = $('<tr>', {class:"refreshing"});
-		var ti;
-		if (res) {
-		    ti = String(re+i)
-		    while (ti.length < res[1].length) ti = '0' + ti // for titles like '01', '001', ...
-		    ti = plintmask.replace(res[0], ti);
-		} else ti = plintmask;
-		var _class, st, idx = matchTitle($scope.plints, ti);
-		var cd, rcd, start1;
-		if (idx >= 0) {
-		    _class="warning";
-		    st = "~";
-		    rcd = L._OLDPL_;
-		    cd = $scope.plints[idx].comdata.unescapeHTML();
-		    start1 = inputs.start1all ? inputs.start1 : $scope.plints[idx].start1;
-		} else {
-		    _class="new";
-		    st = "+";
-		    rcd = L._NEWPL_;
-		    cd = '';
-		    start1 = inputs.start1;
+	    $('#verttitle').text(inputs.title);
+	    var plintmask = inputs.plintmask;
+	    if (plintmask) {
+		var cnt = inputs.count;
+		if (isNaN(cnt) || cnt=='' || cnt>100 || cnt<0) $('#plintCount').addClass('has-error');
+		else {
+		    $('#plintCount').removeClass('has-error');
+		    var titles = chaindata.titles,
+			cdmask = inputs.cdmask.replace(/%C/g, titles.cross||'').replace(/%V/g, titles.vertical||''),
+			rcdmask = inputs.cdmask.replace(/%C/g, $scope.cross).replace(/%V/g, $scope.vertical).unescapeHTML(),
+			pairmask = inputs.pairmask,
+			multiplint = /%\d+/.test(plintmask),    // one plint or more
+			remote = titles.plintindex,	// remote plint index
+			editor = taEl.val().split('\n'),
+			editor_en = editor && /%E/.test(pairmask);
+		    for(var i=0; i<cnt; i++) {
+			var plint = {maindata:{},pairdata:{}},
+			    title = plintmask.getCounter(/%(\d+)/g, i),   // plint title with counter
+			    pairbase = pairmask.getCounter(/%(\d+)/g, i),   // plint counter for pair
+			    set, cd, rcd = '', start1, rem_rec = '',
+			    oldplint = getOldPlint($scope.plints, title);   // search in vertical by plint title
+			if (oldplint) {
+			    set = oldset;
+			    cd = oldplint.comdata.unescapeHTML(); // actual common data from old plint
+			    start1 = inputs.start1all ? inputs.start1 : oldplint.start1;
+			} else {
+			    set = newset;
+			    cd = '';
+			    start1 = inputs.start1;
+			}
+			if (!oldplint || inputs.start1all) plint.maindata['start1'] = start1;
+			if (titles.vertical && chaindata.plints[remote+i]) {
+			    rem_rec = chaindata.plints[remote+i];   // [id, title, start1, comdata]
+			    if (inputs.rcdreplace) {
+				rcd = rcdmask.getComData(rem_rec[3], title, i);
+				vertical.rplints.push([rem_rec[0], rcd]);
+			    }
+			    rem_rec = rem_rec[1];   // remote plint title
+			}
+			var row = {class:set[0], hint:set[2], start1:start1, title:title.escapeHTML(), chr:set[1], cd:cdmask.getComData(cd, rem_rec, i), rcd:rcd, pairs:[]};
+			plint.maindata['title'] = title;
+			plint.maindata['comdata'] = row.cd;
+			set = editor_en ? (editor[i] || '').split('\t')	: '';	// set of pair titles from editor
+			for(var j=0; j<10; j++) {
+			    title = $.trim(pairbase.getCounter(/%P(\d+)/g, j).getCounter(/%D(\d+)/g, i*10+j)
+				.replace(/%A/g, oldplint ? oldplint.pairs[j].unescapeHTML() : '')
+				.replace(/%E/g, set[j] || ''));
+			    plint.pairdata['pid'+String(j+1)] = title;
+			    row.pairs.push(title);
+			}
+			data.rows.push(row);
+			vertical.plints.push(plint);
+			if (!multiplint) break;    // if not %counter, add only 1 plint
+		    }
 		}
-		cd = comdata.replace(/%0/g, cd);
-		if (idx < 0 || inputs.start1all) vertical['start1_'+i] = start1;
-		tr.append(`<td class="${_class}" title="${rcd}"><sup>${start1}</sup>${ti.escapeHTML()}</td>`);
-		tr.append(`<td>${st}</td>`);
-		rcd = rcomdata;
-		if (titles.vertical && chaindata.plints[si+i]) {
-		    st = chaindata.plints[si+i][1];
-		    if (inputs.rcdreplace) {
-			rcd = rcd.replace(/%0/g, chaindata.plints[si+i][3]);
-			rcd = $.trim(rcd.replace(/%3/g, ti));
-			vertical['rcomdata_'+i] = rcd;
-		    } else rcd = '';
-		} else {
-		    st = '';
-		    rcd = '';
-		}
-		cd = $.trim(cd.replace(/%3/g, st));
-		tr.appendTo(watchtable);   // id of element, without declare variable!!!
-		vertical['title_'+i] = ti;
-		vertical['comdata_'+i] = cd;
-		if (view_cd) {
-		    $('<td>').html(_mypre.format(cd.escapeHTML())).appendTo(tr);
-		    $('<td>').html(_mypre.format(rcd.escapeHTML())).appendTo(tr);
-		}
-
-		var pts = ta_add ? (ta_pts[i] || '').split('\t') : '';
-		for(var j=0; j<10; j++) {
-		    ti = idx >= 0 ? $scope.plints[idx].pairs[j].unescapeHTML() : '';
-		    ti = inputs.pairmask.replace(/%0/g, ti);
-		    ti = $.trim(ti.replace(/%1/g, pts[j] || ''));
-		    vertical['pid_'+i+'_'+String(j+1)] = ti;
-		    if (!view_cd) $('<td>').html(_mypre.format(ti.escapeHTML())).appendTo(tr);
-		}
-
-		if (!res) break;    // if not %1, add only 1 plint
 	    }
 	}
+	document.getElementById('watchbody').innerHTML = data.rows.length ? web2spa._render({id: (view_cd ? 'CDwatchTmpl': 'PTwatchTmpl'), data:data}) : '';
+	//console.timeEnd('editvertical');
     }
 
-    function matchTitle(arr, query) { // title of plint: existing or new
-	for(var o in arr) if (arr[o].title && arr[o].title == query.escapeHTML()) return o;
-	return -1;
+    function getOldPlint(arr, query) { // title of plint: existing or new
+	for(var o in arr) if (arr[o].title && arr[o].title == query.escapeHTML()) return arr[o];
+	return 0;
     }
+
+    const _th_com_ = '<th width="14%">'+tbheaders[2]+'</th><th width="6%">+/~</th>';
+    const _th_cdt_ = '<th width="40%">'+L._COMMON_DATA_+'</th><th>'+L._REM_CD_+'</th>';
 
     function viewChange() {
 	view_cd = vmEl.filter(':checked').val() == 'comdata';
-	wthead.empty();
-	wthead.append(_th_com_);
-	if (view_cd) wthead.append(_th_cdt_);
-	else for(var i=0; i<10; i++) wthead.append('<th width="8%">');
+	wthead.html(view_cd ? wthead_cd : wthead_pt);
 	form.init();
     }
 
     function verticalSubmit() {
 	vertical.title = inputs.title;
-	vertical.count = inputs.count || 0;
-	if (inputs.rcdreplace) {
-	    vertical.from_vert = chaindata.verticalId;
-	    vertical.from_plint = chaindata.plintId;
-	}
-	if (inputs.delete) vertical.delete = 'on';
-	$scope.formData = vertical;
+	$scope.formData = {};
+	$scope.formData.vertical = JSON.stringify(vertical);
+	//console.log($scope.formData); return false;
 	return form.post();
     }
 
@@ -208,17 +201,16 @@ function EditVerticalCtrl() {
     $('#helpbtn').click(function() { $.get(web2spa.static_path + "varhelp.html").success(function(data) { web2spa.show_msg(data, 'default', 0); }); });
     $('#editor').change(function() { if (this.checked) { taEl.show(); taEl.focus(); } else taEl.hide(); });
 
-    const _th_com_ = '<th width="14%">'+tbheaders[2]+'</th><th width="6%">+/~</th>';
-    const _th_cdt_ = '<th width="40%">'+L._COMMON_DATA_+'</th><th>'+L._REM_CD_+'</th>';
-
-    var view_cd, vertical,
-	wthead = $('#watchtable tr.info'),
+    var view_cd, vertical, vdata,
+	wthead = $('#watchhead'),
 	vmEl = $('input[name=view]').on('change', viewChange),
 	taEl = $('textarea').on('input', verticalChange);
 
     var form = new Form(verticalSubmit, {hC:verticalChange});
     Chain.init('plintscd', 3, verticalChange);
-    var chaindata = Chain.chain[0], inputs = form.inputs;   // shorthands
+    var chaindata = Chain.chain[0], inputs = form.inputs,   // shorthands
+	wthead_cd = _th_com_ + _th_cdt_,   // for common data
+	wthead_pt = _th_com_ + '<th width="8%">'.repeat(10);	// for pair titles
     viewChange();
 
     taEl.keydown(function(e) {
@@ -297,9 +289,9 @@ function EditPairCtrl() {
     web2spa.load_and_render(function() { return {title:$scope.address, data:{pair:$scope, chain:chainMode}}; });
     var form = new Form(editpairSubmit);
     if (chainMode) {
-	Chain.init('plints', 4, _DEBUG_ ? refreshWatch : null, $scope.chain);
+	Chain.init('plintscd', 4, _DEBUG_?refreshWatch:null, $scope.chain);	// 'plints'
 	//debugger;
-	if (_DEBUG_) { web2spa.render({id:'watchtableTmpl', append:true}); refreshWatch(); }
+	if (_DEBUG_) { web2spa.render({id:'ChainWatchTmpl', append:true}); refreshWatch(); }
 	//console.dir(Chain);
     }
 

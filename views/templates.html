@@ -12,26 +12,26 @@
 </script>
 
 <script type="text/html" id="CrossTmpl">
-<%for(var ci in crosses) {
-var verticals = crosses[ci]["verticals"]; %>
-<div class="col-md-4">
-  <div class="panel panel-default">
-    <div class="panel-heading"><% print(A_Cross({crossId:ci, cross:crosses[ci].title})); %></div>
-    <div class="panel-body">
-      <%for( var cj in verticals ) print(A_Vertical({verticalId:cj, vertical:verticals[cj].title}, "mybtn-link"));%>
+<% for(var ci in crosses) {
+  var cross = crosses[ci]; %>
+  <div class="col-md-4">
+    <div class="panel panel-default">
+      <div class="panel-heading"><%print(A_Cross({crossId:cross[0], cross:cross[1]}));%></div>
+      <div class="panel-body">
+        <%for( var cj in cross[2] ) print(A_Vertical({verticalId:cross[2][cj][0], vertical:cross[2][cj][1]}, "mybtn-link"));%>
+      </div>
     </div>
   </div>
-</div>
 <%}%>
 </script>
 
 <script type="text/html" id="VerticalTmpl">
   <div class="panel panel-default">
-    <div class="panel-heading"><%=header%><%=btnBack%>
+    <div class="panel-heading"><%=header%><%=L._BTNBACK_%>
       <%if (!news) {%>
         <div class="checkbox inmenu right">
           <label><input id="wrapMode" type="checkbox"><%=L._WRAP_%></label>
-          <% if ($userId) print(str_editMode());
+          <%if ($userId) print(str_editMode());
              if ($Admin && vId) {%><a href="<%=web2spa.root_path%>backupvertical/<%=vId%>">Backup Vertical</a><%}%>
         </div>
       <%}%>
@@ -80,20 +80,12 @@ var verticals = crosses[ci]["verticals"]; %>
 <script type="text/html" id="ChainTmpl">
 <div class="col-md-9">
   <div class="panel panel-default">
-    <div class="panel-heading"><label><%=chain.title%></label><%=btnBack%>
-    </div>
-    <div class="panel-body">
-      <p><i><%=chain.modinfo%></i></p>
-    </div>
+    <div class="panel-heading"><label><%=chain.title%></label><%=L._BTNBACK_%></div>
+    <div class="panel-body"><p><i><%=chain.modinfo%></i></p></div>
     <table class="table table-bordered table-condensed" style="display:normal">
-        <tr class="info">
-          <% for( var ci in tbheaders ) print("<td>"+tbheaders[ci]+"</td>"); %>
-          <td><%=L._DETAILS_%></td><td><%=L._COMMON_DATA_%></td>
-        </tr>
-        <% for( var ci in chain.chain ) {
-            var link = chain.chain[ci];
-            print(`<tr>${pairRow(link)}<td>${link.pdt}</td><td>${link.comdata}</td></tr>`);
-            } %>
+        <tr class="info"><%tbheaders.concat(L._DETAILS_,L._COMMON_DATA_,L.i_par).forEach(function(h) print(`<th>${h}</th>`));%></tr>
+        <%chain.chain.forEach(function(link) print(`<tr style="background:${Chain.clr[link.clr]}">`, pairRow(link),
+            `<td>${link.pdt}</td><td>${link.comdata}</td><td>${link.par?L.i_ok:""}</td></tr>`)); %>
     </table>
     <div class="panel-footer"><div class="myright"><%=L._FOUND_%><%=chain.chain.length%></div></div>
   </div>
@@ -103,9 +95,9 @@ var verticals = crosses[ci]["verticals"]; %>
 <script type="text/html" id="RestoreTmpl">
   <div class="container cont-mid">
     <div class="panel panel-warning">
-      <div class="panel-heading"><% print(title, btnBack); %></div>
+      <div class="panel-heading"><%=title%><%=L._BTNBACK_%></div>
       <div class="panel-body">
-        <form class="form-horizontal" name="upload"><input type="file" id="upload" name="upload" required><br><%=btnOkCancel%></form>
+        <form class="form-horizontal" name="upload"><input type="file" id="upload" name="upload" required><br><%=L._BTNOKCNSL_%></form>
       </div>
       <div class="panel-footer"><div class="myright">
         <i><output id="prop"><%=hint%></output></i>
@@ -117,7 +109,7 @@ var verticals = crosses[ci]["verticals"]; %>
 <script type="text/html" id="EditCrossTmpl">
 <div class="col-md-6">
   <div class="panel panel-primary">
-    <div class="panel-heading"><%=cross.header%><%=btnBack%></div>
+    <div class="panel-heading"><%=cross.header%><%=L._BTNBACK_%></div>
     <div class="panel-body">
       <form class="form-horizontal">
         <div class="form-group">
@@ -135,7 +127,7 @@ var verticals = crosses[ci]["verticals"]; %>
           <div class="col-md-8"><input type="text" name="verticaltitle" class="form-control"></div>
         </div>
         <%}%>
-        <%=btnOkCancel%>
+        <%=L._BTNOKCNSL_%>
       </form>
     </div>
   </div>
@@ -143,9 +135,9 @@ var verticals = crosses[ci]["verticals"]; %>
 </script>
 
 <script type="text/html" id="EditVerticalTmpl">
-<div class="col-md-5">
+<div class="col-md-5" style="z-index:10;">
   <div class="panel panel-primary">
-    <div class="panel-heading"><% print(A_Vertical(vertical,"color-root"), btnBack);%></div>
+    <div class="panel-heading"><%print(A_Vertical(vertical,"color-root"));%><%=L._BTNBACK_%></div>
     <div class="panel-body">
       <form class="form-horizontal">
         <div class="form-group">
@@ -159,14 +151,14 @@ var verticals = crosses[ci]["verticals"]; %>
         </div>
         <div class="form-group">
           <div class="checkbox col-md-offset-3 col-md-8"><label>
-            <input name="delete" class="delete" type="checkbox"><%=L._DEL_%> <%=L._VERTICAL_%>
+            <input name="delete" class="delete" type="checkbox"><%=L._DEL_%><%=L._VERTICAL_%>
           </label></div>
         </div>
         <div class="form-group">
           <label class="col-md-3 control-label"><%=L._PLINT_T_%></label>
-          <div class="col-md-3"><input name="plintmask" type="text" class="form-control" value="M%1"></div>
+          <div class="col-md-3"><input name="plintmask" type="text" class="form-control" value="М%1"></div>
           <label class="col-md-2 control-label"><%=L._COUNT_%></label>
-          <div class="col-md-3 numeric"><input type="number" min="0" max="100" name="count" class="form-control" value="0"></div>
+          <div id="plintCount" class="col-md-3"><input type="number" min="0" max="100" name="count" class="form-control" value="0"></div>
         </div>
         <div class="form-group">
           <div class="checkbox col-md-offset-3 col-md-8">
@@ -178,15 +170,15 @@ var verticals = crosses[ci]["verticals"]; %>
           <label class="col-md-3 control-label"><%=L._PAIR_T_%></label>
           <div class="col-md-8">
             <div class="input-group">
-              <input type="text" name="pairmask" class="form-control" value="%0 %1">
+              <input type="text" name="pairmask" class="form-control" value="%A %E" title="%A - actual\n%E - from editor\n%number - plint count\n%Pnumber - pair count\n%Dnumber - direct pair count">
               <span class="input-group-addon"><input id="editor" type="checkbox" title="<%=L._EDITOR_%>"></span>
             </div>
           </div>
         </div>
-        <textarea class="form-control pair-titles" wrap="off" rows="10" name="pairtitles" style="margin-bottom:15px;padding:8px;display:none;"></textarea>
+        <textarea class="form-control pair-data" wrap="off" rows="10" name="pairtitles" style="display:none;"></textarea>
         <div class="form-group">
           <label class="col-md-3 control-label"><%=L._COMMON_DATA_%></label>
-          <div class="col-md-8"><input type="text" name="cdmask" class="form-control" value="%0 %1 %2 %3"></div>
+          <div class="col-md-8"><input type="text" name="cdmask" class="form-control" value="%A %C %V %M" title="%A - actual\n%C - cross\n%V - vertical\n%M - plint\n%number - count"></div>
         </div>
         <div class="form-group">
           <div class="checkbox col-md-offset-3 col-md-8"><label>
@@ -203,7 +195,7 @@ var verticals = crosses[ci]["verticals"]; %>
           </thead>
           <tbody id="chainbody"></tbody>
         </table>
-        <%=btnOkCancel%>
+        <%=L._BTNOKCNSL_%>
       </form>
     </div>
   </div>
@@ -217,16 +209,40 @@ var verticals = crosses[ci]["verticals"]; %>
       </div>
     </div>
     <div class="table-container">
-    <table class="table table-bordered table-condensed" id="watchtable"><tr class="info"></tr></table>
+      <table class="table table-bordered table-condensed">
+        <thead><tr id="watchhead" class="info"></tr>
+        <tbody id="watchbody"></tbody>
+      </table>
     </div>
   </div>
 </div>
 </script>
 
+<script type="text/html" id="CDwatchTmpl">
+<%for (ci in rows) {
+    var row = rows[ci];%>
+  <tr>
+    <td class="<%=row.class%>" title="<%=row.hint%>"><sup><%=row.start1%></sup><%=row.title%></td><td><%=row.chr%></td>
+    <td><%=_mypre.format(row.cd.escapeHTML())%></td>
+    <td><%=_mypre.format(row.rcd.escapeHTML())%></td>
+  </tr>
+<%}%>
+</script>
+
+<script type="text/html" id="PTwatchTmpl">
+<%for (ci in rows) {
+    var row = rows[ci];%>
+  <tr>
+    <td class="<%=row.class%>" title="<%=row.hint%>"><sup><%=row.start1%></sup><%=row.title%></td><td><%=row.chr%></td>
+    <%for (cj in row.pairs) print("<td>"+_mypre.format(row.pairs[cj].escapeHTML())+"</td>");%>
+  </tr>
+<%}%>
+</script>
+
 <script type="text/html" id="EditPlintTmpl">
 <div class="col-md-6">
   <div class="panel panel-primary">
-    <div class="panel-heading"><% print(A_Vertical(plint,"color-root"), btnBack);%></div>
+    <div class="panel-heading"><%print(A_Vertical(plint,"color-root"));%><%=L._BTNBACK_%></div>
     <div class="panel-body">
       <p><i><%=plint.modinfo%></i></p>
       <form class="form-horizontal">
@@ -257,10 +273,10 @@ var verticals = crosses[ci]["verticals"]; %>
         <div class="form-group">
           <label class="col-md-3 control-label"><%=L._PAIR_T_%></label>
           <div class="col-md-8">
-            <div class="pair-ol"><ol start="0"><% for(var i=0; i<10; i++) print("<li></li>"); %></ol></div>
+            <div class="pair-ol"><ol start="0"><%for(var i=0; i<10; i++) print("<li></li>");%></ol></div>
             <div class="pair-li">
-            <textarea class="form-control pair-data" wrap="off" rows="10" name="pairtitles"></textarea>
-            <textarea class="form-control pair-data" wrap="off" rows="10" name="pairdetails" style="display:none;"></textarea>
+            <textarea class="form-control pair-data" wrap="off" rows="10" name="pairtitles" style="resize:none;"></textarea>
+            <textarea class="form-control pair-data" wrap="off" rows="10" name="pairdetails" style="display:none;resize:none;"></textarea>
             </div>
           </div>
         </div>
@@ -270,7 +286,7 @@ var verticals = crosses[ci]["verticals"]; %>
             <div class="right"><input type="text" name="mergechar" class="form-control" disabled="off" placeholder="Enter char"></div>
           </div>
         </div>
-        <%=btnOkCancel%>
+        <%=L._BTNOKCNSL_%>
       </form>
     </div>
   </div>
@@ -278,9 +294,9 @@ var verticals = crosses[ci]["verticals"]; %>
 </script>
 
 <script type="text/html" id="EditPairTmpl">
-<div class="col-md-7">
+<div class="col-md-<%print(chain?9:6);%>">
   <div class="panel panel-primary">
-    <div class="panel-heading"><% print(A_Vertical(pair,"color-root"), btnBack);%></div>
+    <div class="panel-heading"><%print(A_Vertical(pair,"color-root"));%><%=L._BTNBACK_%></div>
     <div class="panel-body">
       <p><i><%=pair.modinfo%></i></p>
       <form class="form-horizontal">
@@ -297,28 +313,28 @@ var verticals = crosses[ci]["verticals"]; %>
           <table id="chaintable" class="table table-condensed">
             <thead>
               <tr class="active">
-                <th width="6%">Edit</th>
-                <th><%=tbheaders[0]%></th>
-                <th width="22%"><%=tbheaders[1]%></th>
-                <th width="22%"><%=tbheaders[2]%></th>
-                <th width="12%"><%=tbheaders[3]%></th>
-                <th width="6%"><i class="glyphicon glyphicon-random"></i></th>
-                <th width="10%">Color</th>
-                <!--<% for( var ci in tbheaders ) { print("<th>"+tbheaders[ci]+"</th>") } %>-->
+                <th width="5%">Edit</th>
+                <th width="18%"><%=tbheaders[0]%></th>
+                <th width="14%"><%=tbheaders[1]%></th>
+                <th width="14%"><%=tbheaders[2]%></th>
+                <th width="10%"><%=tbheaders[3]%></th>
+                <th><%=L._COMMON_DATA_%></th>
+                <th width="4%"><%=L.i_par%></th>
+                <th width="6%">Color</th>
               </tr>
             </thead>
             <tbody id="chainbody"></tbody>
           </table>
         <%}%>
-        <%=btnOkCancel%>
+        <%=L._BTNOKCNSL_%>
       </form>
     </div>
   </div>
 </div>
 </script>
 
-<script type="text/html" id="watchtableTmpl">
-<div class="col-md-5">
+<script type="text/html" id="ChainWatchTmpl">
+<div class="col-md-3">
   <div class="panel panel-default">
     <div class="panel-heading">Watch</div>
     <table class="table table-bordered" id="watchtable">
@@ -331,7 +347,7 @@ var verticals = crosses[ci]["verticals"]; %>
 <script type="text/html" id="EditFoundTmpl">
 <div class="col-md-10">
   <div class="panel panel-primary">
-    <div class="panel-heading"><%=header%><%=btnBack%></div>
+    <div class="panel-heading"><%=header%><%=L._BTNBACK_%></div>
     <div class="panel-body">
       <form class="form-horizontal">
         <div class="form-group">
@@ -347,7 +363,7 @@ var verticals = crosses[ci]["verticals"]; %>
             <input name="follow" type="checkbox" checked="checked"><%=L._FOLLOW_%>
           </label></div>
         </div>
-        <%=btnOkCancel%>
+        <%=L._BTNOKCNSL_%>
       </form>
     </div>
     <table class="table table-bordered table-condensed" id="foundtable">

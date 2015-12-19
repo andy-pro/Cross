@@ -38,8 +38,8 @@ div.pair-ol {
     padding-top: 6px;
 }
 textarea.pair-data {
+    margin-bottom:10px;
     line-height: 16px;
-    resize: none;
     font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
 }
 pre.mypre {
@@ -129,8 +129,8 @@ table#chaintable {
     width: 100%;
     margin: 15px 0px;
 }
-#chainbody td { padding: 3px 3px; }
-#chainbody tr { cursor: move; }
+#chainbody td.chain { padding: 8px; }
+tr.chain { cursor: move; }
 
 /** vertical table css rules **/
 table.vertical { table-layout: fixed; }

@@ -177,39 +177,16 @@ class Vertical:
         if self.title != vars.title:
             db.verticals[self.index] = {'title': vars.title}
             changed = True
-        cnt = int(vars.count)
-        if cnt:
-            try:
-                fp = int(vars.from_plint)
-                fv = int(vars.from_vert)
-                outplints = db((db.plints.vertical == fv) & (db.plints.id >= fp)).select(limitby = (0, cnt))
-                pc = len(outplints)
-                pi = 0
-            except:
-                pc = 0
-
-            idx = 0
-            while(vars['title_'+str(idx)] and idx < 100):
-                si = str(idx)
-                idx += 1
-                pt = vars['title_'+si]  # plint title, add new or modify if it exist
-                xp = db((db.plints.title==pt) & (db.plints.vertical==self.index)).select().first()
-                if not xp:
-                    xp = db.plints.insert(cross=self.cross.index, vertical=self.index, title=pt)
-                #plint = Plint(xp.id)
-                maindata = dict(comdata=vars['comdata_'+si])
-                if vars['start1_'+si]:
-                    maindata['start1'] = vars['start1_'+si]
-                pairdata = {}
-                for pj in xrange(1, 11):
-                    pairdata['pid%i'%pj] = vars['pid_%s_%i' % (si, pj)] or ''
-                if plint_update(xp.id, maindata, pairdata):
-                    changed = True
-                if pc and pi < pc and vars['rcomdata_'+si]:
-                    maindata = dict(comdata=vars['rcomdata_'+si])
-                    if plint_update(outplints[pi].id, maindata, {}):
-                        changed = True
-                    pi += 1
+        for plint in vars.plints:
+            pt = plint.maindata.title
+            xp = db((db.plints.title==pt) & (db.plints.vertical==self.index)).select().first()
+            if not xp:  # if plint not exist then create it
+                xp = db.plints.insert(cross=self.cross.index, vertical=self.index)
+            if plint_update(xp.id, plint.maindata, plint.pairdata):
+                changed = True
+        for plint in vars.rplints:
+            if plint_update(plint[0], dict(comdata=plint[1]), {}):
+                changed = True
         return changed
 
 class Plint:

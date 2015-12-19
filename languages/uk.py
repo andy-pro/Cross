@@ -55,7 +55,7 @@
 'Database update success!': 'Базу даних змінено!',
 'db': 'база даних',
 'DB Model': 'Модель БД',
-'Delete': 'Видалити',
+'Delete ': 'Видалити ',
 'Delete:': 'Вилучити:',
 'Demo': 'Демо',
 'Deployment Recipes': 'Способи розгортання',

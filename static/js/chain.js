@@ -18,12 +18,12 @@ var Chain = {
 	this.url = url;
 	this.onLinkChange = hC;
 	this.depth = depth || 1;
-	this.cache = {};     // use own data cache for ajax request
+	this.cache = null;     // use own data cache for ajax request
+	this.plints = {};
 
 	if (chain) {
-	    this.plints = {};
 	    var self = this, plints = this.plints;
-	    this.exp = true;	// expand mode, extra cols: edited, add parallel, color
+	    this.ext = true;	// extend mode, extra cols: edited, add parallel, color
 	    $.each(chain, function() {
 		self.addLink(this);
 		var row = this.plintId, id = this.pairId;
@@ -39,11 +39,14 @@ var Chain = {
 	    //console.log(self.count);
 	    this.body.sortable();
 	    $('#addLink').click(function() { self.addLink(); });
-	} else this.addLink();
+	} else {
+	    this.ext = false;
+	    this.addLink();
+	}
 
     },
 
-    order: function (title, details) {
+    order: function(title, details) {
 	var link, row, id, pch=1, self = this, plints = this.plints;
 	$.each(this.body.sortable('toArray'), function() {
 	    link = self.chain[this.split('-')[1]];  // retrive index from id='chainId-index'
@@ -60,7 +63,9 @@ var Chain = {
 		if (link.edited) plints[row]['pdt'+id] = details;
 	    }
 	});
-    }
+    },
+
+    getStage: function(data, id) { for(var i in data) { var s = data[i]; if (s[0] == id) return s; } }
 
 }
 
@@ -69,9 +74,9 @@ var Chain = {
 function Link(id, link) {
 
     const _td = '<td>';
+    const _tdc = '<td class="chain">';
     const _sel = '<select class="form-control input-sm">';
 
-    //if (!link) { link = {}; $.each(Chain.stages, function() { link[this+'Id'] = 0; }); }
     link = link || {};
 
     this.id = id || 0;
@@ -86,17 +91,15 @@ function Link(id, link) {
 
     this.controls = {};
     this.titles = {};
-    var title, td, stage, El;
+    var td, stage, El;
 
     this.row = $('<tr id="%s">'.format('chainId-'+id));
 
-    if (Chain.exp) {
-	title = link.comdata ? 'Common data: '+link.comdata+'\n' : '';
-	title += link.pdt ? 'Details: '+link.pdt : '';
-	td = $(_td);
-	if (link.edited) td.html('<i class="glyphicon glyphicon-ok">');
-	td.appendTo(this.row);
-	if (title) this.row.prop('title', title);
+    if (Chain.ext) {
+	td = $(_tdc);
+	if (link.edited) td.html(L.i_ok);
+	this.row.append(td).addClass('chain');
+	//.mousedown(function(){$(this).css('cursor','grabbing')}).mouseup(function(){$(this).css('cursor','grab')});
     }
 
     for(var i = 0; i < Chain.depth; i++) {
@@ -108,8 +111,9 @@ function Link(id, link) {
         td.appendTo(this.row);
         }
 
-    if (Chain.exp) {
-	td = $(_td);
+    if (Chain.ext) {
+	this.comdata = $(_tdc).appendTo(this.row);
+	td = $(_tdc);
 	this.controls['parenEl'] = $('<input type="checkbox" title="Add parallel">').prop({disabled:true, checked:this.par}).data({this:this}).on('change', this.parChange).appendTo(td);
 	td.appendTo(this.row);
 
@@ -124,9 +128,9 @@ function Link(id, link) {
 
     this.row.appendTo(Chain.body);
     this.stage = Chain.stages[0];
-    if (!Chain.cache.crosses) Chain.cache.crosses = web2spa.load('cross', {unescape:true, clearpath:true}).crosses;
+    if (!Chain.cache) Chain.cache = web2spa.load('cross', {unescape:true, clearpath:true}).data;
     this.controls.crossEl.append($('<option>').text(L._NOT_CROSSED_).attr('value', 0));
-    this.addOptFromObj(Chain.cache.crosses);
+    this.appendOptions(Chain.cache);
     this.setVertical();
 }
 
@@ -143,14 +147,17 @@ Link.prototype.colorChange = function() {
     $(this).css('background', clr);
 }
 
-Link.prototype.selectChange = function() {
+Link.prototype.selectChange = function(event) {
     var El = $(this);
     var self = El.data('this'), stage = El.data('stage');
     self[stage+'Id'] = El.val();        // !!! write select option to Link here !!!
     if (stage != 'pair') self[stage+'Change']();  // prototype function name, execute crossChange, verticalChange or plintChange
-    self.row.removeAttr('title');
     var f = Chain.onLinkChange;
-    if (typeof f == 'function') { ajaxstate.during ? ajaxstate.callback.push(f) : f(); }
+    if (typeof f == 'function') {
+	self = this;
+	function hC() { f.call(self, event); }
+	ajaxstate.during ? ajaxstate.callback.push(hC) : hC();
+    }
     return false;
 }
 
@@ -159,11 +166,11 @@ Link.prototype.setVertical = function() {
         this.stage = Chain.stages[1]; // set stage 'vertical'
         var id = this.crossId;
         if (id > 0) {
-            var cross = Chain.cache.crosses[id];
-            this.titles.cross = cross.title;
-            this.verticals = cross.verticals; // shortcut
+            var cross = Chain.getStage(Chain.cache, id);
+            this.titles.cross = cross[1];
+            this.verticals = cross[2]; // shortcut to Chain.cache[id][2]
             if (!$.isEmptyObject(this.verticals)) {
-                this.addOptFromObj(this.verticals);
+                this.appendOptions(this.verticals);
                 this.setPlint();
             }
         }
@@ -176,38 +183,40 @@ Link.prototype.setPlint = function() {
         //console.warn(this);
         var id = this.verticalId;
         if (id > 0) {
-            this.vertical = this.verticals[id]; // shortcut
-            this.titles.vertical = this.vertical.title;
+	    //console.log('verticals: ', this.verticals);
+            this.vertical = Chain.getStage(this.verticals, id); // shortcut to Chain.cache[id].verticals[id]
+            this.titles.vertical = this.vertical[1];
 
             var self = this;
             //----------callback function---------------
-                var callback = function(){  // this=Window inside
-                    self.plints = self.vertical[Chain.url].data; // shortcut, [url] - content of cache defined by urls, specific of "aLoad"
-                    //console.log(self.titles.vertical, ':', self.verticalId, ', ajaxcount:', ajaxstate.count, ', plints:', self.plints, self)
-                    if (self.plints && self.plints.length) {
-                        var El = self.controls.plintEl;
-                        $.each(self.plints, function() {El.append($('<option>').text(this[1]+(_DEBUG_ ? ' : '+this[0] : '')).attr('value', this[0]));});
-                        El.prop('disabled', false);
-                        var pair;
-                        if (self.plintId) {
-                            El.settovalue(self.plintId);
-                            pair = self.pairId;
-                        } else {             // false(default) - set to first
-                            El.settofirst()    ;
-                            self.plintId = El[0].value;
-                            pair = 1;
-                        }
-                        self.plintTitle();
-                        var si = El[0].selectedIndex;
-                        if (Chain.depth > 3) {
-                            El = self.controls.pairEl;
-                            El.enumoptions(self.plints[si][2]);
-                            El.settovalue(pair);
-                            self.pairId = pair;
-			    self.setPairProp(false);
-			}
-                    }
-                }
+	    function callback(){  // this=Window inside
+		self.plints = self.vertical[Chain.url].data; // shortcut, [url] - content of cache defined by urls, specific of "aLoad"
+		//console.log(self.titles.vertical, ':', self.verticalId, ', ajaxcount:', ajaxstate.count, ', plints:', self.plints, self)
+		if (self.plints && self.plints.length) {
+		    var El = self.controls.plintEl;
+		    El.empty(); // prevent multiple <option>
+		    $.each(self.plints, function() {El.append($('<option>').text(this[1]+(_DEBUG_ ? ' : '+this[0] : '')).attr('value', this[0]));});
+		    El.prop('disabled', false);
+		    var pair;
+		    if (self.plintId) {
+			El.settovalue(self.plintId);
+			pair = self.pairId;
+		    } else {             // false(default) - set to first
+			El.settofirst()    ;
+			self.plintId = El[0].value;
+			pair = 1;
+		    }
+		    self.plintTitle();
+		    var si = El[0].selectedIndex;
+		    if (Chain.depth > 3) {
+			El = self.controls.pairEl;
+			El.enumoptions(self.plints[si][2]);
+			El.settovalue(pair);
+			self.pairId = pair;
+			self.setPairProp(false);
+		    }
+		}
+	    }
             //----------end callback function---------------
             aLoad(this.vertical, callback, Chain.url, {args:[this.verticalId]});
         }
@@ -215,7 +224,7 @@ Link.prototype.setPlint = function() {
 }
 
 Link.prototype.setPairProp = function(value) {
-    if (Chain.exp) {
+    if (Chain.ext) {
 	this.controls.parenEl.prop('disabled', value);
 	this.controls.colorEl.prop('disabled', value);
     }
@@ -250,7 +259,9 @@ Link.prototype.plintChange = function() {
 Link.prototype.plintTitle = function() {
     var si = this.controls.plintEl[0].selectedIndex;
     this.titles.plintindex = si;
-    this.titles.plint = this.plints[si][1];
+    si = this.plints[si];
+    this.titles.plint = si[1];
+    if (this.comdata) this.comdata.html('<sup>'+si[2]+'</sup>'+si[3]);
 }
 
 Link.prototype.plintDisable = function() {  //----- plint, pair selectors disable
@@ -259,6 +270,7 @@ Link.prototype.plintDisable = function() {  //----- plint, pair selectors disabl
         ctrls.plintEl.empty();
         ctrls.plintEl.prop('disabled', true);
         this.plintId = 0;
+	if (this.comdata) this.comdata.empty();
         if (Chain.depth > 3) {
             ctrls.pairEl.empty();
             ctrls.pairEl.prop('disabled', true);
@@ -268,22 +280,17 @@ Link.prototype.plintDisable = function() {  //----- plint, pair selectors disabl
     }
 }
 
-Link.prototype.setselect = function() {
-    var El = this.controls[this.stage+'El'];
-    var value = this[this.stage+'Id'];
+Link.prototype.appendOptions = function(data) {
+    var stage = this.stage,
+	El = this.controls[stage+'El'],
+	value = this[stage+'Id'];
+    $.each(data, function() {El.append($('<option>').text(this[1]+(_DEBUG_ ? ' : '+this[0] : '')).attr('value', this[0]));});
+    El.prop('disabled', false);
     if (value) El.settovalue(value);
     else {
         El.settofirst();
-        this[this.stage+'Id'] = El[0].value;
+        this[stage+'Id'] = El[0].value;
     }
-    //this.names[this.stage] = El.children(':selected').text();
-}
-
-Link.prototype.addOptFromObj = function(data) {
-    var El = this.controls[this.stage+'El'];
-    $.each(data, function(key, item) {El.append($('<option>').text(item.title+(_DEBUG_ ? ' : '+key : '')).attr('value', key));});
-    El.prop('disabled', false);
-    this.setselect();
 }
 /*** End Class: Link ***/
 

@@ -14,7 +14,7 @@ def lexicon():
     _COUNT_ = T('Count'),
     _CROSS_ = T('Cross'),
     _DB_UPD_ = T('Database update success!'),
-    _DEL_ = T('Delete'),
+    _DEL_ = T('Delete '),
     _DETAILS_ = T('Details'),
     _EDIT_CROSS_ = T('Edit cross'),
     _EDIT_PAIR_ = T('Edit pair'),
@@ -68,7 +68,7 @@ def templates():
     return dict()
 
 def cross():
-    return {'crosses':{r.id:{'title':r.title, 'verticals':{w.id:{'title':w.title} for w in db(db.verticals.cross == r.id).select()}} for r in db(db.crosses).select()}}
+    return dict(data=[(r.id, r.title, [(w.id, w.title) for w in db(db.verticals.cross == r.id).select()]) for r in db(db.crosses).select()])
 
 def news():
     request.vars.news = True;
@@ -91,7 +91,7 @@ def vertical():
         header = vertical.header
         cross = vertical.cross.title
         rows = db(db.plints.vertical == vertical.index).select(orderby=db.plints.id)
-    plints = []   #plints = {}
+    plints = []
     for plint in rows:
         who = plint.modby
         get_user_name(who)
@@ -242,11 +242,11 @@ def search_plints(q, like=True, pfset=pairtitles):
 
 def livesearch():
     q = request.vars.search
-    plints = search_plints(q, pfset=pdtset) # search in pair details also
+    plints = search_plints(q, pfset=pdtset) # search in plint common data, pair titles and details
     items = []
     for plint in plints:
         for field in pdtset:
-            word = plint[field]
+            word = plint[field] or ''
             if q in word and word not in items:
                 items.append(word)
     items.sort()
@@ -260,16 +260,17 @@ def formUUID(formname):
     return formkey
 
 def json_to_utf(input):
+    import json
+    from gluon.storage import Storage
     def byteify(input):
         if isinstance(input, dict):
-            return {byteify(key):byteify(value) for key,value in input.iteritems()}
+            return Storage({byteify(key):byteify(value) for key,value in input.iteritems()})
         elif isinstance(input, list):
             return [byteify(element) for element in input]
         elif isinstance(input, unicode):
             return input.encode('utf-8')
         else:
             return input
-    import json
     return byteify(json.loads(input))
 
 @auth.requires_membership('managers')
@@ -308,6 +309,7 @@ def update():
                 cross = Cross(request.args(0))
                 if vars.delete:
                     cross.delete()
+                    changed = True
                     result['location'] = ''    # this will redirect to home page index/#
                 else:
                     vt = cross.update(vars)
@@ -318,8 +320,10 @@ def update():
         elif formname == 'editvertical':
             # save formData from Edit Vertical Controller
             vertical = Vertical(request.args(0))
+            vars = json_to_utf(vars.vertical)
             if vars.delete:
                 vertical.delete()
+                changed = True
                 result['location'] = ''
             else:
                 changed = vertical.update(vars)
