@@ -1,28 +1,21 @@
-﻿<script type="text/html" id="liveSearchTmpl">
-<% for(var ci in search ) { %>
-  <a><%=search[ci]%></a>
-<% } %>
-</script>
+﻿<script type="text/html" id="liveSearchTmpl"><%search.forEach(function(s){print(`<a>${s}</a>`);});%></script>
 
 <script type="text/html" id="btnOkCancelTmpl">
 <div class="pull-right">
-<input type="submit" class="btn btn-primary">
-<button class="btn btn-primary" onclick="history.back();return false;"><%=L._CANCEL_%></button>
+  <input type="submit" class="btn btn-primary">
+  <button class="btn btn-primary" onclick="history.back();return false;"><%=L._CANCEL_%></button>
 </div>
 </script>
 
 <script type="text/html" id="CrossTmpl">
-<% for(var ci in crosses) {
-  var cross = crosses[ci]; %>
+<%crosses.forEach(function(cross){%>
   <div class="col-md-4">
     <div class="panel panel-default">
       <div class="panel-heading"><%print(A_Cross({crossId:cross[0], cross:cross[1]}));%></div>
-      <div class="panel-body">
-        <%for( var cj in cross[2] ) print(A_Vertical({verticalId:cross[2][cj][0], vertical:cross[2][cj][1]}, "mybtn-link"));%>
-      </div>
+      <div class="panel-body"><%cross[2].forEach(function(vertical){print(A_Vertical({verticalId:vertical[0], vertical:vertical[1]}, "mybtn-link"));});%></div>
     </div>
   </div>
-<%}%>
+<%});%>
 </script>
 
 <script type="text/html" id="VerticalTmpl">
@@ -32,47 +25,54 @@
         <div class="checkbox inmenu right">
           <label><input id="wrapMode" type="checkbox"><%=L._WRAP_%></label>
           <%if ($userId) print(str_editMode());
-             if ($Admin && vId) {%><a href="<%=web2spa.root_path%>backupvertical/<%=vId%>">Backup Vertical</a><%}%>
+            if ($Admin && vId) print('<a href="%sbackupvertical/%s">Backup Vertical</a>'.format(web2spa.root_path, vId));
+          %>
         </div>
       <%}%>
     </div>
     <table class="vertical table table-bordered table-striped"><tbody>
-    <%  var mode = (news || !$userId) ? 'chain' : '/ctrl/';
-        for( var ci in plints) {
-        var plint = plints[ci];
-        var pairs=plint.pairs, start1=parseInt(plint.start1), when=plint.modon, who=users[plint.modby];
-        var _pattr = ' class="web2spa" href="%seditplint/%s" title="%s\n%s\n%s\n%s"'.format(web2spa.start_path, plint.id, plint.title, plint.comdata, when, who);
-        %>
-          <tr>
+    <%var href1 = web2spa.start_path + 'editplint/',
+          href2 = web2spa.start_path + ((news||!$userId)?'chain/':'/ctrl//'),
+          href3 = web2spa.start_path + 'editvertical/';
+      for(var ci in plints) {
+          var plint=plints[ci];
+          var _href2=href2+plint.id+'/', pairs=plint.pairs, start1=parseInt(plint.start1), when=plint.modon, who=users[plint.modby],
+              _pattr='class="web2spa" title="%s\n%s\n%s\n%s"'.format(plint.title, plint.comdata, when, who);
+    %>
+          <tr style="background:<%=clr[(plint.cable&&!news&&!search)?cables[plint.cable][3]:0]%>">
           <%if (search || news) { print(pairRow(plint, 2, true)); }%>
-          <td class="colv1" style="border-right:2px solid #ddd;"><a <%=_pattr%>><%=plint.title%></a></td>
-          <%for( var cj in pairs ) {
-                var idx = parseInt(cj);
-                var pair = pairs[idx];
+          <td class="colv1" style="border-right:2px solid #ddd;">
+            <a href="<%=href1+plint.id%>" <%=_pattr%>><%=plint.title%></a></td>
+            <%for(var cj in pairs) {
+                var pair = pairs[+cj];
                 var t = pair[0], found = "", _title = "", pidx;
                 if (news) {
                     pidx = pair[1]+1;
                     t = '%s, %s, %s %s, "%s"'.format(when, who, L._PAIR_, pair[1]+start1, t);
                 }
                 else {
-                        pidx = idx+1;
+                        pidx = +cj+1;
                         if (t) {
                             if (pair[3]) t += "\n" + pair[3];
                             if (t.indexOf(search) >= 0) found = "found";
                             _title = t+"\n"+pair[1]+"\n"+users[pair[2]];
                         }
                     }
-                var _href = "%s%s/%s/%s".format(web2spa.start_path, mode, plint.id, pidx);
             %>
-          <td class="<%=found%>"><a class="web2spa" href="<%=_href%>" title="<%=_title%>" data-pair="1"><sup><%=idx+start1%></sup><%=t%></a></td>
+          <td class="<%=found%>">
+          <a class="web2spa" href="<%=_href2+pidx%>" title="<%=_title%>" data-pair="1"><sup><%=+cj+start1%></sup><%=t%></a></td>
           <% }
           if (!news) {
-            t = plint.comdata, found = "commondata";
-            if (t && search && t.indexOf(search) >= 0) found += " cdfound"; %>
-            <td class="<%=found%>" style="border-left:2px solid #ddd;"><a class="web2spa" <%=_pattr%>><%=t%></a></td>
+            t = plint.comdata||'&nbsp;', found = 'commondata';
+            if (search) {
+                if (t && t.indexOf(search)>=0) found += ' cdfound';
+                vId = plint.verticalId;
+            }%>
+            <td class="<%=found%>" style="border-left:2px solid #ddd;">
+            <a href="<%=href3+vId%>/<%=plint.id%>" class="web2spa" <%=_pattr%>><%=t%></a></td>
           <% }; %>
         </tr>
-      <% }; %>
+      <%};%>
     </tbody></table>
   </div>
 </script>
@@ -83,9 +83,9 @@
     <div class="panel-heading"><label><%=chain.title%></label><%=L._BTNBACK_%></div>
     <div class="panel-body"><p><i><%=chain.modinfo%></i></p></div>
     <table class="table table-bordered table-condensed" style="display:normal">
-        <tr class="info"><%tbheaders.concat(L._DETAILS_,L._COMMON_DATA_,L.i_par).forEach(function(h) print(`<th>${h}</th>`));%></tr>
-        <%chain.chain.forEach(function(link) print(`<tr style="background:${Chain.clr[link.clr]}">`, pairRow(link),
-            `<td>${link.pdt}</td><td>${link.comdata}</td><td>${link.par?L.i_ok:""}</td></tr>`)); %>
+        <tr class="info"><%tbheaders.concat(L._DETAILS_,L._COMMON_DATA_,L.i_par).forEach(function(h){print(`<th>${h}</th>`);});%></tr>
+        <%chain.chain.forEach(function(link){print(`<tr style="background:${Chain.clr[link.clr]}">`, pairRow(link),
+            `<td>${link.pdt}</td><td>${link.comdata}</td><td>${link.par?L.i_ok:""}</td></tr>`);});%>
     </table>
     <div class="panel-footer"><div class="myright"><%=L._FOUND_%><%=chain.chain.length%></div></div>
   </div>
@@ -156,9 +156,9 @@
         </div>
         <div class="form-group">
           <label class="col-md-3 control-label"><%=L._PLINT_T_%></label>
-          <div class="col-md-3"><input name="plintmask" type="text" class="form-control" value="М%1"></div>
+          <div class="col-md-3"><input name="plintmask" type="text" class="form-control" value="<%=vertical.s_plint.mask%>"></div>
           <label class="col-md-2 control-label"><%=L._COUNT_%></label>
-          <div id="plintCount" class="col-md-3"><input type="number" min="0" max="100" name="count" class="form-control" value="0"></div>
+          <div id="plintCount" class="col-md-3"><input type="number" min="0" max="100" name="count" class="form-control" value="<%=vertical.s_plint.count%>"></div>
         </div>
         <div class="form-group">
           <div class="checkbox col-md-offset-3 col-md-8">
@@ -181,9 +181,22 @@
           <div class="col-md-8"><input type="text" name="cdmask" class="form-control" value="%A %C %V %M" title="%A - actual\n%C - cross\n%V - vertical\n%M - plint\n%number - count"></div>
         </div>
         <div class="form-group">
-          <div class="checkbox col-md-offset-3 col-md-8"><label>
-            <input name="rcdreplace" type="checkbox" checked><%=L._REM_CD_%>
-          </label></div>
+          <div class="checkbox col-md-offset-3 col-md-8">
+            <label><input name="rcdreplace" type="checkbox" checked><%=L._REM_CD_%></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="checkbox col-md-offset-3 col-md-3"><label><input id="setCable" type="checkbox"><%=L._SET_CABLE_%></label></div>
+          <div class="col-md-5"><select id="cables" class="form-control">
+            <option value="0">No cable</option>
+            <!--<%vertical.cables.forEach(function(cable){
+              print(`<option value="${cable[0]}">${cable[1]+(cable[2]?("&nbsp;("+cable[2]+")"):"")}</option>`);
+            });%>-->
+            <%for(var ci in vertical.cables){
+              var cable = vertical.cables[ci];
+              print(`<option value="${ci}">${cable[0]+(cable[1]?("&nbsp;("+cable[1]+")"):"")}</option>`);
+            }%>
+          </select></div>
         </div>
         <table id="chaintable" class="table table-condensed">
           <thead>
@@ -219,24 +232,22 @@
 </script>
 
 <script type="text/html" id="CDwatchTmpl">
-<%for (ci in rows) {
-    var row = rows[ci];%>
+<%rows.forEach(function(row){%>
   <tr>
     <td class="<%=row.class%>" title="<%=row.hint%>"><sup><%=row.start1%></sup><%=row.title%></td><td><%=row.chr%></td>
     <td><%=_mypre.format(row.cd.escapeHTML())%></td>
     <td><%=_mypre.format(row.rcd.escapeHTML())%></td>
   </tr>
-<%}%>
+<%});%>
 </script>
 
 <script type="text/html" id="PTwatchTmpl">
-<%for (ci in rows) {
-    var row = rows[ci];%>
+<%rows.forEach(function(row){%>
   <tr>
     <td class="<%=row.class%>" title="<%=row.hint%>"><sup><%=row.start1%></sup><%=row.title%></td><td><%=row.chr%></td>
-    <%for (cj in row.pairs) print("<td>"+_mypre.format(row.pairs[cj].escapeHTML())+"</td>");%>
+    <%row.pairs.forEach(function(pair){print(`<td>${_mypre.format(pair.escapeHTML())}</td>`);});%>
   </tr>
-<%}%>
+<%});%>
 </script>
 
 <script type="text/html" id="EditPlintTmpl">
@@ -281,10 +292,8 @@
           </div>
         </div>
         <div class="form-group">
-          <div class="checkbox col-md-offset-3 col-md-8">
-            <label><input name="merge" type="checkbox"><%=L._MERGE_%></label>
-            <div class="right"><input type="text" name="mergechar" class="form-control" disabled="off" placeholder="Enter char"></div>
-          </div>
+          <div class="checkbox col-md-offset-3 col-md-5"><label><input name="merge" type="checkbox"><%=L._MERGE_%></label></div>
+          <div class="col-md-3"><input type="text" name="mergechar" class="form-control" placeholder="Enter char"></div>
         </div>
         <%=L._BTNOKCNSL_%>
       </form>
@@ -368,16 +377,17 @@
     </div>
     <table class="table table-bordered table-condensed" id="foundtable">
       <tr class="info">
-      <td width="15%"><%=tbheaders[0]%></td>
-      <td width="12%"><%=tbheaders[1]%></td>
-      <td width="10%"><%=tbheaders[2]%></td>
-      <td width="12%"><%=tbheaders[3]%></td>
+      <td width="10%"><%=tbheaders[0]%></td>
+      <td width="8%"><%=tbheaders[1]%></td>
+      <td width="8%"><%=tbheaders[2]%></td>
+      <td width="10%"><%=tbheaders[3]%></td>
       <td><%=L._TITLE_%></td>
-      <td><%=L._DETAILS_%></td>
-      <td><%=L._COMMON_DATA_%></td>
+      <td width="20%"><%=L._DETAILS_%></td>
+      <td width="20%"><%=L._COMMON_DATA_%></td>
       </tr>
     </table>
     <div class="panel-footer"><div class="myright"><%=L._FOUND_%><%=count%></div></div>
   </div>
 </div>
 </script>
+

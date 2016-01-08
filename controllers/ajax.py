@@ -47,6 +47,7 @@ def lexicon():
     _RESTORE_ = T('Restore DB'),
     _REM_CD_ = T('Replace remote common data'),
     _SEARCH_ = T('Search'),
+    _SET_CABLE_ = T('Set cable'),
     _START_1_ = T('Numeration start 1'),
     _TITLE_ = T('Title'),
     _TOOSHORT_ = T('too short query!'),
@@ -67,6 +68,11 @@ def templates():
     response.view = 'templates.html'
     return dict()
 
+def cables():
+    #return [(r.id, r.title, r.details, r.capacity, r.color) for r in db(db.cables).select()]
+    return dict((r.id,(r.title, r.details, r.capacity, r.color)) for r in db(db.cables).select())
+    #return db(db.cables).select().as_list()
+
 def cross():
     return dict(data=[(r.id, r.title, [(w.id, w.title) for w in db(db.verticals.cross == r.id).select()]) for r in db(db.crosses).select()])
 
@@ -86,13 +92,20 @@ def vertical():
         rows = db(db.plints).select(orderby=~db.plints.modon, limitby=(0, 50))
         header = T('Last modified')
     else:
-        vertical = Vertical(request.args(0, cast = int))
+        vertical = Vertical(request.args(0, cast=int))
         title = vertical.title
         header = vertical.header
         cross = vertical.cross.title
         rows = db(db.plints.vertical == vertical.index).select(orderby=db.plints.id)
+    xp = request.args(1, cast=int) if request.edit_mode and request.args(1) else 0
+    s_plint = 0
     plints = []
     for plint in rows:
+        if not s_plint and xp==plint.id:
+            xp = plint
+            s_plint = dict(title=plint.title, count=0, cable=plint.cable)
+        if s_plint and s_plint['cable'] and s_plint['cable']==plint.cable:
+            s_plint['count'] += 1
         who = plint.modby
         get_user_name(who)
         tr={'id':plint.id,
@@ -100,13 +113,15 @@ def vertical():
             'start1':int(plint.start1),
             'comdata':plint.comdata,
             'modon':plint.modon,
-            'modby':who.id}
+            'modby':who.id,
+            'cable':plint.cable}
         td = []
         old = plint.pmodon1
         idx = 0
         for i in xrange(10):
+            pf = pairfields[i]
             pairtitle = plint(pairtitles[i])
-            when = plint(pairfields[i][1])
+            when = plint(pf[1])
             if news:
                 if when>old:    # searching newest pair
                     old = when
@@ -114,15 +129,21 @@ def vertical():
             elif request.edit_mode:   # in edit mode(see editvertical) pairs whenwho not needed
                 td.append(pairtitle)
             else:
-                who = plint(pairfields[i][2])
+                who = plint(pf[2])
                 get_user_name(who)
-                td.append((pairtitle,when,who,plint(pairfields[i][3])))
+                td.append((pairtitle,when,who,plint(pf[3])))
         if news:
              td.append((plint(pairtitles[idx]),idx))
         tr['pairs'] = td
-        if search or news: add_root(tr, plint)
-        plints.append(tr)
-    return dict(header=header, plints=plints, users=users, vertical=title, cross=cross)
+        plints.append(add_root(tr, plint) if search or news else tr)
+    result = dict(header=header, plints=plints, users=users, vertical=title, cross=cross)
+    if not news: result['cables'] = cables()
+    if xp:
+        result['s_plint'] = s_plint
+        if xp and xp.cable:
+            xp = db((db.plints.cable==xp.cable) & (db.plints.vertical!=vertical.index)).select().first()
+            if xp: result['chain'] = [add_root(dict(plintId=xp.id, title=xp.title), xp)]
+    return result
 
 def plints():
     return dict(data=[(i.id,i.title,int(i.start1)) for i in db(db.plints.vertical == request.args(0, cast = int)).select(*pfset1, orderby=db.plints.id)])
@@ -186,8 +207,7 @@ def __getchain():
             )
             if linkId == '%s_%s' % (plint.id, i+1):
                 tr['edited'] = True
-            add_root(tr, plint)
-            pairs.append(tr)
+            pairs.append(add_root(tr, plint))
         #=======================
         pairs = []
         if test_query(q):
@@ -225,6 +245,7 @@ def add_root(tr, plint):
     tr['crossId'] = plint.cross
     tr['vertical'] = plint.vertical.title
     tr['verticalId'] = plint.vertical
+    return tr
 
 def search_plints(q, like=True, pfset=pairtitles):
     if q and test_query(q):
@@ -358,8 +379,9 @@ def update():
     return result
 
 def user():
-    action = request.args(0) if request.args(0) else 'login'
-    if action != 'logout':
+    #action = request.args(0) if request.args(0) else 'login'
+    action = request.args(0) or 'login'
+    if action != 'logout' and action != 'reset_password':
         _next = request.env.http_web2py_component_location
         #form = getattr(auth, action)(onaccept=lambda form: response.headers.update({'web2py-component-command': "document.location='%s'" % _next}))
         #form = getattr(auth, action)(onaccept=lambda form: response.headers.update())

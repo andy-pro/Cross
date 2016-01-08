@@ -1,9 +1,11 @@
 /*** Global constants  ***/
-const _DEBUG_ = false;
-//const _DEBUG_ = true;
+//const _DEBUG_ = false;
+const _DEBUG_ = true;
 const _mypre = '<pre class="mypre">%s</pre>';
 
 app = {name: 'cross'};
+//clr = ['#fff', '#9ff', '#f9f', '#ff9', '#aaf', '#afa', '#faa', '#bdf', '#fbd', '#dfb', '#fdb'];
+clr = Chain.clr;
 
 web2spa.init({	// application settings, !!! important: urls or url's parts without slashes
     app: app.name,
@@ -37,21 +39,24 @@ web2spa.init({	// application settings, !!! important: urls or url's parts witho
 	app.editMode = new CheckBox('editMode');
 	app.wrapMode = new CheckBox('wrapMode');
 	app.db_clear = function() { if (confirm("A you sure?")) location.href = web2spa.root_path + 'cleardb'; }
-	if (_DEBUG_) web2spa.targetEl.before('<div id="debuglog" class="well"></div>');
+	if (_DEBUG_) web2spa.targetEl.before('<div id="debug" class="well"><button class="btn btn-default" onclick="vars_watch()">Watch</button><span id="varswatch"></span></div>');
     },
     //beforeNavigate: function() { app.chainMode.reset_handler(); console.log(lengthOf($.cache)); console.dir($.cache); }
     beforeNavigate: function() { app.chainMode.reset_handler(); },
-    afterNavigate: function() {
-	if (_DEBUG_) { $("#debuglog").text('Size of jQuery cache: '+Object.keys( $.cache ).length); console.dir($.cache); }
-    }
+    afterNavigate: function() { if (_DEBUG_) vars_watch(); }
+
 });
 
+/* for DEBUG */
+function vars_watch() {
+    $("#varswatch").text('Size of jQuery cache:%s, Size of window:%s'.format(Object.keys($.cache).length, Object.keys(window).length));
+    //console.dir($.cache);
+}
 /* stage hyperlink helpers */
 function A_Cross(o) { return `<a class="web2spa" href="${web2spa.start_path}editcross/${o.crossId}" title="${L._EDIT_CROSS_} ${o.cross}">${o.cross}</a>`; }
 
-function A_Vertical(o, _class='') {
-    //_class = _class ? `class="${_class}"` : '';
-    return `<a class="web2spa ${_class}" href="${web2spa.start_path}vertical/${o.verticalId}" title="${L._VIEW_VERT_} ${o.vertical}">${o.header || o.vertical}</a>`; }
+function A_Vertical(o, x) {
+    return `<a class="web2spa ${x||''}" href="${web2spa.start_path}vertical/${o.verticalId}" title="${L._VIEW_VERT_} ${o.vertical}">${o.header||o.vertical}</a>`; }
 
 function A_Plint(o) {
     var start1 = o.pairId+o.start1-1;
@@ -63,12 +68,9 @@ function A_Pair(o) {
 
 function pairRow(pair, depth, colv) {
     depth = typeof depth !== 'undefined' ? depth : 4;
-    var cell, row = '', tds = [A_Cross, A_Vertical, A_Plint, A_Pair];
-    for(var i=0; i<depth; i++) {
-	cell = colv ? `<td class="colv${i}">` : '<td>';
-	row += cell+tds[i](pair)+'</td>';
-    }
-    return row;
+    var tda = [], fna = [A_Cross, A_Vertical, A_Plint, A_Pair];
+    for(var i=0; i<depth; i++) tda.push((colv ? `<td class="colv${i}">` : '<td>')+fna[i](pair)+'</td>');
+    return tda.join('');
 }
 /* stage hyperlink helpers */
 
@@ -100,5 +102,5 @@ function toggle_ctrl() {
 function str_editMode() { return `<label><input id="editMode" type="checkbox">${L._EDITOR_}</label>`; }
 
 function D_Vertical(header, search, news, vId) {
-    return {plints:$scope.plints, users:$scope.users, header:header, search:search, news:news, vId:vId};
+    return {plints:$scope.plints, users:$scope.users, cables:$scope.cables, header:header, search:search, news:news, vId:vId};
 }

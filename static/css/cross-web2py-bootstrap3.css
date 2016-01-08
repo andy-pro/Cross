@@ -142,7 +142,7 @@ table.vertical td {
     padding: 0px 3px!important;
 }
 table.vertical a {
-    color:#147;
+    color:#136;
     display: block;
     font-size: 9pt;
     text-decoration:none;
@@ -155,7 +155,8 @@ table sup {
 }
 .colv0 { width: 56px; }
 .colv1 { width: 44px; }
-table.vertical tr:hover { background: #ffc; }
+/*table.vertical tr:hover { background: #ffc; }*/
+table.vertical tr:hover { background: #ccc!important; }
 td.found {background: #cfc;}
 td.new {background: #ffb;}
 td.cdfound {background: #cfc;}
@@ -190,7 +191,6 @@ div.flash.alert:hover {
 .ie-lte8 div.flash:hover {
     filter: alpha(opacity=25);
 }
-
 
 div.error {
     width: auto;

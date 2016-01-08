@@ -5,8 +5,8 @@ start_path = '/cross/default/index/';   # URL function give wrong result for aja
 
 from gluon.contrib.appconfig import AppConfig # private/appconfig.ini
 myconf = AppConfig()
-db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['common'], migrate_enabled=False)
-#db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['common'], migrate_enabled=True)
+#db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['common'], migrate_enabled=False)
+db = DAL(myconf.take('db.uri'), pool_size=myconf.take('db.pool_size', cast=int), check_reserved=['common'], migrate_enabled=True)
 response.generic_patterns = ['*'] if request.is_local else ['*.json']   # for *.json give generic view
 response.formstyle = myconf.take('forms.formstyle')  # or 'bootstrap3_stacked' or 'bootstrap2' or other
 response.form_label_separator = myconf.take('forms.separator')
@@ -30,6 +30,7 @@ mail = auth.settings.mailer
 mail.settings.server = 'logging' if request.is_local else myconf.take('smtp.server')
 mail.settings.sender = myconf.take('smtp.sender')
 mail.settings.login = myconf.take('smtp.login')
+mail.settings.tls = True
 
 ## configure auth policy
 auth.settings.registration_requires_verification = False
@@ -40,7 +41,12 @@ auth.settings.everybody_group_id = 1
 
 #========= define tables ================================
 #print 'db.py exec'
-tables = 'crosses', 'verticals', 'plints'
+tables = 'crosses', 'verticals', 'plints', 'cables'
+db.define_table('cables',
+                Field('title', length=40, default=''),
+                Field('details', length=80, default=''),
+                Field('capacity', 'integer', default=0),
+                Field('color', 'integer', default=0))
 db.define_table('crosses', Field('title', length=40))
 db.define_table('verticals', Field('cross', db.crosses), Field('title', length=40))
 selfields = []
@@ -63,7 +69,7 @@ for i in xrange(1, 11):
     selfields.append(Field(fnames[4], 'integer', default=0))   # pch, position in chain
     selfields.append(Field(fnames[5], 'boolean', default=False))   # par, parallel presence
     selfields.append(Field(fnames[6], 'integer', default=0))   # clr, pair color, default is #fff, white
-plintfields = ('title','start1','comdata','modon','modby')
+plintfields = ('title','start1','comdata','modon','modby','cable')
 db.define_table('plints',
                 Field('cross', db.crosses),
                 Field('vertical', db.verticals),
@@ -72,6 +78,7 @@ db.define_table('plints',
                 Field(plintfields[2], length=40, default=''),  # comdata
                 Field(plintfields[3], 'date', default=request.now.date()),  # modon
                 Field(plintfields[4], db.auth_user, default=auth.user),  # modby
+                Field(plintfields[5], db.cables),
                 *selfields)
 pairtitles.append(plintfields[2])    # this list contain pid1, pid2,..., pid10, comdata
 pfset1 = [db.plints.id, db.plints.title, db.plints.start1, db.plints.comdata]
@@ -173,6 +180,8 @@ class Vertical:
         del db.verticals[self.index]
 
     def update(self, vars):
+        if vars.cable:
+            db.cables[vars.cable.id] = vars.cable.maindata
         changed = False
         if self.title != vars.title:
             db.verticals[self.index] = {'title': vars.title}
@@ -185,7 +194,7 @@ class Vertical:
             if plint_update(xp.id, plint.maindata, plint.pairdata):
                 changed = True
         for plint in vars.rplints:
-            if plint_update(plint[0], dict(comdata=plint[1]), {}):
+            if plint_update(plint.id, plint.maindata, {}):
                 changed = True
         return changed
 

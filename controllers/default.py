@@ -10,7 +10,9 @@ def restore():
 
 def user():
     response.view='default/index.html'
-    return dict(form=auth()) if request.args(0) == 'logout' else dict()
+    action = request.args(0)
+    return dict(form=auth()) if action == 'logout' or action == 'reset_password' else dict()
+    #return dict(form=auth())
 
 def error():
     response.view='default/index.html'

@@ -24,7 +24,7 @@ function CrossCtrl() { web2spa.load_and_render(function() { return {data:{crosse
 function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search
     web2spa.load_and_render(function() {
 	var search = $request.vars.search, vId = false, _title='', href;
-	mastersearch.val((search || '').unescapeHTML());
+	$("#master-search").val((search || '').unescapeHTML());
 	if ($request.args[0]) { // for certain vertical view
 	    vId = $request.args[0];
 	    href = `${web2spa.start_path}editvertical/${vId}`;
@@ -43,7 +43,7 @@ function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search
 /*** NewsController ***/
 function NewsCtrl() {
     web2spa.load_and_render(function() { return {title:L._NEWS_, data:D_Vertical($scope.header, false, true, false)}; });
-    toggle_chain();
+    //toggle_chain();
 }
 /* end NewsController */
 
@@ -58,21 +58,16 @@ function ChainCtrl() {
 //======================================
 /*** RestoreController ***/
 function RestoreCtrl() {
-
-    function handleFileSelect(e) {
-	file = e.target.files[0];
-	document.getElementById('prop').innerHTML = file.size + ' bytes, last modified: ' +
-	    (file.lastModifiedDate ? file.lastModifiedDate.toLocaleDateString() : 'n/a');
-    }
-
     var file, title, ft = 'csv';
     if ($request.vars.merge) title = L._MERGE_DB_;
     else if ($request.vars.txt) { title = L._IMPORT_; ft = 'txt'; }
     else title = L._RESTORE_;
-
     web2spa.load_and_render(function() { return {title:title, data:{title:title, hint:`Select ${ft} file`}}; });
     var form = new Form(function() { return file ? form.post(this) : false; }); // restore ctrl
-    document.getElementById('upload').addEventListener('change', handleFileSelect, false);
+    $('#upload').change(function (e) {
+	file = e.target.files[0];
+	$('#prop').text(file.size + ' bytes, last modified: ' + (file.lastModifiedDate ? file.lastModifiedDate.toLocaleDateString() : 'n/a'));
+    });
 }
 /* end RestoreController */
 
@@ -104,52 +99,55 @@ function EditVerticalCtrl() {
     const oldset = ["warning", "~", L._OLDPL_], newset = ["new", "+", L._NEWPL_];
 
     function verticalChange() {
+	//var timeLoop = performance.now();
         //console.time('editvertical');
-	//console.info(inputs);
+	//console.info('form inputs:', inputs);
 	vertical = {plints:[], rplints:[]};
-	var data = {rows:[]};
+	var data = {rows:[]}, link = Chain.chain[0];
+	//console.log(link);
 	if (inputs.delete) vertical.delete = 'on';
 	else {
 	    $('#verttitle').text(inputs.title);
-	    var plintmask = inputs.plintmask;
+	    var plintmask = inputs.plintmask, cable = 0;
 	    if (plintmask) {
 		var cnt = inputs.count;
 		if (isNaN(cnt) || cnt=='' || cnt>100 || cnt<0) $('#plintCount').addClass('has-error');
 		else {
 		    $('#plintCount').removeClass('has-error');
-		    var titles = chaindata.titles,
-			cdmask = inputs.cdmask.replace(/%C/g, titles.cross||'').replace(/%V/g, titles.vertical||''),
+		    //var titles = chaindata.titles,
+		    var cdmask = inputs.cdmask.replace(/%C/g, link.cross.title||'').replace(/%V/g, link.vertical.title||''),
 			rcdmask = inputs.cdmask.replace(/%C/g, $scope.cross).replace(/%V/g, $scope.vertical).unescapeHTML(),
 			pairmask = inputs.pairmask,
 			multiplint = /%\d+/.test(plintmask),    // one plint or more
-			remote = titles.plintindex,	// remote plint index
+			remote = link.plint.si,	// remote plint selected index
 			editor = taEl.val().split('\n'),
 			editor_en = editor && /%E/.test(pairmask);
 		    for(var i=0; i<cnt; i++) {
 			var plint = {maindata:{},pairdata:{}},
 			    title = plintmask.getCounter(/%(\d+)/g, i),   // plint title with counter
 			    pairbase = pairmask.getCounter(/%(\d+)/g, i),   // plint counter for pair
-			    set, cd, rcd = '', start1, rem_rec = '',
-			    oldplint = getOldPlint($scope.plints, title);   // search in vertical by plint title
+			    set, row, cd, rcd = '', start1, rem_rec = '',
+			    oldplint = plintByTitle($scope.plints, title.escapeHTML());   // search in vertical by plint title
 			if (oldplint) {
 			    set = oldset;
 			    cd = oldplint.comdata.unescapeHTML(); // actual common data from old plint
 			    start1 = inputs.start1all ? inputs.start1 : oldplint.start1;
+			    if (i==0) cable = oldplint.cable || 0;
 			} else {
 			    set = newset;
 			    cd = '';
 			    start1 = inputs.start1;
 			}
 			if (!oldplint || inputs.start1all) plint.maindata['start1'] = start1;
-			if (titles.vertical && chaindata.plints[remote+i]) {
-			    rem_rec = chaindata.plints[remote+i];   // [id, title, start1, comdata]
+			if (link.vertical.title && link.plint.data[remote+i]) {
+			    rem_rec = link.plint.data[remote+i];   // [id, title, start1, comdata]
 			    if (inputs.rcdreplace) {
 				rcd = rcdmask.getComData(rem_rec[3], title, i);
-				vertical.rplints.push([rem_rec[0], rcd]);
+				vertical.rplints.push({id:rem_rec[0], maindata:{comdata:rcd}});
 			    }
 			    rem_rec = rem_rec[1];   // remote plint title
 			}
-			var row = {class:set[0], hint:set[2], start1:start1, title:title.escapeHTML(), chr:set[1], cd:cdmask.getComData(cd, rem_rec, i), rcd:rcd, pairs:[]};
+			row = {class:set[0], hint:set[2], start1:start1, title:title.escapeHTML(), chr:set[1], cd:cdmask.getComData(cd, rem_rec, i), rcd:rcd, pairs:[]};
 			plint.maindata['title'] = title;
 			plint.maindata['comdata'] = row.cd;
 			set = editor_en ? (editor[i] || '').split('\t')	: '';	// set of pair titles from editor
@@ -166,13 +164,15 @@ function EditVerticalCtrl() {
 		    }
 		}
 	    }
+	    scEl.val(cable);
 	}
-	document.getElementById('watchbody').innerHTML = data.rows.length ? web2spa._render({id: (view_cd ? 'CDwatchTmpl': 'PTwatchTmpl'), data:data}) : '';
+	$('#watchbody').html(data.rows.length ? web2spa._render({id: (view_cd ? 'CDwatchTmpl': 'PTwatchTmpl'), data:data}) : '');
 	//console.timeEnd('editvertical');
+	//console.log(performance.now() - timeLoop);
     }
 
-    function getOldPlint(arr, query) { // title of plint: existing or new
-	for(var o in arr) if (arr[o].title && arr[o].title == query.escapeHTML()) return arr[o];
+    function plintByTitle(arr, title) { // title of plint: existing or new
+	for(var o in arr) if (arr[o].title && arr[o].title == title) return arr[o];
 	return 0;
     }
 
@@ -181,12 +181,23 @@ function EditVerticalCtrl() {
 
     function viewChange() {
 	view_cd = vmEl.filter(':checked').val() == 'comdata';
-	wthead.html(view_cd ? wthead_cd : wthead_pt);
-	form.init();
+	$('#watchhead').html(view_cd ? wthead_cd : wthead_pt);
+	form.init();	// this trigger 'verticalChange'
     }
 
     function verticalSubmit() {
 	vertical.title = inputs.title;
+	if ($('#setCable')[0].checked) {
+	    var cid = +scEl.val();
+	    if (vertical.plints.length) {
+		var details = vertical.plints[0].maindata.comdata;
+		for (var ci in vertical.plints) vertical.plints[ci].maindata.cable = cid;
+		if (vertical.rplints.length) {
+		    for(var ci in vertical.rplints) vertical.rplints[ci].maindata.cable = cid;
+		    if (cid) vertical.cable = {id:cid, maindata:{details:vertical.rplints[0].maindata.comdata + ' - ' + details}};
+		}
+	    }
+	}
 	$scope.formData = {};
 	$scope.formData.vertical = JSON.stringify(vertical);
 	//console.log($scope.formData); return false;
@@ -195,6 +206,8 @@ function EditVerticalCtrl() {
 
     web2spa.load_and_render(function() {
 	$scope.verticalId = $request.args[0];
+	if ($scope.s_plint) $scope.s_plint.mask = $scope.s_plint.title.replace(/(\d+)/, '%$1');
+	else $scope.s_plint = {mask:'М%1', count:0};
 	return {title: $scope.header, data:{vertical:$scope}};
     });
 
@@ -202,16 +215,15 @@ function EditVerticalCtrl() {
     $('#editor').change(function() { if (this.checked) { taEl.show(); taEl.focus(); } else taEl.hide(); });
 
     var view_cd, vertical, vdata,
-	wthead = $('#watchhead'),
 	vmEl = $('input[name=view]').on('change', viewChange),
-	taEl = $('textarea').on('input', verticalChange);
-
-    var form = new Form(verticalSubmit, {hC:verticalChange});
-    Chain.init('plintscd', 3, verticalChange);
-    var chaindata = Chain.chain[0], inputs = form.inputs,   // shorthands
+	taEl = $('textarea').on('input', verticalChange),
+	scEl = $('#cables'),
+	form = new Form(verticalSubmit, {hC:verticalChange}),
+	inputs = form.inputs,   // shorthand
 	wthead_cd = _th_com_ + _th_cdt_,   // for common data
 	wthead_pt = _th_com_ + '<th width="8%">'.repeat(10);	// for pair titles
-    viewChange();
+
+    Chain.init('plintscd', 3, verticalChange, $scope.chain, false, viewChange);
 
     taEl.keydown(function(e) {
 	if(e.keyCode === 9) { // tab key
@@ -258,12 +270,13 @@ function EditPlintCtrl() {
 function EditPairCtrl() {
 
     function refreshWatch() {	//~~~~~~~~~~~~for debug~~~~~~~~~~~~~~
-        $("table#watchtable tr").remove(".refreshing");
+        var wt = $('#watchtable'), tr;
+        wt.find('tr').remove('.refreshing');
         $.each(Chain.chain, function(key, link) {
-            var tr = $('<tr>', {class:"refreshing"});
-            $('<td>', {class:"warning"}).text(key).appendTo(tr);
-            $.each(Chain.stages, function() { $('<td>').text(link[this+'Id']).appendTo(tr); });
-            tr.appendTo(watchtable);   // id of element, without declare variable!!!
+            tr = $('<tr>', {class:'refreshing'});
+            $('<td>', {class:'warning'}).text(key).appendTo(tr);
+            $.each(Chain.stages, function() { $('<td>').text(link[this].id).appendTo(tr); });
+            tr.appendTo(wt);   // id of element, without declare variable!!!
         });
 	//console.log(form);
     }	//~~~~~~~~~~~~end for debug~~~~~~~~~~~~~~
@@ -273,29 +286,32 @@ function EditPairCtrl() {
 	if (chainMode) Chain.order(title, details);
 	else {
 	    id = $request.args;
+	    Chain.plints = {};
 	    Chain.plints[id[0]] = {};
 	    Chain.plints[id[0]]['pid'+id[1]] = title;
 	    Chain.plints[id[0]]['pdt'+id[1]] = details;
 	}
-
 	$scope.formData = {};
 	$scope.formData.plints = JSON.stringify(Chain.plints);
-	//console.log($scope.formData.plints);
+	//console.log($scope.formData.plints); return false;
 	return form.post();
-	//return false;
     }
 
     var chainMode = $request.vars.chain;
     web2spa.load_and_render(function() { return {title:$scope.address, data:{pair:$scope, chain:chainMode}}; });
     var form = new Form(editpairSubmit);
     if (chainMode) {
-	Chain.init('plintscd', 4, _DEBUG_?refreshWatch:null, $scope.chain);	// 'plints'
-	//debugger;
+	Chain.init('plintscd', 4, _DEBUG_?refreshWatch:null, $scope.chain, true);	// 'plints'
 	if (_DEBUG_) { web2spa.render({id:'ChainWatchTmpl', append:true}); refreshWatch(); }
-	//console.dir(Chain);
+	//debugger;
     }
+    //console.table(Chain);
 
-    app.chainMode.init(function(value) { web2spa.navigate(location.pathname + (value?'?chain=true':'')); });
+    app.chainMode.init(function(value) {
+	value = location.pathname + (value?'?chain=true':'');
+	history.replaceState(null, null, value);
+	web2spa.navigate(value);
+    });
 
 }
 /* end edit pair controller */
@@ -312,9 +328,7 @@ function EditFoundCtrl() {
 	    pair = fdata[ci];
 	    pair.cell.innerHTML = _mypre.format(pair.title.replace(ftext, out));
 	    pair._title = pair.title.replace(ftext, rtext);
-	    row = pair.plintId;
-	    if (!plints[row]) plints[row] = {};
-	    plints[row]['pid'+pair.pairId] = pair._title.unescapeHTML();
+	    plints[pair.plintId]['pid'+pair.pairId] = pair._title.unescapeHTML();
 	}
     }
 
@@ -322,7 +336,7 @@ function EditFoundCtrl() {
 	$.each($scope.plints, function(key, plint) {  // convert : array of plints to array of pairs
 	    var start1 = parseInt(plint.start1);
 	    $.each(this.pairs, function(idx, pair) {
-		if (pair[0].indexOf($request.vars.search) >= 0)
+		if (pair[0].indexOf($request.vars.search) >= 0) {
 		    fdata.push({cross: plint.cross,
 				crossId: plint.crossId,
 				vertical: plint.vertical,
@@ -335,6 +349,8 @@ function EditFoundCtrl() {
 				comdata: plint.comdata,
 				pairId: idx+1,    // idx in range 0-9, pid in range 1-10
 				start1: start1});
+		    if (!plints[plint.id]) plints[plint.id] = {};
+		}
 	    });
 	});
 	return {title:$scope.header, data:{search:$request.vars.search, header:$scope.header, count:fdata.length}};
@@ -342,12 +358,10 @@ function EditFoundCtrl() {
 
     function foundSubmit() { $scope.formData = {}; $scope.formData.plints = JSON.stringify(plints); return form.post(); }
 
-    var fdata = [];
+    var fdata = [], plints = {};
     web2spa.load_and_render(plints_to_pairs);
     var form = new Form(foundSubmit, {hC:refreshFoundTable});    // edit found ctrl
-    var inputs = form.inputs;
-    var plints = {};
-    var pair, row;
+    var inputs = form.inputs, pair, row;
     for(var ci in fdata) {
 	pair = fdata[ci];
 	row = foundtable.insertRow();
@@ -366,12 +380,12 @@ function EditFoundCtrl() {
 // running at startup
 (function() {
 
-    var keypress = false, searchvalue = '', oldvalue = '', div = $("#livesearchout"), reqs = [];
+    var jqXHR, keypress = false, searchvalue = '', oldvalue = '', div = $("#livesearchout");
 
     function hidelive() {
         div.hide();
 	div.empty();
-        while (reqs.length) reqs.pop().abort();	// abort all ajax requests
+        //while (reqs.length) reqs.pop().abort();	// abort all ajax requests
     }
 
     function getPairTitles(event) {
@@ -381,12 +395,9 @@ function EditFoundCtrl() {
 	//console.log(searchvalue)
             if (searchvalue != oldvalue) {
 		oldvalue = searchvalue;
-                $.ajax(web2spa.get_ajax_url("livesearch", {}), {
+		if (jqXHR) jqXHR.abort();
+                jqXHR = $.ajax(web2spa.get_ajax_url("livesearch", {}), {
                     data: {search: searchvalue},
-                    beforeSend: function(jqXHR){
-                        while (reqs.length) reqs.pop().abort();
-                        reqs.push(jqXHR);
-                    },
 		    dataFilter: function(data) { return data.escapeHTML(); },
                     success: function(data){
                         if (data.search.length) {
@@ -405,7 +416,7 @@ function EditFoundCtrl() {
         }
     }
 
-    mastersearch = $("#master-search")    // global input
+    var mastersearch = $("#master-search")    // global input
 	.on('keydown', function() { keypress = true; })
 	.on('keyup', function(event) { keypress = false; getPairTitles(event); })
 	.on('input', getPairTitles)
