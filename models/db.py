@@ -41,11 +41,10 @@ auth.settings.everybody_group_id = 1
 
 #========= define tables ================================
 #print 'db.py exec'
-tables = 'crosses', 'verticals', 'plints', 'cables'
+tables = 'cables', 'crosses', 'verticals', 'plints'
 db.define_table('cables',
                 Field('title', length=40, default=''),
                 Field('details', length=80, default=''),
-                Field('capacity', 'integer', default=0),
                 Field('color', 'integer', default=0))
 db.define_table('crosses', Field('title', length=40))
 db.define_table('verticals', Field('cross', db.crosses), Field('title', length=40))
@@ -78,7 +77,7 @@ db.define_table('plints',
                 Field(plintfields[2], length=40, default=''),  # comdata
                 Field(plintfields[3], 'date', default=request.now.date()),  # modon
                 Field(plintfields[4], db.auth_user, default=auth.user),  # modby
-                Field(plintfields[5], db.cables),
+                Field(plintfields[5], db.cables),  # cable
                 *selfields)
 pairtitles.append(plintfields[2])    # this list contain pid1, pid2,..., pid10, comdata
 pfset1 = [db.plints.id, db.plints.title, db.plints.start1, db.plints.comdata]
@@ -87,7 +86,8 @@ pdtset = pairtitles + pdtset
 
 def get_tb_fields():
     fields = (('id','title'), ('id','cross','title'), ('id','cross','vertical')+plintfields+tuple(sum(pairfields,[])))
-    return zip(tables, fields)
+    #return zip(tables, fields)
+    return zip(('crosses', 'verticals', 'plints'), fields)
 
 get_pids = lambda rec: '\n'.join(rec(pairtitles[i]) or '' for i in xrange(10))
 get_pdts = lambda rec: '\n'.join(rec(pairfields[i][3]) or '' for i in xrange(10))
@@ -130,7 +130,8 @@ if not request.ajax:
     ]
 
     if auth.has_membership('managers'):
-        toolsmenu = [('', False, A(itext('th-list', T('New cross')), _class='web2spa', _href=URL('default', 'index/editcross', vars={'new':'true'})))]
+        toolsmenu = [('', False, A(itext('th-list', T('New cross')), _class='web2spa', _href=URL('default', 'index/editcross', vars={'new':'true'}))),
+                     ('', False, A(itext('random', T('Cables')), _class='web2spa', _href=URL('default', 'index/editcables')))]
         if is_admin:
             response.headers['Admin'] = True
             hr = LI(_class="divider")
@@ -236,19 +237,19 @@ class Plint:
 def plint_update(index, maindata, pairdata, merge=False, mergechar=''):
     """
     index - record id
-    maindata - dict, possible keys: title, start1, comdata
+    maindata - dict, possible keys: title, start1, comdata, cable
     pairdata - dict, possible keys: pid1-10:title; pdt1-10:details; pch1-10:position in chain; par1-10:parallel existence; clr1-10:pair color
     merge - boolean, if True, new pair title merge with existing
     """
-    plint = db.plints[index]
+    table = db.plints
+    plint = table[index]
     whenwho = get_whenwho()
     changed = False
     if maindata:
         keys = maindata.keys()
         for key in keys:
-            if plint(key) != maindata[key]:
-                changed = True
-                break
+            if plint(key) != maindata[key]: changed = True
+            if table[key].type.startswith('reference') and maindata[key]==0: maindata[key]=None
     if pairdata:
         keys = pairdata.keys()
         for key in keys:

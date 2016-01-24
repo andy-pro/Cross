@@ -3,14 +3,17 @@
 def lexicon():
     return dict(
     _ADD_LINK_ = T('Add link to chain'),
+    _ADD_CABLE_ = T('Add cable'),
     _ADMIN_DB_ = T('Direct edit DB'),
     _BACK_ = T('Back'),
     _BACKUP_ = T('Backup DB'),
     _BTNBACK_ = btnBack,
+    _CABLES_ = T('Cables'),
     _CANCEL_ = T('Cancel'),
     _CHAIN_ = T('Edit chain'),
     _CLEAR_DB_ = T('Clear DB'),
     _COMMON_DATA_ = T('Common data'),
+    _COLOR_ = T('Color'),
     _COUNT_ = T('Count'),
     _CROSS_ = T('Cross'),
     _DB_UPD_ = T('Database update success!'),
@@ -69,9 +72,7 @@ def templates():
     return dict()
 
 def cables():
-    #return [(r.id, r.title, r.details, r.capacity, r.color) for r in db(db.cables).select()]
-    return dict((r.id,(r.title, r.details, r.capacity, r.color)) for r in db(db.cables).select())
-    #return db(db.cables).select().as_list()
+    return dict(cables=dict((r.id,(r.title, r.details, r.color)) for r in db(db.cables).select()))
 
 def cross():
     return dict(data=[(r.id, r.title, [(w.id, w.title) for w in db(db.verticals.cross == r.id).select()]) for r in db(db.crosses).select()])
@@ -137,7 +138,7 @@ def vertical():
         tr['pairs'] = td
         plints.append(add_root(tr, plint) if search or news else tr)
     result = dict(header=header, plints=plints, users=users, vertical=title, cross=cross)
-    if not news: result['cables'] = cables()
+    if not news: result.update(cables())
     if xp:
         result['s_plint'] = s_plint
         if xp and xp.cable:
@@ -175,8 +176,6 @@ def editvertical():
 def editplint():
     data = Plint(request.args(0, cast = int))
     result = comdict(data)
-    #result.update(dict(pairtitles=data.get_fieldstring('pid'),
-                       #pairdetails=data.get_fieldstring('pdt'),
     result.update(dict(pairtitles=get_pids(data.record),
                        pairdetails=get_pdts(data.record),
                        start1=data.start1, comdata=data.comdata))
@@ -185,6 +184,10 @@ def editplint():
 @auth.requires_membership('managers')
 def editpair():
     return add_formkey(__getchain())
+
+@auth.requires_membership('managers')
+def editcables():
+    return add_formkey(cables())
 
 def chain():
     request.vars.chain = True
@@ -359,6 +362,26 @@ def update():
             plints = json_to_utf(vars.plints)
             for i in plints:
                 changed = plint_update(i, {}, plints[i])
+        elif formname == 'editcables':
+            cables = json_to_utf(vars.cables)
+            for i in cables:
+                idx = i.id
+                if i.delete:
+                    #db(db.cables.id==idx).delete()
+                    del db.cables[idx]
+                    changed = True
+                else:
+                    #db.cables[i.pop('id', 0)] = i
+                    if idx:
+                        d = db.cables[idx].as_dict()
+                        del d['id']
+                        del i['id']
+                        if cmp(d, i)!=0:
+                            db.cables[idx] = i
+                            changed = True
+                    else:
+                        db.cables[0] = i    # insert new
+                        changed = True
         elif formname == 'restore':
             f = vars.upload.file
             if vars.txt == 'true':
@@ -379,7 +402,6 @@ def update():
     return result
 
 def user():
-    #action = request.args(0) if request.args(0) else 'login'
     action = request.args(0) or 'login'
     if action != 'logout' and action != 'reset_password':
         _next = request.env.http_web2py_component_location

@@ -20,12 +20,8 @@ div#gif {
                 no-repeat;
 }
 /*body.loading .ajaxanimation {display: block;}*/
-.cont-mid {
-    max-width: 600px;
-}
-div.pair-li {
-    overflow: hidden;
-}
+.cont-mid { max-width: 600px; }
+div.pair-li { overflow: hidden; }
 div.pair-ol {
     float: left;
     background: #eee;
@@ -54,9 +50,7 @@ div.table-container{
     max-height: 568px;
     overflow: auto;
 }
-.checkbox label, .radio label{
-    color: #337ab7;
-}
+.checkbox label, .radio label{ color: #337ab7; }
 .nav input[type=checkbox] {
     margin-left: -20px;
     position: absolute;
@@ -129,8 +123,8 @@ table#chaintable {
     width: 100%;
     margin: 15px 0px;
 }
-#chainbody td.chain { padding: 8px; }
-tr.chain { cursor: move; }
+td.padd9 { padding: 9px!important; }
+tr.move { cursor: move; }
 
 /** vertical table css rules **/
 table.vertical { table-layout: fixed; }
@@ -142,7 +136,7 @@ table.vertical td {
     padding: 0px 3px!important;
 }
 table.vertical a {
-    color:#136;
+    color: #136;
     display: block;
     font-size: 9pt;
     text-decoration:none;

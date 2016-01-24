@@ -11,8 +11,8 @@
 <%crosses.forEach(function(cross){%>
   <div class="col-md-4">
     <div class="panel panel-default">
-      <div class="panel-heading"><%print(A_Cross({crossId:cross[0], cross:cross[1]}));%></div>
-      <div class="panel-body"><%cross[2].forEach(function(vertical){print(A_Vertical({verticalId:vertical[0], vertical:vertical[1]}, "mybtn-link"));});%></div>
+      <div class="panel-heading"><%print(app.A_Cross({crossId:cross[0], cross:cross[1]}));%></div>
+      <div class="panel-body"><%cross[2].forEach(function(vertical){print(app.A_Vertical({verticalId:vertical[0], vertical:vertical[1]}, "mybtn-link"));});%></div>
     </div>
   </div>
 <%});%>
@@ -24,23 +24,24 @@
       <%if (!news) {%>
         <div class="checkbox inmenu right">
           <label><input id="wrapMode" type="checkbox"><%=L._WRAP_%></label>
-          <%if ($userId) print(str_editMode());
+          <%if ($userId) print(app.str_editMode());
             if ($Admin && vId) print('<a href="%sbackupvertical/%s">Backup Vertical</a>'.format(web2spa.root_path, vId));
           %>
         </div>
       <%}%>
     </div>
-    <table class="vertical table table-bordered table-striped"><tbody>
+    <table class="vertical table table-bordered"><tbody>
     <%var href1 = web2spa.start_path + 'editplint/',
           href2 = web2spa.start_path + ((news||!$userId)?'chain/':'/ctrl//'),
           href3 = web2spa.start_path + 'editvertical/';
       for(var ci in plints) {
-          var plint=plints[ci];
-          var _href2=href2+plint.id+'/', pairs=plint.pairs, start1=parseInt(plint.start1), when=plint.modon, who=users[plint.modby],
-              _pattr='class="web2spa" title="%s\n%s\n%s\n%s"'.format(plint.title, plint.comdata, when, who);
+          var plint=plints[ci], _pattr='', _style=0,
+              _href2=href2+plint.id+'/', pairs=plint.pairs, start1=parseInt(plint.start1), when=plint.modon, who=users[plint.modby];
+          if (plint.cable&&!news) { _pattr=cables[plint.cable]; if (!search) _style=_pattr[2]; _pattr = _pattr[0]; }
+          _pattr='class="web2spa" title="%s\n%s\n%s\n%s\n%s"'.format(plint.title, plint.comdata, when, who, _pattr);
     %>
-          <tr style="background:<%=clr[(plint.cable&&!news&&!search)?cables[plint.cable][3]:0]%>">
-          <%if (search || news) { print(pairRow(plint, 2, true)); }%>
+          <tr style="background:<%=app.cable_clrs[_style]%>">
+          <%if (search || news) { print(app.pairRow(plint, 2, true)); }%>
           <td class="colv1" style="border-right:2px solid #ddd;">
             <a href="<%=href1+plint.id%>" <%=_pattr%>><%=plint.title%></a></td>
             <%for(var cj in pairs) {
@@ -82,9 +83,9 @@
   <div class="panel panel-default">
     <div class="panel-heading"><label><%=chain.title%></label><%=L._BTNBACK_%></div>
     <div class="panel-body"><p><i><%=chain.modinfo%></i></p></div>
-    <table class="table table-bordered table-condensed" style="display:normal">
+    <table class="table table-bordered table-condensed">
         <tr class="info"><%tbheaders.concat(L._DETAILS_,L._COMMON_DATA_,L.i_par).forEach(function(h){print(`<th>${h}</th>`);});%></tr>
-        <%chain.chain.forEach(function(link){print(`<tr style="background:${Chain.clr[link.clr]}">`, pairRow(link),
+        <%chain.chain.forEach(function(link){print(`<tr style="background:${app.link_clrs[link.clr]}">`, app.pairRow(link),
             `<td>${link.pdt}</td><td>${link.comdata}</td><td>${link.par?L.i_ok:""}</td></tr>`);});%>
     </table>
     <div class="panel-footer"><div class="myright"><%=L._FOUND_%><%=chain.chain.length%></div></div>
@@ -137,7 +138,7 @@
 <script type="text/html" id="EditVerticalTmpl">
 <div class="col-md-5" style="z-index:10;">
   <div class="panel panel-primary">
-    <div class="panel-heading"><%print(A_Vertical(vertical,"color-root"));%><%=L._BTNBACK_%></div>
+    <div class="panel-heading"><%print(app.A_Vertical(vertical,"color-root"));%><%=L._BTNBACK_%></div>
     <div class="panel-body">
       <form class="form-horizontal">
         <div class="form-group">
@@ -170,7 +171,7 @@
           <label class="col-md-3 control-label"><%=L._PAIR_T_%></label>
           <div class="col-md-8">
             <div class="input-group">
-              <input type="text" name="pairmask" class="form-control" value="%A %E" title="%A - actual\n%E - from editor\n%number - plint count\n%Pnumber - pair count\n%Dnumber - direct pair count">
+              <input type="text" name="pairmask" class="form-control" value="<%=vertical.pairmask%>" title="%A - actual\n%E - from editor\n%number - plint count\n%Pnumber - pair count\n%Dnumber - direct pair count">
               <span class="input-group-addon"><input id="editor" type="checkbox" title="<%=L._EDITOR_%>"></span>
             </div>
           </div>
@@ -178,7 +179,7 @@
         <textarea class="form-control pair-data" wrap="off" rows="10" name="pairtitles" style="display:none;"></textarea>
         <div class="form-group">
           <label class="col-md-3 control-label"><%=L._COMMON_DATA_%></label>
-          <div class="col-md-8"><input type="text" name="cdmask" class="form-control" value="%A %C %V %M" title="%A - actual\n%C - cross\n%V - vertical\n%M - plint\n%number - count"></div>
+          <div class="col-md-8"><input type="text" name="cdmask" class="form-control" value="<%=vertical.cdmask%>" title="%A - actual\n%C - cross\n%V - vertical\n%M - plint\n%number - count"></div>
         </div>
         <div class="form-group">
           <div class="checkbox col-md-offset-3 col-md-8">
@@ -189,12 +190,9 @@
           <div class="checkbox col-md-offset-3 col-md-3"><label><input id="setCable" type="checkbox"><%=L._SET_CABLE_%></label></div>
           <div class="col-md-5"><select id="cables" class="form-control">
             <option value="0">No cable</option>
-            <!--<%vertical.cables.forEach(function(cable){
-              print(`<option value="${cable[0]}">${cable[1]+(cable[2]?("&nbsp;("+cable[2]+")"):"")}</option>`);
-            });%>-->
             <%for(var ci in vertical.cables){
               var cable = vertical.cables[ci];
-              print(`<option value="${ci}">${cable[0]+(cable[1]?("&nbsp;("+cable[1]+")"):"")}</option>`);
+              print(`<option value="${ci}" style="background:${app.cable_clrs[cable[2]]}">${cable[0]+(cable[1]?("&nbsp;("+cable[1]+")"):"")}</option>`);
             }%>
           </select></div>
         </div>
@@ -253,7 +251,7 @@
 <script type="text/html" id="EditPlintTmpl">
 <div class="col-md-6">
   <div class="panel panel-primary">
-    <div class="panel-heading"><%print(A_Vertical(plint,"color-root"));%><%=L._BTNBACK_%></div>
+    <div class="panel-heading"><%print(app.A_Vertical(plint,"color-root"));%><%=L._BTNBACK_%></div>
     <div class="panel-body">
       <p><i><%=plint.modinfo%></i></p>
       <form class="form-horizontal">
@@ -305,7 +303,7 @@
 <script type="text/html" id="EditPairTmpl">
 <div class="col-md-<%print(chain?9:6);%>">
   <div class="panel panel-primary">
-    <div class="panel-heading"><%print(A_Vertical(pair,"color-root"));%><%=L._BTNBACK_%></div>
+    <div class="panel-heading"><%print(app.A_Vertical(pair,"color-root"));%><%=L._BTNBACK_%></div>
     <div class="panel-body">
       <p><i><%=pair.modinfo%></i></p>
       <form class="form-horizontal">
@@ -329,7 +327,7 @@
                 <th width="10%"><%=tbheaders[3]%></th>
                 <th><%=L._COMMON_DATA_%></th>
                 <th width="4%"><%=L.i_par%></th>
-                <th width="6%">Color</th>
+                <th width="6%"><%=L._COLOR_%></th></th>
               </tr>
             </thead>
             <tbody id="chainbody"></tbody>
@@ -391,3 +389,27 @@
 </div>
 </script>
 
+<script type="text/html" id="EditCablesTmpl">
+<div class="col-md-8">
+  <div class="panel panel-primary">
+    <div class="panel-heading"><label><%=L._CABLES_%></label><%=L._BTNBACK_%></div>
+    <div class="panel-body">
+      <form class="form-horizontal">
+        <button id="addCable" type="button" class="btn btn-sm btn-success pull-right" title="<%=L._ADD_CABEL_%>">+</button><br><br>
+        <table id="cabletable" class="table table-condensed">
+          <thead>
+            <tr class="active">
+              <th width="40%"><%=L._TITLE_%></th>
+              <th width="40%"><%=L._DETAILS_%></th>
+              <th width="10%"><%=L._COLOR_%></th>
+              <th><%=L._DEL_%></th>
+            </tr>
+          </thead>
+        <tbody id="cablebody"></tbody>
+        </table>
+        <%=L._BTNOKCNSL_%>
+      </form>
+    </div>
+  </div>
+</div>
+</script>

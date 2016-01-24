@@ -50,8 +50,8 @@ def import_from_txt1(fl, tb_fields):
             s1 = readstring()   # common data
             start1 = (readstring()=='0') ^ (plint[3]=='0')   # start inverse?
             sp = sp + sp0 if start1 else sp0 + sp
-            #                id   cross   vertical    title       start1    comdata modon  modby
-            writer.writerow([x, plint[0], plint[1], plint[2], str(start1), s1, dateplint, 1] + sp)
+            #                id   cross   vertical    title       start1 comdata modon  modby  cable
+            writer.writerow([x, plint[0], plint[1], plint[2], str(start1), s1, dateplint, 1, '<NULL>'] + sp)
             x += 1
 
     fncs = fnc, fnv, fnp

@@ -31,19 +31,19 @@ function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search
 	    _title = `${L._EDIT_VERT_} ${$scope.vertical}`;
 	} else href = `${web2spa.start_path}editfound?search=${search}`;    // for search results view
 	var header = `<a class="web2spa" href="${href}" title="${_title}">${$scope.header}</a>`;
-	return {title:$scope.header, data:D_Vertical(header, search, false, vId)};
+	return {title:$scope.header, data:app.D_Vertical(header, search, false, vId)};
     });
-    toggle_wrap();
-    if ($userId) toggle_ctrl();
-    //toggle_ctrl();
+    app.strip_table();
+    app.toggle_wrap();
+    $userId && app.toggle_ctrl();
 }
 /* end VerticalController */
 
 //======================================
 /*** NewsController ***/
 function NewsCtrl() {
-    web2spa.load_and_render(function() { return {title:L._NEWS_, data:D_Vertical($scope.header, false, true, false)}; });
-    //toggle_chain();
+    web2spa.load_and_render(function() { return {title:L._NEWS_, data:app.D_Vertical($scope.header, false, true, false)}; });
+    app.strip_table();
 }
 /* end NewsController */
 
@@ -51,7 +51,7 @@ function NewsCtrl() {
 /*** ChainController ***/
 function ChainCtrl() {
     web2spa.load_and_render(function() { return {title:$scope.address, data:{chain:$scope}}; });
-    toggle_chain();
+    app.toggle_chain();
 }
 /* end ChainController */
 
@@ -62,7 +62,7 @@ function RestoreCtrl() {
     if ($request.vars.merge) title = L._MERGE_DB_;
     else if ($request.vars.txt) { title = L._IMPORT_; ft = 'txt'; }
     else title = L._RESTORE_;
-    web2spa.load_and_render(function() { return {title:title, data:{title:title, hint:`Select ${ft} file`}}; });
+    web2spa.load_and_render({title:title, data:{title:title, hint:`Select ${ft} file`}});
     var form = new Form(function() { return file ? form.post(this) : false; }); // restore ctrl
     $('#upload').change(function (e) {
 	file = e.target.files[0];
@@ -103,7 +103,7 @@ function EditVerticalCtrl() {
         //console.time('editvertical');
 	//console.info('form inputs:', inputs);
 	vertical = {plints:[], rplints:[]};
-	var data = {rows:[]}, link = Chain.chain[0];
+	var data = {rows:[]}, link = chain.chain[0];
 	//console.log(link);
 	if (inputs.delete) vertical.delete = 'on';
 	else {
@@ -114,7 +114,6 @@ function EditVerticalCtrl() {
 		if (isNaN(cnt) || cnt=='' || cnt>100 || cnt<0) $('#plintCount').addClass('has-error');
 		else {
 		    $('#plintCount').removeClass('has-error');
-		    //var titles = chaindata.titles,
 		    var cdmask = inputs.cdmask.replace(/%C/g, link.cross.title||'').replace(/%V/g, link.vertical.title||''),
 			rcdmask = inputs.cdmask.replace(/%C/g, $scope.cross).replace(/%V/g, $scope.vertical).unescapeHTML(),
 			pairmask = inputs.pairmask,
@@ -186,6 +185,8 @@ function EditVerticalCtrl() {
     }
 
     function verticalSubmit() {
+	localStorage.pairmask = inputs.pairmask;
+	localStorage.cdmask = inputs.cdmask;
 	vertical.title = inputs.title;
 	if ($('#setCable')[0].checked) {
 	    var cid = +scEl.val();
@@ -208,6 +209,8 @@ function EditVerticalCtrl() {
 	$scope.verticalId = $request.args[0];
 	if ($scope.s_plint) $scope.s_plint.mask = $scope.s_plint.title.replace(/(\d+)/, '%$1');
 	else $scope.s_plint = {mask:'М%1', count:0};
+	$scope.cdmask = localStorage.cdmask || '%A %C %V %M';
+	$scope.pairmask = localStorage.pairmask || '%A %E';
 	return {title: $scope.header, data:{vertical:$scope}};
     });
 
@@ -216,26 +219,24 @@ function EditVerticalCtrl() {
 
     var view_cd, vertical, vdata,
 	vmEl = $('input[name=view]').on('change', viewChange),
-	taEl = $('textarea').on('input', verticalChange),
 	scEl = $('#cables'),
 	form = new Form(verticalSubmit, {hC:verticalChange}),
 	inputs = form.inputs,   // shorthand
 	wthead_cd = _th_com_ + _th_cdt_,   // for common data
-	wthead_pt = _th_com_ + '<th width="8%">'.repeat(10);	// for pair titles
-
-    Chain.init('plintscd', 3, verticalChange, $scope.chain, false, viewChange);
-
-    taEl.keydown(function(e) {
-	if(e.keyCode === 9) { // tab key
-	    var start = this.selectionStart,
-		target = e.target,
-		value = target.value;
-	    target.value = value.substring(0, start) + "\t" + value.substring(this.selectionEnd);
-	    this.selectionStart = this.selectionEnd = start + 1;
-	    //e.preventDefault();
-	    return false;
-	}
-    });
+	wthead_pt = _th_com_ + '<th width="8%">'.repeat(10),	// for pair titles
+	chain = new Chain('plintscd', 3, $scope.chain, false),
+	taEl = $('textarea').on('input', verticalChange).keydown(function(e) {
+	    if(e.keyCode === 9) { // tab key
+		var start = this.selectionStart,
+		    target = e.target,
+		    value = target.value;
+		target.value = value.substring(0, start) + "\t" + value.substring(this.selectionEnd);
+		this.selectionStart = this.selectionEnd = start + 1;
+		//e.preventDefault();
+		return false;
+	    }
+	});
+    chain.on('change', verticalChange).on('load', viewChange);
 }
 /* end EditVerticalController */
 
@@ -272,10 +273,10 @@ function EditPairCtrl() {
     function refreshWatch() {	//~~~~~~~~~~~~for debug~~~~~~~~~~~~~~
         var wt = $('#watchtable'), tr;
         wt.find('tr').remove('.refreshing');
-        $.each(Chain.chain, function(key, link) {
+        $.each(chain.chain, function(key, link) {
             tr = $('<tr>', {class:'refreshing'});
             $('<td>', {class:'warning'}).text(key).appendTo(tr);
-            $.each(Chain.stages, function() { $('<td>').text(link[this].id).appendTo(tr); });
+            $.each(chain.stages, function() { $('<td>').text(link[this].id).appendTo(tr); });
             tr.appendTo(wt);   // id of element, without declare variable!!!
         });
 	//console.log(form);
@@ -283,16 +284,16 @@ function EditPairCtrl() {
 
     function editpairSubmit() {	// submit edit pair ctrl
 	var id, title = this.title.value, details = this.details.value;
-	if (chainMode) Chain.order(title, details);
+	if (chainMode) chain.order(title, details);
 	else {
 	    id = $request.args;
-	    Chain.plints = {};
-	    Chain.plints[id[0]] = {};
-	    Chain.plints[id[0]]['pid'+id[1]] = title;
-	    Chain.plints[id[0]]['pdt'+id[1]] = details;
+	    var chain = {plints:{}};
+	    chain.plints[id[0]] = {};
+	    chain.plints[id[0]]['pid'+id[1]] = title;
+	    chain.plints[id[0]]['pdt'+id[1]] = details;
 	}
 	$scope.formData = {};
-	$scope.formData.plints = JSON.stringify(Chain.plints);
+	$scope.formData.plints = JSON.stringify(chain.plints);
 	//console.log($scope.formData.plints); return false;
 	return form.post();
     }
@@ -301,11 +302,15 @@ function EditPairCtrl() {
     web2spa.load_and_render(function() { return {title:$scope.address, data:{pair:$scope, chain:chainMode}}; });
     var form = new Form(editpairSubmit);
     if (chainMode) {
-	Chain.init('plintscd', 4, _DEBUG_?refreshWatch:null, $scope.chain, true);	// 'plints'
-	if (_DEBUG_) { web2spa.render({id:'ChainWatchTmpl', append:true}); refreshWatch(); }
+	var chain = new Chain('plintscd', 4, $scope.chain, true);	// 'plints'
+	if (_DEBUG_) {
+	    web2spa.render({id:'ChainWatchTmpl', append:true});
+	    refreshWatch();
+	    chain.on('change', refreshWatch);
+	}
 	//debugger;
     }
-    //console.table(Chain);
+    //console.table(chain);
 
     app.chainMode.init(function(value) {
 	value = location.pathname + (value?'?chain=true':'');
@@ -365,15 +370,62 @@ function EditFoundCtrl() {
     for(var ci in fdata) {
 	pair = fdata[ci];
 	row = foundtable.insertRow();
-	row.insertAdjacentHTML('beforeend', pairRow(pair));
+	row.insertAdjacentHTML('beforeend', app.pairRow(pair));
 	pair.cell = row.insertCell();
 	row.insertCell().innerHTML = pair.details;
 	row.insertCell().innerHTML = pair.comdata;
     }
     form.init();
-    toggle_chain();
+    app.toggle_chain();
 }
 /* end edit found controller */
+
+//======================================
+/*** Edit Cables Controller ***/
+function EditCablesCtrl() {
+
+    function foundSubmit() {
+	var cables = [], cable, _c;
+	cdata.forEach(function(_c) {
+	    title = _c.title.val();
+	    cable = {};
+	    try {
+		if (_c.id) {
+		    cable.id = _c.id;
+		    if (_c.delete.is(':checked') || !title) { cable.delete = 'on'; throw false; }
+		    else throw true;
+		} else if (title) throw true;
+	    } catch(e) {
+		if (e) { cable.title = title; cable.details = _c.details.val(); cable.color = _c.clr; }
+		cables.push(cable);
+	    }
+	});
+	$scope.formData = {};
+	$scope.formData.cables = JSON.stringify(cables);
+	//console.table(cables); console.log($scope.formData.cables); return false;
+	return form.post();
+    }
+
+    function addCable(id) {
+	var cable;
+	if (id) {
+	    cable = $scope.cables[id];
+	    cable.id = id;
+	} else cable = ['', '', 0];
+	cable = new Cable(cable);
+	cable.row.appendTo(tb);
+	cdata.push(cable);
+    }
+
+    web2spa.load_and_render({title:L._CABLES_});
+    var form = new Form(foundSubmit),
+	cdata = [],
+	tb = $('#cablebody');
+    for (var ci in $scope.cables) addCable(ci);
+    $('#addCable').click(function() { addCable(); });
+
+}
+/* end edit cables controller */
 
 //======================================
 /*** Ajax Live Search Controller ***/
