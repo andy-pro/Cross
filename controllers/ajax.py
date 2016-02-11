@@ -55,7 +55,7 @@ def lexicon():
     _TITLE_ = T('Title'),
     _TOOSHORT_ = T('too short query!'),
     _TOOLS_ = T('Tools'),
-    _UKSATSE_ = T('Uksatse'),
+    _UKSATSE_ = T('UkSATSE'),
     _VERTICAL_ = T('Vertical'),
     _VERT_T_ = T('Vertical title'),
     _VIEW_VERT_ = T('View vertical'),
@@ -75,7 +75,7 @@ def cables():
     return dict(cables=dict((r.id,(r.title, r.details, r.color)) for r in db(db.cables).select()))
 
 def cross():
-    return dict(data=[(r.id, r.title, [(w.id, w.title) for w in db(db.verticals.cross == r.id).select()]) for r in db(db.crosses).select()])
+    return dict(crosses=[(r.id, r.title, [(w.id, w.title) for w in db(db.verticals.cross == r.id).select()]) for r in db(db.crosses).select()])
 
 def news():
     request.vars.news = True;
@@ -170,7 +170,9 @@ def editcross():
 @auth.requires_membership('managers')
 def editvertical():
     request.edit_mode = True;
-    return add_formkey(vertical())
+    result = vertical()
+    result.update(cross())
+    return add_formkey(result)
 
 @auth.requires_membership('managers')
 def editplint():
@@ -183,7 +185,9 @@ def editplint():
 
 @auth.requires_membership('managers')
 def editpair():
-    return add_formkey(__getchain())
+    result = __getchain()
+    result.update(cross())
+    return add_formkey(result)
 
 @auth.requires_membership('managers')
 def editcables():
@@ -361,7 +365,8 @@ def update():
         elif formname == 'editpair' or formname == 'editfound':
             plints = json_to_utf(vars.plints)
             for i in plints:
-                changed = plint_update(i, {}, plints[i])
+                if plint_update(i, {}, plints[i]):
+                    changed = True
         elif formname == 'editcables':
             cables = json_to_utf(vars.cables)
             for i in cables:

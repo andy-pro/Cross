@@ -1,5 +1,5 @@
 /*** Model: Chain, contains chain data, links information ***/
-function Chain(url, depth, chain, ext) { // constructor
+function Chain(depth, ext) { // constructor
     this.on = function(_e, _h) {
 	switch(_e) {
 	    case 'change': this.hS = _h; break;	// <select> input change handler
@@ -31,18 +31,18 @@ function Chain(url, depth, chain, ext) { // constructor
 	});
     }
     this.stages = ['cross','vertical','plint','pair'];
-    this.cache = web2spa.load('cross', {unescape:true, clearpath:true}).data;
+    //this.cache = web2spa.load('cross', {unescape:true, clearpath:true}).data;
+    this.cache = $scope.crosses;
     this.body = $('#chainbody');
     this.plints = {};
     this.chain = {};
     this.promises = [];
-    this.url = url;
     this.depth = depth || 1;
     this.ext = ext;	// extend mode, extra cols: edited, add parallel, color
     this.count = 0;
-    if (chain) {
+    if ($scope.chain) {
 	var self = this, plints = this.plints;
-	$.each(chain, function() {
+	$.each($scope.chain, function() {
 	    self.addLink(this);
 	    var row = this.plintId, id = this.pairId;
 	    if (!plints[row]) plints[row] = {};
@@ -62,7 +62,7 @@ function Chain(url, depth, chain, ext) { // constructor
 
 /*** Model: Link, response <selector> sequence to row ***/
 function Link(Chain, link) { // constructor
-    link = link || {};
+    link || (link = {});
     this.Chain = Chain;
     this.depth = Chain.depth;
     this.id = Chain.count;
@@ -92,7 +92,7 @@ function Link(Chain, link) { // constructor
 }
 
 Link.prototype = {
-    clrs: app.link_clrs,
+    clrs: app.LINK_CLRS,
     add_td: function(_c) { return $(_c?'<td class="padd9">':'<td>').appendTo(this.row); },
     add_sel: function () { return $('<select class="form-control input-sm">').prop('disabled', true).data({this:this}).appendTo(this.add_td());},
     selectChange: function(event) {
@@ -101,8 +101,8 @@ Link.prototype = {
 	    stage = El.data('stage');
 	self[stage].id = +El.val();
 	self[stage].si = El[0].selectedIndex;
-	if (stage != 'pair') self[stage+'Change']();  // execute crossChange(), verticalChange() or plintChange()
-	if (typeof self.Chain.hS == 'function') {
+	if (stage !== 'pair') self[stage+'Change']();  // execute crossChange(), verticalChange() or plintChange()
+	if (typeof self.Chain.hS === 'function') {
 	    El = this;
 	    self.cache.xhr.always(function() {
 		//console.log(status, 'onselect occure:', stage, self[stage]);
@@ -129,8 +129,8 @@ Link.prototype = {
 		    cache = this.vertical.data[this.vertical.si]; // shortcut to cross[id].vertical[id]
 		this.vertical.title = cache[1];
 		if (!cache.xhr) {
-		    cache.xhr = $.get(web2spa.get_ajax_url(this.Chain.url, {args:[this.vertical.id]})).always(function(data, status) {
-			cache[2] = status=='success' ? data.data : [[0,status,0,'']];	// for error data is jqXHR
+		    cache.xhr = $.get(web2spa.get_ajax_url('plintscd', {args:[this.vertical.id]})).always(function(data, status) {
+			cache[2] = status=='success' ? data.data : [[0,status,0,'']];	// data is jqXHR if error
 		    });
 		}
 		this.cache = cache;
@@ -231,7 +231,7 @@ function Cable(cable) { // constructor
 }
 
 Cable.prototype = {
-    clrs: app.cable_clrs,
+    clrs: app.CABLE_CLRS,
     _inp: '<input type="text">',
     addCell: function (El) {
 	El = $(El).attr('class', 'form-control input-sm').data({this:this});

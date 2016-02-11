@@ -1,15 +1,12 @@
 /*** Global constants  ***/
-//const _DEBUG_ = false;
-const _DEBUG_ = true;
+const _DEBUG_ = false;
+//const _DEBUG_ = true;
 const _mypre = '<pre class="mypre">%s</pre>';
-
-var compile = pattern => pattern+2
-console.log(compile(1));
 
 var app = {
     name: 'cross',
-    link_clrs:  ['#fff', '#9ff', '#f9f', '#ff9', '#aaf', '#afa', '#faa', '#bdf', '#fbd', '#dfb', '#fdb'],
-    cable_clrs: ['#fff', '#bff', '#fbf', '#ffb', '#ccf', '#bfc', '#fcc', '#cef', '#fce', '#efe', '#fdc'],
+    LINK_CLRS:  ['#fff', '#9ff', '#f9f', '#ff9', '#aaf', '#afa', '#faa', '#bdf', '#fbd', '#dfb', '#fdb'],
+    CABLE_CLRS: ['#fff', '#bff', '#fbf', '#ffb', '#ccf', '#bfc', '#fcc', '#cef', '#fce', '#efe', '#fdc'],
     /* for DEBUG */
     vars_watch: function() {
 	$("#varswatch").text('Size of jQuery cache:%s, Size of window:%s'.format(Object.keys($.cache).length, Object.keys(window).length));
@@ -72,15 +69,16 @@ var app = {
 	    // blacking color like rgb(rrr, ggg, bbb)
 	    return v.replace(/(\d+)/g, function(s, m) { return (+m/1.03).toFixed(); });
 	});
-    }
+    },
+    db_clear: function() { if (confirm("A you sure?")) location.href = web2spa.root_path + 'cleardb'; }
 };
 
 web2spa.init({	// application settings, !!! important: urls or url's parts without slashes
     app: app.name,
-    ajaxctrl: 'ajax',
-    lexicon_url: 'lexicon', // lexicon url: 'cross/ajax/lexicon.json'
-    target: 'crosshome',	// main div for content
+    ajaxctrl: 'ajax',	// 'cross/controllers/ajax.py' web2py controller for ajax requests
+    lexicon: 'lexicon',	// lexicon url: 'cross/ajax/lexicon.json'
     templates: 'templates', // templates url: 'cross/views/templates.html'
+    target: 'crosshome',	// main div for content
     post_back: true, // enable history.back() when forms are posted
     esc_back: true, // enable history.back() when 'ESC' key pressed
     routes: [
@@ -99,7 +97,7 @@ web2spa.init({	// application settings, !!! important: urls or url's parts witho
 	['Error', {error_path: true}]],
 
     beforeStart: function () {   /* callback, perform after app load & init, but before start, application setup */
-	L = web2spa.lexicon;   // global shortcut to lexicon
+	L = web2spa.lexicon.data;   // global shorthand to lexicon
 	tbheaders = [L._CROSS_, L._VERTICAL_, L._PLINT_, L._PAIR_];
 	L._BTNOKCNSL_ = web2spa._render({id:'btnOkCancelTmpl'});    // helpers, inline templates for common buttons
 	L.i_ok = '<i class="glyphicon glyphicon-ok">';
@@ -107,12 +105,10 @@ web2spa.init({	// application settings, !!! important: urls or url's parts witho
 	app.chainMode = new CheckBox('chainMode');
 	app.editMode = new CheckBox('editMode');
 	app.wrapMode = new CheckBox('wrapMode');
-	app.db_clear = function() { if (confirm("A you sure?")) location.href = web2spa.root_path + 'cleardb'; }
 	_DEBUG_ && web2spa.targetEl.before('<div id="debug" class="well"><button class="btn btn-default" onclick="vars_watch()">Watch</button><span id="varswatch"></span></div>');
     },
     beforeNavigate: function() {
 	app.chainMode.reset_handler();
     },
     afterNavigate: function() { _DEBUG_ && app.vars_watch(); }
-
 });

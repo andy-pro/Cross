@@ -16,42 +16,52 @@ function UserCtrl() {
 
 //======================================
 /*** CrossController ***/
-function CrossCtrl() { web2spa.load_and_render(function() { return {data:{crosses:$scope.data}}; }); }
+function CrossCtrl() {
+    web2spa.load_and_render(function() { return {data:{crosses:$scope.crosses}}; });
+}
 /* end CrossController */
 
 //======================================
 /*** VerticalController ***/
 function VerticalCtrl() {	// requests: #/vertical/id, #/vertical?search=search
-    web2spa.load_and_render(function() {
-	var search = $request.vars.search, vId = false, _title='', href;
-	$("#master-search").val((search || '').unescapeHTML());
-	if ($request.args[0]) { // for certain vertical view
-	    vId = $request.args[0];
-	    href = `${web2spa.start_path}editvertical/${vId}`;
-	    _title = `${L._EDIT_VERT_} ${$scope.vertical}`;
-	} else href = `${web2spa.start_path}editfound?search=${search}`;    // for search results view
-	var header = `<a class="web2spa" href="${href}" title="${_title}">${$scope.header}</a>`;
-	return {title:$scope.header, data:app.D_Vertical(header, search, false, vId)};
-    });
-    app.strip_table();
-    app.toggle_wrap();
-    $userId && app.toggle_ctrl();
+    web2spa.load_and_render(
+	function() {
+	    var search = $request.vars.search, vId = false, _title='', href;
+	    $("#master-search").val((search || '').unescapeHTML());
+	    if ($request.args[0]) { // for certain vertical view
+		vId = $request.args[0];
+		href = `${web2spa.start_path}editvertical/${vId}`;
+		_title = `${L._EDIT_VERT_} ${$scope.vertical}`;
+	    } else href = `${web2spa.start_path}editfound?search=${search}`;    // for search results view
+	    var header = `<a class="web2spa" href="${href}" title="${_title}">${$scope.header}</a>`;
+	    return {title:$scope.header, data:app.D_Vertical(header, search, false, vId)};
+	},
+	function() {
+	    app.strip_table();
+	    app.toggle_wrap();
+	    $userId && app.toggle_ctrl();
+	}
+    );
 }
 /* end VerticalController */
 
 //======================================
 /*** NewsController ***/
 function NewsCtrl() {
-    web2spa.load_and_render(function() { return {title:L._NEWS_, data:app.D_Vertical($scope.header, false, true, false)}; });
-    app.strip_table();
+    web2spa.load_and_render(
+	function() { return {title:L._NEWS_, data:app.D_Vertical($scope.header, false, true, false)}; },
+	app.strip_table
+    );
 }
 /* end NewsController */
 
 //======================================
 /*** ChainController ***/
 function ChainCtrl() {
-    web2spa.load_and_render(function() { return {title:$scope.address, data:{chain:$scope}}; });
-    app.toggle_chain();
+    web2spa.load_and_render(
+	function() { return {title:$scope.address, data:{chain:$scope}}; },
+	app.toggle_chain
+    );
 }
 /* end ChainController */
 
@@ -62,23 +72,31 @@ function RestoreCtrl() {
     if ($request.vars.merge) title = L._MERGE_DB_;
     else if ($request.vars.txt) { title = L._IMPORT_; ft = 'txt'; }
     else title = L._RESTORE_;
-    web2spa.load_and_render({title:title, data:{title:title, hint:`Select ${ft} file`}});
-    var form = new Form(function() { return file ? form.post(this) : false; }); // restore ctrl
-    $('#upload').change(function (e) {
-	file = e.target.files[0];
-	$('#prop').text(file.size + ' bytes, last modified: ' + (file.lastModifiedDate ? file.lastModifiedDate.toLocaleDateString() : 'n/a'));
-    });
+    web2spa.load_and_render(
+	{title:title, data:{title:title, hint:`Select ${ft} file`}},
+	function() {
+	    var form = new Form(function() { return file ? form.post(this) : false; }); // restore ctrl
+	    $('#upload').change(function (e) {
+		file = e.target.files[0];
+		$('#prop').text(file.size + ' bytes, last modified: ' + (file.lastModifiedDate ? file.lastModifiedDate.toLocaleDateString() : 'n/a'));
+	    });
+	}
+    );
 }
 /* end RestoreController */
 
 //======================================
 /*** EditCrossController ***/
 function EditCrossCtrl() {
-    web2spa.load_and_render(function() {
-	if ($scope.new = $request.vars.new) $scope.title = '';
-	return {title:$scope.header, data:{cross:$scope}};
-    });
-    var form = new Form(function() { return form.post(this); });    // edit cross ctrl
+    web2spa.load_and_render(
+	function() {
+	    if ($scope.new = $request.vars.new) $scope.title = '';
+	    return {title:$scope.header, data:{cross:$scope}};
+	},
+	function() {
+	    var form = new Form(function() { return form.post(this); });    // edit cross ctrl
+	}
+    );
 }
 /* end EditCrossController */
 
@@ -103,7 +121,7 @@ function EditVerticalCtrl() {
         //console.time('editvertical');
 	//console.info('form inputs:', inputs);
 	vertical = {plints:[], rplints:[]};
-	var data = {rows:[]}, link = chain.chain[0];
+	var data = {rows:[]};
 	//console.log(link);
 	if (inputs.delete) vertical.delete = 'on';
 	else {
@@ -175,13 +193,21 @@ function EditVerticalCtrl() {
 	return 0;
     }
 
-    const _th_com_ = '<th width="14%">'+tbheaders[2]+'</th><th width="6%">+/~</th>';
-    const _th_cdt_ = '<th width="40%">'+L._COMMON_DATA_+'</th><th>'+L._REM_CD_+'</th>';
-
     function viewChange() {
 	view_cd = vmEl.filter(':checked').val() == 'comdata';
 	$('#watchhead').html(view_cd ? wthead_cd : wthead_pt);
 	form.init();	// this trigger 'verticalChange'
+    }
+
+    function forceTab(e) {
+	if(e.keyCode === 9) { // check tab key
+	    var start = this.selectionStart,
+		target = e.target,
+		value = target.value;
+	    target.value = value.substring(0, start) + "\t" + value.substring(this.selectionEnd);
+	    this.selectionStart = this.selectionEnd = start + 1;
+	    return false;
+	}
     }
 
     function verticalSubmit() {
@@ -205,38 +231,34 @@ function EditVerticalCtrl() {
 	return form.post();
     }
 
-    web2spa.load_and_render(function() {
-	$scope.verticalId = $request.args[0];
-	if ($scope.s_plint) $scope.s_plint.mask = $scope.s_plint.title.replace(/(\d+)/, '%$1');
-	else $scope.s_plint = {mask:'М%1', count:0};
-	$scope.cdmask = localStorage.cdmask || '%A %C %V %M';
-	$scope.pairmask = localStorage.pairmask || '%A %E';
-	return {title: $scope.header, data:{vertical:$scope}};
-    });
-
-    $('#helpbtn').click(function() { $.get(web2spa.static_path + "varhelp.html").success(function(data) { web2spa.show_msg(data, 'default', 0); }); });
-    $('#editor').change(function() { if (this.checked) { taEl.show(); taEl.focus(); } else taEl.hide(); });
-
-    var view_cd, vertical, vdata,
-	vmEl = $('input[name=view]').on('change', viewChange),
-	scEl = $('#cables'),
-	form = new Form(verticalSubmit, {hC:verticalChange}),
-	inputs = form.inputs,   // shorthand
+    const _th_com_ = '<th width="14%">'+tbheaders[2]+'</th><th width="6%">+/~</th>';
+    const _th_cdt_ = '<th width="40%">'+L._COMMON_DATA_+'</th><th>'+L._REM_CD_+'</th>';
+    var view_cd, vertical, vmEl, scEl, taEl,
 	wthead_cd = _th_com_ + _th_cdt_,   // for common data
 	wthead_pt = _th_com_ + '<th width="8%">'.repeat(10),	// for pair titles
-	chain = new Chain('plintscd', 3, $scope.chain, false),
-	taEl = $('textarea').on('input', verticalChange).keydown(function(e) {
-	    if(e.keyCode === 9) { // tab key
-		var start = this.selectionStart,
-		    target = e.target,
-		    value = target.value;
-		target.value = value.substring(0, start) + "\t" + value.substring(this.selectionEnd);
-		this.selectionStart = this.selectionEnd = start + 1;
-		//e.preventDefault();
-		return false;
-	    }
-	});
-    chain.on('change', verticalChange).on('load', viewChange);
+	form, inputs, link;
+
+    web2spa.load_and_render(
+	function() {
+	    $scope.verticalId = $request.args[0];
+	    if ($scope.s_plint) $scope.s_plint.mask = $scope.s_plint.title.replace(/(\d+)/, '%$1');
+	    else $scope.s_plint = {mask:'М%1', count:0};
+	    $scope.cdmask = localStorage.cdmask || '%A %C %V %M';
+	    $scope.pairmask = localStorage.pairmask || '%A %E';
+	    return {title: $scope.header, data:{vertical:$scope}};
+	},
+	function() {
+	    $('#helpbtn').click(function() { $.get(web2spa.static_path + "varhelp.html").success(function(data) { web2spa.show_msg(data, 'default', 0); }); });
+	    $('#editor').change(function() { if (this.checked) { taEl.show(); taEl.focus(); } else taEl.hide(); });
+	    vmEl = $('input[name=view]').on('change', viewChange);
+	    scEl = $('#cables');
+	    form = new Form(verticalSubmit, {hC:verticalChange});
+	    inputs = form.inputs;   // shorthand
+	    taEl = $('textarea').on('input', verticalChange).keydown(forceTab);
+	    var chain = new Chain(3, false);	// bind events below: var chain must be defined
+	    chain.on('change', verticalChange).on('load', function() { link = chain.chain[0]; viewChange(); });
+	}
+    );
 }
 /* end EditVerticalController */
 
@@ -252,17 +274,22 @@ function EditPlintCtrl() {
 
     function viewChange() { ta.css('display', function(i, v) { return v=='none' ? 'block' : 'none'; }); }
 
-    web2spa.load_and_render(function() {
-	$scope.start1 = $scope.start1 ? "checked" : "";
-	return {title:$scope.address, data:{plint:$scope}};
-    });
-    var ta = $('textarea');
-    ta[0].value = $scope.pairtitles.unescapeHTML();   // innerHTML used in templating system gives loss first empty line (\n), :-( ?
-    ta[1].value = $scope.pairdetails.unescapeHTML();
-    $('input[name=view]').on('change', viewChange);
-    var form = new Form(function() { return form.post(this); }, {hC:plintChange}); // edit plint ctrl
-    var mergechar = form.inputstext.filter('[name=mergechar]')[0];
-    form.init();
+    var ta, form, mergechar;
+    web2spa.load_and_render(
+	function() {
+	    $scope.start1 = $scope.start1 ? "checked" : "";
+	    return {title:$scope.address, data:{plint:$scope}};
+	},
+	function() {
+	    ta = $('textarea');
+	    ta[0].value = $scope.pairtitles.unescapeHTML();   // innerHTML used in templating system gives loss first empty line (\n), :-( ?
+	    ta[1].value = $scope.pairdetails.unescapeHTML();
+	    $('input[name=view]').on('change', viewChange);
+	    form = new Form(function() { return form.post(this); }, {hC:plintChange}); // edit plint ctrl
+	    mergechar = form.inputstext.filter('[name=mergechar]')[0];
+	    form.init();
+	}
+    );
 }
 /* end EditPlintController */
 
@@ -283,11 +310,12 @@ function EditPairCtrl() {
     }	//~~~~~~~~~~~~end for debug~~~~~~~~~~~~~~
 
     function editpairSubmit() {	// submit edit pair ctrl
+	console.info(chain);
 	var id, title = this.title.value, details = this.details.value;
 	if (chainMode) chain.order(title, details);
 	else {
 	    id = $request.args;
-	    var chain = {plints:{}};
+	    chain = {plints:{}};
 	    chain.plints[id[0]] = {};
 	    chain.plints[id[0]]['pid'+id[1]] = title;
 	    chain.plints[id[0]]['pdt'+id[1]] = details;
@@ -298,25 +326,31 @@ function EditPairCtrl() {
 	return form.post();
     }
 
-    var chainMode = $request.vars.chain;
-    web2spa.load_and_render(function() { return {title:$scope.address, data:{pair:$scope, chain:chainMode}}; });
-    var form = new Form(editpairSubmit);
-    if (chainMode) {
-	var chain = new Chain('plintscd', 4, $scope.chain, true);	// 'plints'
-	if (_DEBUG_) {
-	    web2spa.render({id:'ChainWatchTmpl', append:true});
-	    refreshWatch();
-	    chain.on('change', refreshWatch);
+    var chainMode = $request.vars.chain, form, chain;
+    web2spa.load_and_render(
+	function() {
+	    return {title:$scope.address, data:{pair:$scope, chain:chainMode}};
+	},
+	function() {
+	    form = new Form(editpairSubmit);
+	    if (chainMode) {
+		chain = new Chain(4, true);
+		if (_DEBUG_) {
+		    web2spa.render({id:'ChainWatchTmpl', append:true});
+		    refreshWatch();
+		    chain.on('change', refreshWatch);
+		}
+		//debugger;
+	    }
+	    console.info(chain);
+	    app.chainMode.init(function(value) {
+		value = location.pathname + (value?'?chain=true':'');
+		history.replaceState(null, null, value);
+		web2spa.navigate(value);
+	    });
 	}
-	//debugger;
-    }
-    //console.table(chain);
+    );
 
-    app.chainMode.init(function(value) {
-	value = location.pathname + (value?'?chain=true':'');
-	history.replaceState(null, null, value);
-	web2spa.navigate(value);
-    });
 
 }
 /* end edit pair controller */
@@ -329,12 +363,11 @@ function EditFoundCtrl() {
         var ftext = inputs.find.escapeHTML();
         var rtext = inputs.replace.escapeHTML();
 	var out = '<span style="background-color: #ff6">'+(inputs.follow ? rtext : ftext)+'</span>';
-	for(var ci in fdata) {
-	    pair = fdata[ci];
+	fdata.forEach(function(pair) {
 	    pair.cell.innerHTML = _mypre.format(pair.title.replace(ftext, out));
 	    pair._title = pair.title.replace(ftext, rtext);
 	    plints[pair.plintId]['pid'+pair.pairId] = pair._title.unescapeHTML();
-	}
+	});
     }
 
     function plints_to_pairs() {
@@ -363,20 +396,23 @@ function EditFoundCtrl() {
 
     function foundSubmit() { $scope.formData = {}; $scope.formData.plints = JSON.stringify(plints); return form.post(); }
 
-    var fdata = [], plints = {};
-    web2spa.load_and_render(plints_to_pairs);
-    var form = new Form(foundSubmit, {hC:refreshFoundTable});    // edit found ctrl
-    var inputs = form.inputs, pair, row;
-    for(var ci in fdata) {
-	pair = fdata[ci];
-	row = foundtable.insertRow();
-	row.insertAdjacentHTML('beforeend', app.pairRow(pair));
-	pair.cell = row.insertCell();
-	row.insertCell().innerHTML = pair.details;
-	row.insertCell().innerHTML = pair.comdata;
-    }
-    form.init();
-    app.toggle_chain();
+    var fdata = [], plints = {}, form, inputs;
+    web2spa.load_and_render(
+	plints_to_pairs,
+	function() {
+	    form = new Form(foundSubmit, {hC:refreshFoundTable});    // edit found ctrl
+	    inputs = form.inputs;
+	    fdata.forEach(function(pair) {
+		var row = foundtable.insertRow();
+		row.insertAdjacentHTML('beforeend', app.pairRow(pair));
+		pair.cell = row.insertCell();
+		row.insertCell().innerHTML = pair.details;
+		row.insertCell().innerHTML = pair.comdata;
+	    });
+	    form.init();
+	    app.toggle_chain();
+	}
+    );
 }
 /* end edit found controller */
 
@@ -384,7 +420,7 @@ function EditFoundCtrl() {
 /*** Edit Cables Controller ***/
 function EditCablesCtrl() {
 
-    function foundSubmit() {
+    function cablesSubmit() {
 	var cables = [], cable, _c;
 	cdata.forEach(function(_c) {
 	    title = _c.title.val();
@@ -417,13 +453,17 @@ function EditCablesCtrl() {
 	cdata.push(cable);
     }
 
-    web2spa.load_and_render({title:L._CABLES_});
-    var form = new Form(foundSubmit),
-	cdata = [],
-	tb = $('#cablebody');
-    for (var ci in $scope.cables) addCable(ci);
-    $('#addCable').click(function() { addCable(); });
-
+    var form, cdata, tb;
+    web2spa.load_and_render(
+	{title:L._CABLES_},
+	function() {
+	    form = new Form(cablesSubmit);
+	    cdata = [];
+	    tb = $('#cablebody');
+	    for (var ci in $scope.cables) addCable(ci);
+	    $('#addCable').click(function() { addCable(); });
+	}
+    );
 }
 /* end edit cables controller */
 
@@ -445,7 +485,7 @@ function EditCablesCtrl() {
         searchvalue = mastersearch.val();
         if(searchvalue.length > 2){
 	//console.log(searchvalue)
-            if (searchvalue != oldvalue) {
+            if (searchvalue !== oldvalue) {
 		oldvalue = searchvalue;
 		if (jqXHR) jqXHR.abort();
                 jqXHR = $.ajax(web2spa.get_ajax_url("livesearch", {}), {
@@ -475,7 +515,7 @@ function EditCablesCtrl() {
 	.blur(function(event){
 	    oldvalue = searchvalue;
 	    hidelive();
-	    if (mastersearch.val() != searchvalue) {
+	    if (mastersearch.val() !== searchvalue) {
 		mastersearch.val(searchvalue);
 		setTimeout(function(){mastersearch.focus()}, 10);
 	    }

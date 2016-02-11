@@ -40,7 +40,7 @@
           if (plint.cable&&!news) { _pattr=cables[plint.cable]; if (!search) _style=_pattr[2]; _pattr = _pattr[0]; }
           _pattr='class="web2spa" title="%s\n%s\n%s\n%s\n%s"'.format(plint.title, plint.comdata, when, who, _pattr);
     %>
-          <tr style="background:<%=app.cable_clrs[_style]%>">
+          <tr style="background:<%=app.CABLE_CLRS[_style]%>">
           <%if (search || news) { print(app.pairRow(plint, 2, true)); }%>
           <td class="colv1" style="border-right:2px solid #ddd;">
             <a href="<%=href1+plint.id%>" <%=_pattr%>><%=plint.title%></a></td>
@@ -85,7 +85,7 @@
     <div class="panel-body"><p><i><%=chain.modinfo%></i></p></div>
     <table class="table table-bordered table-condensed">
         <tr class="info"><%tbheaders.concat(L._DETAILS_,L._COMMON_DATA_,L.i_par).forEach(function(h){print(`<th>${h}</th>`);});%></tr>
-        <%chain.chain.forEach(function(link){print(`<tr style="background:${app.link_clrs[link.clr]}">`, app.pairRow(link),
+        <%chain.chain.forEach(function(link){print(`<tr style="background:${app.LINK_CLRS[link.clr]}">`, app.pairRow(link),
             `<td>${link.pdt}</td><td>${link.comdata}</td><td>${link.par?L.i_ok:""}</td></tr>`);});%>
     </table>
     <div class="panel-footer"><div class="myright"><%=L._FOUND_%><%=chain.chain.length%></div></div>
@@ -192,7 +192,7 @@
             <option value="0">No cable</option>
             <%for(var ci in vertical.cables){
               var cable = vertical.cables[ci];
-              print(`<option value="${ci}" style="background:${app.cable_clrs[cable[2]]}">${cable[0]+(cable[1]?("&nbsp;("+cable[1]+")"):"")}</option>`);
+              print(`<option value="${ci}" style="background:${app.CABLE_CLRS[cable[2]]}">${cable[0]+(cable[1]?("&nbsp;("+cable[1]+")"):"")}</option>`);
             }%>
           </select></div>
         </div>
@@ -395,7 +395,7 @@
     <div class="panel-heading"><label><%=L._CABLES_%></label><%=L._BTNBACK_%></div>
     <div class="panel-body">
       <form class="form-horizontal">
-        <button id="addCable" type="button" class="btn btn-sm btn-success pull-right" title="<%=L._ADD_CABEL_%>">+</button><br><br>
+        <button id="addCable" type="button" class="btn btn-sm btn-success pull-right" title="<%=L._ADD_CABLE_%>">+</button><br><br>
         <table id="cabletable" class="table table-condensed">
           <thead>
             <tr class="active">
