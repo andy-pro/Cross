@@ -200,7 +200,7 @@ function EditVerticalCtrl() {
     }
 
     function forceTab(e) {
-	if(e.keyCode === 9) { // check tab key
+	if (e.keyCode === 9) { // check tab key
 	    var start = this.selectionStart,
 		target = e.target,
 		value = target.value;
@@ -342,7 +342,7 @@ function EditPairCtrl() {
 		}
 		//debugger;
 	    }
-	    console.info(chain);
+	    //console.info(chain);
 	    app.chainMode.init(function(value) {
 		value = location.pathname + (value?'?chain=true':'');
 		history.replaceState(null, null, value);

@@ -1,6 +1,7 @@
 /*** Global constants  ***/
 const _DEBUG_ = false;
 //const _DEBUG_ = true;
+const _TMPLS_ = false;
 const _mypre = '<pre class="mypre">%s</pre>';
 
 var app = {
@@ -77,7 +78,8 @@ web2spa.init({	// application settings, !!! important: urls or url's parts witho
     app: app.name,
     ajaxctrl: 'ajax',	// 'cross/controllers/ajax.py' web2py controller for ajax requests
     lexicon: 'lexicon',	// lexicon url: 'cross/ajax/lexicon.json'
-    templates: 'templates', // templates url: 'cross/views/templates.html'
+    //templates: 'templates', // templates url: 'cross/views/templates.html'
+    templates_json: 'templates', // templates.json url: 'cross/static/templates.json'
     target: 'crosshome',	// main div for content
     post_back: true, // enable history.back() when forms are posted
     esc_back: true, // enable history.back() when 'ESC' key pressed
